@@ -227,7 +227,7 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:v
 @keyframes screenFlash{0%{filter:brightness(1.7)}100%{filter:brightness(1)}}
 @keyframes lossSettle{0%{transform:translateY(-5px);filter:brightness(1.18)}100%{transform:none;filter:brightness(1)}}
 @keyframes grainJitter{0%{transform:translate(0,0)}50%{transform:translate(-1%,1%)}100%{transform:translate(1%,-1%)}}
-@media(prefers-reduced-motion:reduce){.motion-grain{animation:none;opacity:.025}.result-celebration.show,.result-celebration.show *{animation:none!important;transition:none!important}.motion-wipe,.motion-stripes{display:none}}
+@media(prefers-reduced-motion:reduce){.motion-grain{animation:none;opacity:.025}.result-celebration.show .motion-wipe,.result-celebration.show .motion-stripes{display:none}.result-celebration.show .brand-result-logo,.result-celebration.show .brand-logo-stage::before,.result-celebration.show .brand-logo-stage::after{animation-play-state:running!important}}
 @media(max-width:360px){.motion-word{font-size:clamp(52px,17vw,72px)}.motion-amount{font-size:clamp(42px,13vw,58px)}.motion-content{padding-left:4vw;padding-right:4vw}}
 
 /* ── Toast ── */
