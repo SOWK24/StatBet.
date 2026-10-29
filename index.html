@@ -1374,6 +1374,37 @@ function switchTab(name) {
   exit.onfinish = activate;
 }
 
+/* Compteurs fluides : l'animation ne modifie que l'affichage, jamais les données stockées. */
+const currencyAnimations = new WeakMap();
+function animateCurrencyValue(element, target) {
+  if (!element) return;
+  const previousAnimation = currencyAnimations.get(element);
+  if (previousAnimation) cancelAnimationFrame(previousAnimation);
+  const parseAmount = value => {
+    const parsed = Number(String(value).replace(/[^0-9,.-]/g, '').replace(/\s/g, '').replace(',', '.'));
+    return Number.isFinite(parsed) ? parsed : target;
+  };
+  const start = parseAmount(element.textContent);
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduced || start === target) {
+    element.textContent = fmtEurPlain(target);
+    return;
+  }
+  const began = performance.now();
+  const duration = 520;
+  const tick = now => {
+    const progress = Math.min(1, (now - began) / duration);
+    const eased = 1 - Math.pow(1 - progress, 4);
+    element.textContent = fmtEurPlain(start + (target - start) * eased);
+    if (progress < 1) currencyAnimations.set(element, requestAnimationFrame(tick));
+    else {
+      element.textContent = fmtEurPlain(target);
+      currencyAnimations.delete(element);
+    }
+  };
+  currencyAnimations.set(element, requestAnimationFrame(tick));
+}
+
 /* ─── Dashboard ─────────────────────────────────────────────────────── */
 function renderDashboard() {
   const gs = calcStats(bets);
@@ -1395,8 +1426,8 @@ function renderDashboard() {
   void sb.offsetWidth;
   sb.classList.add('updating');
 
-  document.getElementById('g-mises').textContent = fmtEurPlain(gs.totalMises);
-  document.getElementById('g-gains').textContent = fmtEurPlain(gs.totalGains);
+  animateCurrencyValue(document.getElementById('g-mises'), gs.totalMises);
+  animateCurrencyValue(document.getElementById('g-gains'), gs.totalGains);
 
   renderRecordCard();
 }
