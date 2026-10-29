@@ -1820,21 +1820,42 @@ function drawChart(canvas, data) {
   }
 
   let activeBarKey = '';
+  let pointerStart = null;
+  let suppressClickUntil = 0;
   canvas.onclick = (e) => {
+    if (Date.now() < suppressClickUntil) return;
     const bar = findBar(e.clientX);
     if (bar) { showTip(bar, e.clientX); activeBarKey = bar.m.key; }
   };
-  // Le glissement explore les barres sans ouvrir le sheet avant le relâchement.
+  canvas.onpointerdown = e => {
+    pointerStart = { x:e.clientX, y:e.clientY, id:e.pointerId };
+    activeBarKey = '';
+    try { canvas.setPointerCapture(e.pointerId); } catch(err) {}
+  };
+  // Survol ou glissement horizontal : aucun glow ni changement de couleur,
+  // seulement un retour haptique léger au passage d'une barre à l'autre.
   canvas.onpointermove = e => {
-    if (e.pointerType === 'mouse' && e.buttons === 0) return;
+    if (!pointerStart || pointerStart.id !== e.pointerId) return;
     const bar = findBar(e.clientX);
     if (bar && activeBarKey !== bar.m.key) {
       activeBarKey = bar.m.key;
       if (navigator.vibrate) { try { navigator.vibrate(8); } catch(err) {} }
     }
   };
+  canvas.onpointerup = e => {
+    if (!pointerStart || pointerStart.id !== e.pointerId) return;
+    const moved = Math.hypot(e.clientX - pointerStart.x, e.clientY - pointerStart.y) > 10;
+    pointerStart = null;
+    if (!moved) return;
+    const bar = findBar(e.clientX);
+    if (bar) {
+      showTip(bar, e.clientX);
+      suppressClickUntil = Date.now() + 450;
+    }
+  };
+  canvas.onpointercancel = () => { pointerStart = null; };
   canvas.ontouchstart = null;
-  canvas.setAttribute('aria-label','Graphique interactif : touchez une barre pour afficher les statistiques du mois');
+  canvas.setAttribute('aria-label','Graphique interactif : touchez une barre ou faites glisser le doigt pour afficher les statistiques du mois');
 }
 
 /* ─── Subtle tactile motion for decorative, non-interactive surfaces ─── */
