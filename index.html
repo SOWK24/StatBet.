@@ -1147,15 +1147,7 @@ input[type="submit"]:active, input[type="reset"]:active, summary:active,
 </div>
 
 <div id="toast"></div>
-<div id="result-celebration" class="result-celebration" role="dialog" aria-modal="true" aria-live="polite" aria-label="Résultat du pari" onclick="closeResultCelebration()">
-  <div class="brand-result-bg" aria-hidden="true"><div class="brand-result-orbit orbit-a"></div><div class="brand-result-orbit orbit-b"></div><div class="brand-result-flash"></div></div>
-  <div class="demo-result-rays" aria-hidden="true"></div><div class="demo-result-marquee" aria-hidden="true">PAULY’BET · CASH · BANCO · ÇA PASSE · PAULY’BET · CASH · BANCO · ÇA PASSE ·</div>
-  <div class="brand-result-shards" id="celebration-particles" aria-hidden="true">
-    <img class="logo-shard shard-1" src="./275C6C76-2C7B-40CA-9CC4-853F38A703DA.svg?v=4" alt="">
-    <img class="logo-shard shard-2" src="./275C6C76-2C7B-40CA-9CC4-853F38A703DA.svg?v=4" alt="">
-    <img class="logo-shard shard-3" src="./275C6C76-2C7B-40CA-9CC4-853F38A703DA.svg?v=4" alt="">
-    <img class="logo-shard shard-4" src="./275C6C76-2C7B-40CA-9CC4-853F38A703DA.svg?v=4" alt="">
-  </div>
+<div id="result-celebration" class="result-celebration" role="dialog" aria-modal="true" aria-live="polite" aria-label="Résultat du pari">
   <iframe id="result-demo-frame" title="Animation du résultat Pauly’Bet" src="./demo-animation.html?embed=1" style="position:absolute;inset:0;width:100%;height:100%;border:0;background:#070908;z-index:10;pointer-events:none"></iframe>
   <div id="result-demo-dismiss-layer" onclick="closeResultCelebration()" aria-label="Fermer le résultat" style="position:absolute;inset:0;z-index:20;cursor:pointer"></div>
   <button type="button" aria-label="Fermer le résultat" onclick="closeResultCelebration()" style="position:absolute;z-index:30;top:max(12px,env(safe-area-inset-top));right:14px;width:38px;height:38px;border:1px solid rgba(255,255,255,.2);border-radius:50%;background:rgba(10,14,10,.7);color:#fff;font-size:22px">×</button>
@@ -2115,68 +2107,19 @@ function showResultCelebration(isWin, amount) {
   resultCelebrationPreviousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   modal.setAttribute('tabindex', '-1');
   modal.className = 'result-celebration show ' + (isWin ? 'win' : 'loss');
-  try { modal.focus({ preventScroll: true }); } catch(e) { modal.focus(); }
   modal.setAttribute('aria-label', isWin ? 'Victoire au pari' : 'Défaite au pari');
-  const winHeadlines = ['LE FLAIR FONCTIONNE', 'ÇA SENT LE YACHT', 'LE BOOKMAKER PLEURE', 'ENCORE DU CASH', 'BANCO MON COCO', 'JOLI PETIT BRAQUAGE', 'ÇA PAYE LE RESTO', 'LA CHANCE SOURIT', 'PROPRE ET NET', 'LE KARMA REMBOURSE', 'LE TICKET RÉGALE', 'PAS MAL DU TOUT', 'ON PREND MERCI', 'ÇA RENTRE TRANQUILLE', 'LA COTE EST MIENNE', 'MAMAN AVAIT RAISON', 'ÇA FAIT PLAISIR', 'LE FLAIR A FRAPPÉ', 'C’ÉTAIT DONC ÇA', 'ON CONNAÎT LE SPORT'];
-  const lossHeadlines = ['NEXT', 'ON REFAIT PAS', 'PAS TON JOUR', 'LE VAR T’A EU', 'ÇA PIQUE UN PEU', 'LE SCÉNARIO TROLL', 'ON GARDE LA FOI', 'PETIT DÉTOUR', 'RIEN À SIGNALER', 'ON RESTE DIGNES', 'LA COTE MENTAIT', 'LE SUSPENSE INUTILE', 'ÇA IRA MIEUX', 'ON APPREND ENCORE', 'PRESQUE LÉGENDAIRE', 'PAS DE PANIQUE', 'LE SPORT, HEIN', 'ON AVANCE', 'C’ÉTAIT ÉCRIT', 'ON PASSE À AUTRE'];
-  const headlines = isWin ? winHeadlines : lossHeadlines;
-  const previousHeadline = modal.dataset.lastHeadline || '';
-  let headline = headlines[Math.floor(Math.random() * headlines.length)];
-  if (headlines.length > 1 && headline === previousHeadline) headline = headlines[(headlines.indexOf(headline) + 1 + Math.floor(Math.random() * (headlines.length - 1))) % headlines.length];
-  modal.dataset.lastHeadline = headline;
-  document.getElementById('celebration-symbol').textContent = isWin ? 'VICTOIRE' : 'DÉFAITE';
-  document.getElementById('celebration-title').textContent = headline;
-  const amountEl = document.getElementById('celebration-amount');
-  const amountPrefix = isWin ? '+' : '−';
+
+  // Une seule animation : la démo validée, avec le vrai résultat du pari.
   const amountTarget = Math.max(0, Number(amount) || 0);
-  amountEl.textContent = amountPrefix + fmtEurPlain(0);
-  document.getElementById('celebration-caption').textContent = isWin ? 'BÉNÉFICE NET' : 'MISE PERDUE';
-  // Chiffre qui monte pendant 3 secondes, avec de courtes impulsions haptiques si le navigateur le permet.
-  if (window.resultCountFrame) cancelAnimationFrame(window.resultCountFrame);
-  if (window.resultVibrationTimer) clearInterval(window.resultVibrationTimer);
-  if (window.resultVibrationStop) clearTimeout(window.resultVibrationStop);
-  const countStart = performance.now();
-  const countDuration = 3000;
-  const animateAmount = (now) => {
-    if (!modal.classList.contains('show')) return;
-    const progress = Math.min(1, (now - countStart) / countDuration);
-    const eased = 1 - Math.pow(1 - progress, 2.2);
-    amountEl.textContent = amountPrefix + fmtEurPlain(amountTarget * eased);
-    if (progress < 1) window.resultCountFrame = requestAnimationFrame(animateAmount);
-    else amountEl.textContent = amountPrefix + fmtEurPlain(amountTarget);
-  };
-  window.resultCountFrame = requestAnimationFrame(animateAmount);
-  if ('vibrate' in navigator) {
-    try {
-      navigator.vibrate([90, 70]);
-      window.resultVibrationTimer = setInterval(() => {
-        if (!modal.classList.contains('show')) {
-          clearInterval(window.resultVibrationTimer);
-          return;
-        }
-        navigator.vibrate([90, 70]);
-      }, 360);
-      window.resultVibrationStop = setTimeout(() => {
-        clearInterval(window.resultVibrationTimer);
-        navigator.vibrate(0);
-      }, countDuration);
-    } catch (e) {}
-  }
-  document.getElementById('celebration-encouragement').textContent = pickPunchline(isWin);
-  // Rejoue à l'identique la démo plein écran et lui transmet le vrai résultat du pari.
   const demoFrame = document.getElementById('result-demo-frame');
   if (demoFrame) {
-    // Paramètres dans l'URL : aucun message ne peut être perdu si l'iframe charge trop tôt.
     const demoUrl = new URL('./demo-animation.html', window.location.href);
     demoUrl.searchParams.set('embed', '1');
     demoUrl.searchParams.set('kind', isWin ? 'gain' : 'loss');
     demoUrl.searchParams.set('amount', String(amountTarget));
-    demoUrl.searchParams.set('v', '3');
+    demoUrl.searchParams.set('v', '4');
     demoFrame.src = demoUrl.toString();
   }
-  if (!reduced) haptique(isWin ? 'victoire' : 'defaite');
-  clearTimeout(resultCelebrationTimer);
-  // Le logo reste visible au centre, victoire comme défaite, jusqu'à une action explicite.
 }
 let resultCelebrationTimer = null;
 let pendingResultRefresh = false;
