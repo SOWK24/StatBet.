@@ -17,8 +17,8 @@ h1{font-size:clamp(24px,5vw,46px);line-height:1.1;letter-spacing:-.05em;margin:0
 svg{width:100%;height:100%;overflow:visible}
 .piece{transform-box:fill-box;transform-origin:center;will-change:transform,opacity;transition:transform 1.15s cubic-bezier(.18,.78,.18,1),opacity .8s ease}
 .bars-piece{opacity:0;transform:translate(-48vw,0) scale(.8)}
-body.bars-enter .bars-piece{opacity:1;animation:pixarHop 2.25s cubic-bezier(.2,.8,.25,1) both;animation-delay:var(--hopdelay,0ms)}
-@keyframes pixarHop{0%{transform:translate(-160vw,0) scale(.72)}12%{transform:translate(-130vw,-28px) scale(.78)}21%{transform:translate(-116vw,0) scale(.84)}33%{transform:translate(-88vw,-24px) scale(.88)}42%{transform:translate(-75vw,0) scale(.91)}54%{transform:translate(-48vw,-19px) scale(.94)}63%{transform:translate(-35vw,0) scale(.97)}74%{transform:translate(-18vw,-12px) scale(1)}83%{transform:translate(-10vw,0) scale(1.02)}92%{transform:translate(-3vw,-4px) scale(1)}100%{transform:translate(0,0) scale(1)}}
+body.bars-enter .bars-piece{opacity:1;animation:pixarHop 4.25s cubic-bezier(.2,.8,.25,1) both;animation-delay:var(--hopdelay,0ms)}
+@keyframes pixarHop{0%{transform:translate(-250vw,0) scale(.72)}8%{transform:translate(-225vw,-36px) scale(.76)}14%{transform:translate(-207vw,0) scale(.79)}23%{transform:translate(-180vw,-31px) scale(.82)}29%{transform:translate(-163vw,0) scale(.85)}38%{transform:translate(-137vw,-28px) scale(.88)}44%{transform:translate(-120vw,0) scale(.90)}53%{transform:translate(-95vw,-25px) scale(.92)}59%{transform:translate(-78vw,0) scale(.94)}68%{transform:translate(-55vw,-21px) scale(.96)}74%{transform:translate(-40vw,0) scale(.98)}82%{transform:translate(-24vw,-16px) scale(1)}88%{transform:translate(-14vw,0) scale(1.02)}94%{transform:translate(-5vw,-7px) scale(1)}100%{transform:translate(0,0) scale(1)}}
 body.scattered .piece:not(.bars-piece){transform:translate(var(--dx),var(--dy)) rotate(var(--rot)) scale(var(--scale,.76));opacity:.92;transition-duration:1.25s;transition-delay:var(--delay,0ms)}
 body.scattered .bars-piece{opacity:0;transform:translate(-160vw,0) scale(.8);transition:none}
 body.assembling .piece{transition-duration:1.2s;transition-delay:var(--backdelay,0ms)}
@@ -62,8 +62,11 @@ function splitLogoIntoPieces(){
       const p=document.createElementNS('http://www.w3.org/2000/svg','path');
       p.setAttribute('d',chunk);p.setAttribute('fill',fill);p.classList.add('piece');
       const isGreen=fill.includes('95,249,46') || fill.includes('95, 249, 46');
-      // The lime-green middle strokes enter separately after the main logo has reassembled.
-      if(isGreen){p.classList.add('bars-piece');p.style.setProperty('--hopdelay',(barPieces.length*115)+'ms');barPieces.push(p);}
+      // Only the three narrow central strokes enter separately; the green sweep stays with the logo.
+      const startMatch=chunk.match(/^M\\s*([0-9.]+)\\s+([0-9.]+)/);
+      const startX=startMatch?Number(startMatch[1]):-1;
+      const isMiddleBar=isGreen && [529.00,459.66,418.33].some(x=>Math.abs(startX-x)<0.1);
+      if(isMiddleBar){p.classList.add('bars-piece');p.style.setProperty('--hopdelay',(barPieces.length*170)+'ms');barPieces.push(p);}
       const angle=Math.random()*Math.PI*2, radius=.22+Math.random()*.55;
       const dx=Math.cos(angle)*innerWidth*radius, dy=Math.sin(angle)*innerHeight*radius;
       p.style.setProperty('--dx',dx.toFixed(0)+'px');p.style.setProperty('--dy',dy.toFixed(0)+'px');
