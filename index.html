@@ -844,6 +844,16 @@ input[type="submit"]:active, input[type="reset"]:active, summary:active,
   }
 }
 
+
+.tap-feedback {
+  animation: paulyTapPop 240ms cubic-bezier(.2,.85,.25,1.25);
+}
+@keyframes paulyTapPop {
+  0% { transform: scale(1); }
+  42% { transform: scale(1.045); filter: brightness(1.13); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
 </style>
 <style>
 /* Animation retenue : grand message aléatoire, ambiance gain/perte */
@@ -2720,6 +2730,23 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
     // Petite latence pour laisser le script Supabase finir de charger
     setTimeout(() => pullFromCloud(true), 300);
   }
+})();
+/* Retour haptique global et animation d'appui */
+(function initGlobalTapFeedback() {
+  const selector = 'button, a, [onclick], [role="button"], [role="tab"], .clickable, input[type="button"], input[type="submit"], input[type="reset"], select, summary, [data-clickable="true"]';
+  let lastBuzz = 0;
+  document.addEventListener('pointerdown', event => {
+    const target = event.target instanceof Element ? event.target.closest(selector) : null;
+    if (!target || target.disabled || target.getAttribute('aria-disabled') === 'true') return;
+    target.classList.remove('tap-feedback');
+    void target.offsetWidth;
+    target.classList.add('tap-feedback');
+    window.setTimeout(() => target.classList.remove('tap-feedback'), 240);
+    const now = Date.now();
+    if (now - lastBuzz < 45) return;
+    lastBuzz = now;
+    try { if (typeof navigator.vibrate === 'function') navigator.vibrate(12); } catch (_) {}
+  }, { passive: true });
 })();
 </script>
 </body>
