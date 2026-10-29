@@ -2101,6 +2101,12 @@ function pickPunchline(isWin) {
   if (isWin) lastWinPunchline = selected; else lastLossPunchline = selected;
   return selected;
 }
+// Fermeture fiable depuis le clic dans la démo intégrée (iframe).
+window.addEventListener('message', function(event) {
+  if (event.data && event.data.type === 'paulybet-result-dismiss') {
+    closeResultCelebration();
+  }
+});
 let resultCelebrationPreviousFocus = null;
 function showResultCelebration(isWin, amount) {
   const modal = document.getElementById('result-celebration');
@@ -2175,12 +2181,6 @@ function showResultCelebration(isWin, amount) {
       }, { once: true });
     }
   }
-  window.addEventListener('message', function resultDemoDismiss(event) {
-    if (event.data && event.data.type === 'paulybet-result-dismiss') {
-      window.removeEventListener('message', resultDemoDismiss);
-      closeResultCelebration();
-    }
-  });
   if (!reduced) haptique(isWin ? 'victoire' : 'defaite');
   clearTimeout(resultCelebrationTimer);
   // Le logo reste visible au centre, victoire comme défaite, jusqu'à une action explicite.
