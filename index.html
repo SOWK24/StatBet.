@@ -405,7 +405,7 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:v
 .chart-replay { flex-shrink:0; border:1px solid var(--border); border-radius:20px; padding:5px 9px; color:var(--text2); background:var(--surface); font-size:10px; font-weight:700; }
 .chart-replay:active { transform:scale(.96); }
 .chart-title { font-size:10px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--text2); margin-bottom:10px; padding:0 4px; }
-canvas { display:block; width:100%; cursor:pointer; }
+canvas { display:block; width:100%; cursor:pointer; touch-action:pan-y; }
 
   .chart-tooltip { position:fixed; inset:0; z-index:260; display:flex; flex-direction:column; justify-content:flex-end; opacity:0; visibility:hidden; pointer-events:none; background:transparent; transition:opacity .22s,visibility .22s; }
 .chart-tooltip.show { opacity:1; visibility:visible; pointer-events:auto; }
@@ -1806,7 +1806,7 @@ function drawChart(canvas, data) {
       else if ((streak > 0) === won) streak += won ? 1 : -1;
       else break;
     }
-    tip.innerHTML = `<div class="chart-sheet-backdrop"></div><div class="chart-sheet-content"><div class="sheet-grabber"></div>
+    tip.innerHTML = `<div class="chart-sheet-backdrop" onclick="this.parentElement.classList.remove('show')" aria-hidden="true"></div><div class="chart-sheet-content" role="dialog" aria-modal="true" aria-label="Statistiques du mois de ${m.label} ${m.year || ''}"><div class="sheet-grabber"></div>
       <div class="ctt-month">${m.label.charAt(0).toUpperCase()+m.label.slice(1)} · ${m.year || ''}</div>
       <div class="ctt-row"><span>Paris</span><strong>${m.nb}</strong></div>
       <div class="ctt-row"><span>Mises totales</span><strong>${fmtEurPlain(m.mises)}</strong></div>
@@ -2140,9 +2140,17 @@ function doEdit() {
 /* ─── Init ──────────────────────────────────────────────────────────── */
 renderDashboard();
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && document.getElementById('result-celebration')?.classList.contains('show')) {
+  if (e.key !== 'Escape') return;
+  const celebration = document.getElementById('result-celebration');
+  if (celebration?.classList.contains('show')) {
     e.preventDefault();
     closeResultCelebration();
+    return;
+  }
+  const openChartSheet = document.querySelector('.chart-tooltip.show');
+  if (openChartSheet) {
+    e.preventDefault();
+    openChartSheet.classList.remove('show');
   }
 });
 inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.getElementById('result-celebration')?.classList.contains('show')) addBet(); });
