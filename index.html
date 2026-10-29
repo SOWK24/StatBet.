@@ -796,6 +796,25 @@ button:not(:disabled):active,.pill:active,.year-header:active{ transform:scale(.
 .result-celebration .brand-result-status,.result-celebration .brand-result-word,.result-celebration .brand-result-amount,.result-celebration .brand-result-caption,.result-celebration .brand-result-tagline,.result-celebration .brand-result-dismiss{opacity:1!important;visibility:visible!important;z-index:30!important}
 </style>
 <style>
+/* Animation retenue : grand message aléatoire, ambiance gain/perte */
+.demo-result-rays{position:absolute;inset:-55%;pointer-events:none;z-index:0;background:repeating-conic-gradient(from 0deg at 50% 50%,rgba(190,255,110,.055) 0deg 1deg,transparent 1deg 15deg);animation:demoResultSpin 32s linear infinite}
+.result-celebration.loss .demo-result-rays{background:repeating-conic-gradient(from 0deg at 50% 50%,rgba(255,70,90,.05) 0deg 1deg,transparent 1deg 16deg)}
+.demo-result-marquee{position:absolute;left:-12%;right:-12%;top:19%;transform:rotate(-8deg);white-space:nowrap;overflow:hidden;pointer-events:none;opacity:.09;color:#d9f7c2;font:900 clamp(20px,4vw,42px) 'Unbounded',sans-serif;letter-spacing:.12em;animation:demoResultMarquee 24s linear infinite}
+.result-celebration.loss .demo-result-marquee{color:#ff9aa6}
+.result-celebration .brand-result-content{z-index:20!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:0!important;padding:88px 16px 70px!important}
+.result-celebration .brand-result-status{font:800 10px 'Bricolage Grotesque',sans-serif!important;letter-spacing:.28em!important;margin-bottom:clamp(20px,4vh,34px)!important;color:#d4e7c2!important}
+.result-celebration.loss .brand-result-status{color:#ffb4bd!important}
+.result-celebration .brand-logo-stage-vector,.result-celebration .brand-result-word{display:none!important}
+.result-celebration .brand-result-amount{font:800 clamp(34px,9vw,58px)/1.1 'Bricolage Grotesque',sans-serif!important;letter-spacing:-.045em!important;margin-top:clamp(22px,4vh,38px)!important;color:#a6ff3b!important}
+.result-celebration.loss .brand-result-amount{color:#ff8a98!important}
+.result-celebration .brand-result-caption{font:800 10px 'Bricolage Grotesque',sans-serif!important;letter-spacing:.22em!important;color:rgba(255,255,255,.54)!important;margin-top:10px!important}
+.result-celebration .brand-result-tagline{font:600 clamp(14px,3.8vw,17px)/1.45 'Bricolage Grotesque',sans-serif!important;color:#e6e9e3!important;max-width:90%!important;margin-top:clamp(20px,4vh,32px)!important;text-align:center!important}
+.result-celebration .brand-result-dismiss{bottom:26px!important;letter-spacing:.2em!important}
+@keyframes demoResultSpin{to{transform:rotate(360deg)}}
+@keyframes demoResultMarquee{to{transform:translateX(-25%)}}
+@media(max-width:380px){.result-celebration .brand-result-status{font-size:9px!important}.demo-result-marquee{top:23%}.result-celebration .brand-result-content{padding-left:12px!important;padding-right:12px!important}}
+</style>
+<style>
 /* Pauly'Bet — nouvelle séquence de résultat pilotée par le logo */
 .result-celebration{position:fixed;inset:0;z-index:300;overflow:hidden;display:block;background:#060807;color:#f6f8f4;opacity:0;visibility:hidden;pointer-events:none;isolation:isolate;transition:opacity .25s ease,visibility .25s}
 .result-celebration.show{opacity:1;visibility:visible;pointer-events:auto;cursor:pointer}
@@ -1012,6 +1031,7 @@ button:not(:disabled):active,.pill:active,.year-header:active{ transform:scale(.
 <div id="toast"></div>
 <div id="result-celebration" class="result-celebration" role="dialog" aria-modal="true" aria-live="polite" aria-label="Résultat du pari" onclick="closeResultCelebration()">
   <div class="brand-result-bg" aria-hidden="true"><div class="brand-result-orbit orbit-a"></div><div class="brand-result-orbit orbit-b"></div><div class="brand-result-flash"></div></div>
+  <div class="demo-result-rays" aria-hidden="true"></div><div class="demo-result-marquee" aria-hidden="true">PAULY’BET · CASH · BANCO · ÇA PASSE · PAULY’BET · CASH · BANCO · ÇA PASSE ·</div>
   <div class="brand-result-shards" id="celebration-particles" aria-hidden="true">
     <img class="logo-shard shard-1" src="./275C6C76-2C7B-40CA-9CC4-853F38A703DA.svg?v=4" alt="">
     <img class="logo-shard shard-2" src="./275C6C76-2C7B-40CA-9CC4-853F38A703DA.svg?v=4" alt="">
@@ -1981,11 +2001,15 @@ function showResultCelebration(isWin, amount) {
   modal.className = 'result-celebration show ' + (isWin ? 'win' : 'loss');
   try { modal.focus({ preventScroll: true }); } catch(e) { modal.focus(); }
   modal.setAttribute('aria-label', isWin ? 'Victoire au pari' : 'Défaite au pari');
-  const winHeadlines = ['TICKET VALIDÉ', 'ÇA PASSE !', 'ON PREND !', 'PAULY’BET EN FEU'];
-  const lossHeadlines = ['TICKET PERDU', 'ÇA PIQUE.', 'PAS LE JOUR', 'ON REPART'];
+  const winHeadlines = ['LE FLAIR FONCTIONNE', 'ÇA SENT LE YACHT', 'LE BOOKMAKER PLEURE', 'ENCORE DU CASH', 'BANCO MON COCO', 'JOLI PETIT BRAQUAGE', 'ÇA PAYE LE RESTO', 'LA CHANCE SOURIT', 'PROPRE ET NET', 'LE KARMA REMBOURSE', 'LE TICKET RÉGALE', 'PAS MAL DU TOUT', 'ON PREND MERCI', 'ÇA RENTRE TRANQUILLE', 'LA COTE EST MIENNE', 'MAMAN AVAIT RAISON', 'ÇA FAIT PLAISIR', 'LE FLAIR A FRAPPÉ', 'C’ÉTAIT DONC ÇA', 'ON CONNAÎT LE SPORT'];
+  const lossHeadlines = ['NEXT', 'ON REFAIT PAS', 'PAS TON JOUR', 'LE VAR T’A EU', 'ÇA PIQUE UN PEU', 'LE SCÉNARIO TROLL', 'ON GARDE LA FOI', 'PETIT DÉTOUR', 'RIEN À SIGNALER', 'ON RESTE DIGNES', 'LA COTE MENTAIT', 'LE SUSPENSE INUTILE', 'ÇA IRA MIEUX', 'ON APPREND ENCORE', 'PRESQUE LÉGENDAIRE', 'PAS DE PANIQUE', 'LE SPORT, HEIN', 'ON AVANCE', 'C’ÉTAIT ÉCRIT', 'ON PASSE À AUTRE'];
   const headlines = isWin ? winHeadlines : lossHeadlines;
+  const previousHeadline = modal.dataset.lastHeadline || '';
+  let headline = headlines[Math.floor(Math.random() * headlines.length)];
+  if (headlines.length > 1 && headline === previousHeadline) headline = headlines[(headlines.indexOf(headline) + 1 + Math.floor(Math.random() * (headlines.length - 1))) % headlines.length];
+  modal.dataset.lastHeadline = headline;
   document.getElementById('celebration-symbol').textContent = isWin ? 'VICTOIRE' : 'DÉFAITE';
-  document.getElementById('celebration-title').textContent = headlines[Math.floor(Math.random() * headlines.length)];
+  document.getElementById('celebration-title').textContent = headline;
   document.getElementById('celebration-amount').textContent = (isWin ? '+' : '−') + fmtEurPlain(amount);
   document.getElementById('celebration-caption').textContent = isWin ? 'BÉNÉFICE NET' : 'MISE PERDUE';
   document.getElementById('celebration-encouragement').textContent = pickPunchline(isWin);
