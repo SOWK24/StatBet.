@@ -985,6 +985,17 @@ input[type="submit"]:active, input[type="reset"]:active, summary:active,
 }
 
 </style>
+<style id="paulybet-exact-demo-override">
+/* Priorité finale : l'écran est exactement la démo, pas l'ancien écran logo. */
+#result-celebration{position:fixed!important;inset:0!important;z-index:999999!important;overflow:hidden!important;background:#070908!important;padding:0!important}
+#result-celebration .brand-result-bg,
+#result-celebration .demo-result-rays,
+#result-celebration .demo-result-marquee,
+#result-celebration .brand-result-shards,
+#result-celebration .brand-result-content{display:none!important}
+#result-celebration #result-demo-frame{display:block!important;position:absolute!important;inset:0!important;width:100%!important;height:100%!important;border:0!important;z-index:2!important;background:#070908!important}
+#result-celebration>button{display:block!important;z-index:5!important}
+</style>
 </head>
 <body>
 <div id="app">
