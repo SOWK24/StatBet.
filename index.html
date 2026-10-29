@@ -809,6 +809,31 @@ function chartData(data) {
   });
 }
 
+/* Paris restaurés depuis l'historique fourni par l'utilisateur — heures françaises d'été (UTC+2). */
+const JULY_RECOVERY_BETS = [
+  { id:'recovery-2026-07-15-1150-loss-1', mise:10, gain:0, date:'2026-07-15T09:50:00Z', year:2026 },
+  { id:'recovery-2026-07-15-1150-loss-2', mise:10, gain:0, date:'2026-07-15T09:50:00Z', year:2026 },
+  { id:'recovery-2026-07-12-1017-loss', mise:5.24, gain:0, date:'2026-07-12T08:17:00Z', year:2026 },
+  { id:'recovery-2026-07-12-1017-win', mise:10, gain:20, date:'2026-07-12T08:17:00Z', year:2026 },
+  { id:'recovery-2026-07-10-2344-win-1', mise:20, gain:109.26, date:'2026-07-10T21:44:00Z', year:2026 },
+  { id:'recovery-2026-07-10-2344-win-2', mise:10, gain:29.43, date:'2026-07-10T21:44:00Z', year:2026 },
+  { id:'recovery-2026-07-09-0006-win', mise:10, gain:20, date:'2026-07-08T22:06:00Z', year:2026 },
+  { id:'recovery-2026-07-07-2035-win', mise:150, gain:367.41, date:'2026-07-07T18:35:00Z', year:2026 },
+  { id:'recovery-2026-07-07-1036-loss', mise:20, gain:0, date:'2026-07-07T08:36:00Z', year:2026 },
+  { id:'recovery-2026-07-06-0818-win', mise:10, gain:22.5, date:'2026-07-06T06:18:00Z', year:2026 },
+  { id:'recovery-2026-07-06-0817-loss', mise:5, gain:0, date:'2026-07-06T06:17:00Z', year:2026 },
+  { id:'recovery-2026-07-06-0201-win', mise:10, gain:20, date:'2026-07-06T00:01:00Z', year:2026 },
+  { id:'recovery-2026-07-04-0346-win', mise:650, gain:1774.33, date:'2026-07-04T01:46:00Z', year:2026 },
+  { id:'recovery-2026-07-04-0345-loss', mise:10, gain:0, date:'2026-07-04T01:45:00Z', year:2026 },
+  { id:'recovery-2026-07-04-0345-win', mise:10, gain:21, date:'2026-07-04T01:45:00Z', year:2026 },
+  { id:'recovery-2026-07-02-2256-loss', mise:10, gain:0, date:'2026-07-02T20:56:00Z', year:2026 },
+  { id:'recovery-2026-07-01-1945-win', mise:10, gain:17.5, date:'2026-07-01T17:45:00Z', year:2026 },
+  { id:'recovery-2026-07-01-1944-win', mise:10, gain:20, date:'2026-07-01T17:44:00Z', year:2026 },
+  { id:'recovery-2026-07-01-0115-loss', mise:5, gain:0, date:'2026-06-30T23:15:00Z', year:2026 },
+  { id:'recovery-2026-07-01-0115-win-1', mise:10, gain:20, date:'2026-06-30T23:15:00Z', year:2026 },
+  { id:'recovery-2026-07-01-0115-win-2', mise:10, gain:20, date:'2026-06-30T23:15:00Z', year:2026 }
+];
+
 /* ─── Stockage ─────────────────────────────────────────────────────── */
 function loadBets() {
   try {
@@ -820,7 +845,7 @@ function loadBets() {
       loaded = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
     }
     if (!Array.isArray(loaded)) loaded = [];
-    const recoveryBets = [
+    const recoveryBets = [...JULY_RECOVERY_BETS,
       { id: 'recovery-2026-08-14', mise: 10, gain: 20.5, date: '2026-08-14T16:00:00Z', year: 2026 },
       { id: 'recovery-2026-09-17', mise: 10, gain: 20.5, date: '2026-09-17T16:00:00Z', year: 2026 }
     ];
@@ -914,10 +939,10 @@ async function pullFromCloud(silent) {
     if (data && Array.isArray(data.data)) {
       bets = data.data;
       // Reconstitution idempotente des deux paris manquants d'août et septembre 2026.
-      const recoveryBets = [
-        { id: 'recovery-2026-08-14', mise: 10, gain: 20.5, date: '2026-08-14T16:00:00Z', year: 2026 },
-        { id: 'recovery-2026-09-17', mise: 10, gain: 20.5, date: '2026-09-17T16:00:00Z', year: 2026 }
-      ];
+      const recoveryBets = [...JULY_RECOVERY_BETS,
+      { id: 'recovery-2026-08-14', mise: 10, gain: 20.5, date: '2026-08-14T16:00:00Z', year: 2026 },
+      { id: 'recovery-2026-09-17', mise: 10, gain: 20.5, date: '2026-09-17T16:00:00Z', year: 2026 }
+    ];
       let addedRecoveryBets = false;
       for (const recoveryBet of recoveryBets) {
         if (!bets.some(b => b.id === recoveryBet.id)) {
@@ -1005,10 +1030,10 @@ async function connectAndSync() {
     if (data && Array.isArray(data.data) && data.data.length > 0) {
       // Les données cloud restent la base ; ajout de deux paris de reconstitution une seule fois.
       bets = data.data;
-      const recoveryBets = [
-        { id: 'recovery-2026-08-14', mise: 10, gain: 20.5, date: '2026-08-14T16:00:00Z', year: 2026 },
-        { id: 'recovery-2026-09-17', mise: 10, gain: 20.5, date: '2026-09-17T16:00:00Z', year: 2026 }
-      ];
+      const recoveryBets = [...JULY_RECOVERY_BETS,
+      { id: 'recovery-2026-08-14', mise: 10, gain: 20.5, date: '2026-08-14T16:00:00Z', year: 2026 },
+      { id: 'recovery-2026-09-17', mise: 10, gain: 20.5, date: '2026-09-17T16:00:00Z', year: 2026 }
+    ];
       let addedRecoveryBets = false;
       for (const recoveryBet of recoveryBets) {
         if (!bets.some(b => b.id === recoveryBet.id)) {
@@ -1475,10 +1500,10 @@ function renderHistory() {
   const container = document.getElementById('history-container');
   // Garde-fou : réinjecter les deux paris restaurés au moment même où l'historique s'affiche,
   // même si une récupération cloud a remplacé le tableau en mémoire après le chargement.
-  const recoveryBets = [
-    { id: 'recovery-2026-08-14', mise: 10, gain: 20.5, date: '2026-08-14T16:00:00Z', year: 2026 },
-    { id: 'recovery-2026-09-17', mise: 10, gain: 20.5, date: '2026-09-17T16:00:00Z', year: 2026 }
-  ];
+  const recoveryBets = [...JULY_RECOVERY_BETS,
+      { id: 'recovery-2026-08-14', mise: 10, gain: 20.5, date: '2026-08-14T16:00:00Z', year: 2026 },
+      { id: 'recovery-2026-09-17', mise: 10, gain: 20.5, date: '2026-09-17T16:00:00Z', year: 2026 }
+    ];
   if (!Array.isArray(bets)) bets = [];
   for (const recoveryBet of recoveryBets) {
     if (!bets.some(b => b && b.id === recoveryBet.id)) bets.push(recoveryBet);
