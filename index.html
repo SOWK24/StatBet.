@@ -916,15 +916,20 @@ async function pullFromCloud(silent) {
         }
       }
       saveLocalOnly(bets);
-      if (addedRecoveryBets) {
-        const { error: saveError } = await client
-          .from('statbet_sync')
-          .upsert({ sync_code: cfg.code, data: bets, updated_at: new Date().toISOString() }, { onConflict: 'sync_code' });
-        if (saveError) throw saveError;
-      }
       renderDashboard();
       if (document.getElementById('panel-history').classList.contains('active')) renderHistory();
-      if (!silent && addedRecoveryBets) updateSyncStatusLine('ok', 'Historique complété : août et septembre ajoutés ✓');
+      if (addedRecoveryBets) {
+        try {
+          const { error: saveError } = await client
+            .from('statbet_sync')
+            .upsert({ sync_code: cfg.code, data: bets, updated_at: new Date().toISOString() }, { onConflict: 'sync_code' });
+          if (saveError) throw saveError;
+          if (!silent) updateSyncStatusLine('ok', 'Historique complété : août et septembre ajoutés ✓');
+        } catch (saveError) {
+          console.error('StatBet recovery cloud save failed', saveError);
+          if (!silent) updateSyncStatusLine('err', 'Paris ajoutés localement, sauvegarde cloud impossible : ' + (saveError.message || saveError));
+        }
+      }
     }
     setSyncIndicator('ok');
     if (!silent) updateSyncStatusLine('ok', 'Données récupérées depuis le cloud ✓');
