@@ -745,6 +745,24 @@ button:not(:disabled):active,.pill:active,.year-header:active{ transform:scale(.
  .result-celebration .motion-amount,.result-celebration.win .motion-amount,.result-celebration.loss .motion-amount{animation:none!important;filter:none}
 }
 
+
+/* Pauly'Bet — animation de marque visible pendant tout l'écran résultat */
+.brand-logo-stage{isolation:isolate}
+.brand-logo-stage::before,.brand-logo-stage::after{content:"";position:absolute;inset:-12px;border-radius:50%;pointer-events:none}
+.brand-logo-stage::before{border:2px solid transparent;border-top-color:#a6ff3b;border-right-color:rgba(166,255,59,.45);animation:paulyOrbit .95s linear infinite;z-index:1}
+.brand-logo-stage::after{inset:-23px;border:1px solid rgba(166,255,59,.55);animation:paulyPulse 1.35s ease-out infinite;z-index:0}
+.result-celebration.loss .brand-logo-stage::before{border-top-color:#ff5369;border-right-color:rgba(255,83,105,.45)}
+.result-celebration.loss .brand-logo-stage::after{border-color:rgba(255,83,105,.55)}
+.result-celebration.show .brand-result-logo{animation:brandLogoAssemble .9s .18s cubic-bezier(.16,1,.3,1) both,paulyLogoFloat 1.8s 1.1s ease-in-out infinite!important}
+.result-celebration.show.loss .brand-result-logo{animation:brandLogoBreak .85s .16s cubic-bezier(.16,1,.3,1) both,paulyLogoFloat 1.8s 1.1s ease-in-out infinite!important}
+.result-celebration.show.win .brand-logo-halo{animation:brandHalo .8s .15s ease-out both,paulyHaloPulse 1.6s 1s ease-in-out infinite}
+.result-celebration.show.loss .brand-logo-halo{animation:brandHalo .8s .15s ease-out both,paulyHaloPulse 1.6s 1s ease-in-out infinite}
+@keyframes paulyOrbit{to{transform:rotate(360deg)}}
+@keyframes paulyPulse{0%{transform:scale(.86);opacity:.8}100%{transform:scale(1.2);opacity:0}}
+@keyframes paulyLogoFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-5px) scale(1.035)}}
+@keyframes paulyHaloPulse{0%,100%{opacity:.25;transform:scale(.9)}50%{opacity:.85;transform:scale(1.12)}}
+@media(prefers-reduced-motion:reduce){.brand-logo-stage::before,.brand-logo-stage::after,.result-celebration.show .brand-result-logo,.result-celebration.show .brand-logo-halo{animation:none!important}}
+
 </style>
 <style>
 /* Pauly'Bet — nouvelle séquence de résultat pilotée par le logo */
