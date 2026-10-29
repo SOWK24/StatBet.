@@ -17,9 +17,10 @@ h1{font-size:clamp(24px,5vw,46px);line-height:1.1;letter-spacing:-.05em;margin:0
 svg{width:100%;height:100%;overflow:visible}
 .piece{transform-box:fill-box;transform-origin:center;will-change:transform,opacity;transition:transform 1.15s cubic-bezier(.18,.78,.18,1),opacity .8s ease}
 .bars-piece{opacity:0;transform:translate(-48vw,0) scale(.8)}
-body.bars-enter .bars-piece{opacity:1;animation:pixarHop 1.55s cubic-bezier(.2,.8,.25,1) both;animation-delay:var(--hopdelay,0ms)}
-@keyframes pixarHop{0%{transform:translate(-48vw,0) scale(.8)}18%{transform:translate(-36vw,-34px) scale(.88)}30%{transform:translate(-29vw,0) scale(.95)}43%{transform:translate(-20vw,-24px) scale(1)}55%{transform:translate(-13vw,0) scale(1.03)}68%{transform:translate(-7vw,-12px) scale(1)}80%{transform:translate(-2vw,0) scale(1.02)}91%{transform:translate(2px,-4px) scale(1)}100%{transform:translate(0,0) scale(1)}}
-body.scattered .piece{transform:translate(var(--dx),var(--dy)) rotate(var(--rot)) scale(var(--scale,.76));opacity:.92;transition-duration:1.25s;transition-delay:var(--delay,0ms)}
+body.bars-enter .bars-piece{opacity:1;animation:pixarHop 2.25s cubic-bezier(.2,.8,.25,1) both;animation-delay:var(--hopdelay,0ms)}
+@keyframes pixarHop{0%{transform:translate(-160vw,0) scale(.72)}12%{transform:translate(-130vw,-28px) scale(.78)}21%{transform:translate(-116vw,0) scale(.84)}33%{transform:translate(-88vw,-24px) scale(.88)}42%{transform:translate(-75vw,0) scale(.91)}54%{transform:translate(-48vw,-19px) scale(.94)}63%{transform:translate(-35vw,0) scale(.97)}74%{transform:translate(-18vw,-12px) scale(1)}83%{transform:translate(-10vw,0) scale(1.02)}92%{transform:translate(-3vw,-4px) scale(1)}100%{transform:translate(0,0) scale(1)}}
+body.scattered .piece:not(.bars-piece){transform:translate(var(--dx),var(--dy)) rotate(var(--rot)) scale(var(--scale,.76));opacity:.92;transition-duration:1.25s;transition-delay:var(--delay,0ms)}
+body.scattered .bars-piece{opacity:0;transform:translate(-160vw,0) scale(.8);transition:none}
 body.assembling .piece{transition-duration:1.2s;transition-delay:var(--backdelay,0ms)}
 .controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px}
 button{font:700 12px system-ui,sans-serif;letter-spacing:.04em;padding:12px 17px;border:1px solid #3b4238;border-radius:4px;background:#10130f;color:#f4f5f2;cursor:pointer}
@@ -81,7 +82,7 @@ function scatter(){
 }
 function assemble(){
   clearTimeout(timer);body.classList.remove('scattered','bars-enter');body.classList.add('assembling');
-  document.querySelector('#sub').textContent='Les formes se rassemblent, puis les trois barres arrivent en rebond.';
+  document.querySelector('#sub').textContent='Le logo attend au centre ; les trois barres arrivent de très loin à gauche en petits sauts.';
   timer=setTimeout(()=>{body.classList.remove('assembling');body.classList.add('bars-enter')},1250);
   timer=setTimeout(()=>body.classList.remove('assembling'),1700);
 }
