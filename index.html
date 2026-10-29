@@ -834,6 +834,47 @@ const JULY_RECOVERY_BETS = [
   { id:'recovery-2026-07-01-0115-win-2', mise:10, gain:20, date:'2026-06-30T23:15:00Z', year:2026 }
 ];
 
+/* Fusion idempotente des paris restaurés : évite de compter deux fois un pari
+   déjà présent dans les données sous un autre identifiant. */
+function mergeRecoveryBets(existing, recoveryBets) {
+  const result = Array.isArray(existing) ? [...existing] : [];
+  const signature = b => [String(b.date || ''), r2(Number(b.mise) || 0).toFixed(2), r2(Number(b.gain) || 0).toFixed(2)].join('|');
+  const recoveryIds = new Set(recoveryBets.map(b => b.id));
+  const groups = new Map();
+  for (const rb of recoveryBets) {
+    const key = signature(rb);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(rb);
+  }
+  for (const [key, wanted] of groups) {
+    const matching = result.filter(b => signature(b) === key);
+    const ordinary = matching.filter(b => !recoveryIds.has(b.id) && !String(b.id || '').startsWith('recovery-'));
+    const existingRecovery = matching.filter(b => String(b.id || '').startsWith('recovery-'));
+    const keepRecoveryCount = Math.max(0, wanted.length - ordinary.length);
+    const keepIds = new Set(existingRecovery.slice(0, keepRecoveryCount).map(b => b.id));
+    for (let i = result.length - 1; i >= 0; i--) {
+      const b = result[i];
+      if (signature(b) === key && String(b.id || '').startsWith('recovery-') && !keepIds.has(b.id)) {
+        result.splice(i, 1);
+      }
+    }
+    const current = result.filter(b => signature(b) === key).length;
+    for (const rb of wanted) {
+      if (result.filter(b => signature(b) === key).length >= Math.max(wanted.length, ordinary.length)) break;
+      if (!result.some(b => b.id === rb.id)) result.push(rb);
+    }
+  }
+  // Élimine aussi les doublons portant exactement le même identifiant.
+  const seen = new Set();
+  return result.filter(b => {
+    if (b && b.id != null) {
+      if (seen.has(b.id)) return false;
+      seen.add(b.id);
+    }
+    return true;
+  });
+}
+
 /* ─── Stockage ─────────────────────────────────────────────────────── */
 function loadBets() {
   try {
@@ -849,9 +890,7 @@ function loadBets() {
       { id: 'recovery-2026-08-14', mise: 10, gain: 20.5, date: '2026-08-14T16:00:00Z', year: 2026 },
       { id: 'recovery-2026-09-17', mise: 10, gain: 20.5, date: '2026-09-17T16:00:00Z', year: 2026 }
     ];
-    for (const recoveryBet of recoveryBets) {
-      if (!loaded.some(b => b.id === recoveryBet.id)) loaded.push(recoveryBet);
-    }
+    loaded = mergeRecoveryBets(loaded, recoveryBets);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(loaded));
     return loaded;
   } catch(e) { return []; }
@@ -944,12 +983,9 @@ async function pullFromCloud(silent) {
       { id: 'recovery-2026-09-17', mise: 10, gain: 20.5, date: '2026-09-17T16:00:00Z', year: 2026 }
     ];
       let addedRecoveryBets = false;
-      for (const recoveryBet of recoveryBets) {
-        if (!bets.some(b => b.id === recoveryBet.id)) {
-          bets.push(recoveryBet);
-          addedRecoveryBets = true;
-        }
-      }
+      const beforeRecoveryCount = bets.length;
+      bets = mergeRecoveryBets(bets, recoveryBets);
+      addedRecoveryBets = bets.length !== beforeRecoveryCount;
       saveLocalOnly(bets);
       renderDashboard();
       if (document.getElementById('panel-history').classList.contains('active')) renderHistory();
@@ -1035,12 +1071,9 @@ async function connectAndSync() {
       { id: 'recovery-2026-09-17', mise: 10, gain: 20.5, date: '2026-09-17T16:00:00Z', year: 2026 }
     ];
       let addedRecoveryBets = false;
-      for (const recoveryBet of recoveryBets) {
-        if (!bets.some(b => b.id === recoveryBet.id)) {
-          bets.push(recoveryBet);
-          addedRecoveryBets = true;
-        }
-      }
+      const beforeRecoveryCount = bets.length;
+      bets = mergeRecoveryBets(bets, recoveryBets);
+      addedRecoveryBets = bets.length !== beforeRecoveryCount;
       saveLocalOnly(bets);
       if (addedRecoveryBets) {
         const { error: saveError } = await client
@@ -1505,9 +1538,7 @@ function renderHistory() {
       { id: 'recovery-2026-09-17', mise: 10, gain: 20.5, date: '2026-09-17T16:00:00Z', year: 2026 }
     ];
   if (!Array.isArray(bets)) bets = [];
-  for (const recoveryBet of recoveryBets) {
-    if (!bets.some(b => b && b.id === recoveryBet.id)) bets.push(recoveryBet);
-  }
+  bets = mergeRecoveryBets(bets, recoveryBets);
   saveLocalOnly(bets);
   // Mettre aussi à jour les totaux globaux et le record après la réinjection des paris restaurés.
   renderDashboard();
