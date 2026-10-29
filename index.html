@@ -83,6 +83,17 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:v
 .panel { display:none; flex:1; flex-direction:column; overflow-y:auto; }
 .panel.active { display:flex; }
 .panel-inner { padding:20px 16px 100px; }
+.panel.active .panel-inner { animation: panelEnter .32s ease-out both; }
+@keyframes panelEnter { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+.scoreboard-value { transition: color .25s, transform .25s; }
+.scoreboard-value.number-pop { animation:numberPop .38s ease-out; }
+@keyframes numberPop { 0%{transform:scale(1)} 45%{transform:scale(1.07)} 100%{transform:scale(1)} }
+.chart-wrap { animation: chartEnter .5s ease-out both; }
+@keyframes chartEnter { from {opacity:0;transform:translateY(10px)} to {opacity:1;transform:translateY(0)} }
+.bet-list { display:none; flex-direction:column; gap:6px; }
+.bet-list.show { display:flex; animation:panelEnter .25s ease-out both; }
+.history-toggle { width:100%; margin:0 0 12px; border:1px solid var(--border); background:var(--surface); color:var(--text); border-radius:8px; padding:12px; font:600 12px Inter,sans-serif; }
+.history-toggle:active { transform:scale(.99); }
 
 .app-logo { font-family:var(--font-d); font-size:36px; font-weight:800; letter-spacing:3px; margin-bottom:24px; padding-top:4px; line-height:1; }
 .app-logo span { color:var(--wina); }
@@ -157,6 +168,22 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:v
 .btn-submit:hover  { background:var(--wina-dark); }
 .btn-submit:active { transform:scale(.98); }
 .btn-submit:disabled { opacity:.35; cursor:not-allowed; transform:none; }
+
+/* ── Result celebration ── */
+.result-celebration { position:fixed; inset:0; z-index:300; display:flex; align-items:center; justify-content:center; padding:24px; background:rgba(0,0,0,.82); backdrop-filter:blur(9px); opacity:0; visibility:hidden; transition:opacity .22s,visibility .22s; }
+.result-celebration.show { opacity:1; visibility:visible; }
+.celebration-card { width:min(100%,340px); text-align:center; padding:30px 22px 22px; border:1px solid var(--border); border-radius:22px; background:var(--surface); animation:celebrationPop .38s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes celebrationPop { from{transform:scale(.82) translateY(16px);opacity:0} to{transform:scale(1) translateY(0);opacity:1} }
+.celebration-symbol { width:64px;height:64px;margin:0 auto 16px;border-radius:50%;display:grid;place-items:center;font-size:34px;font-weight:800; }
+.result-celebration.win .celebration-symbol { color:#A6FF3B;background:rgba(166,255,59,.12); }
+.result-celebration.loss .celebration-symbol { color:#FF6B75;background:rgba(255,107,117,.12); }
+.celebration-title { font-size:12px;font-weight:800;letter-spacing:2px;color:var(--text2); }
+.celebration-amount { font-size:clamp(32px,9vw,44px);font-weight:800;letter-spacing:-1.5px;margin:10px 0 2px; }
+.result-celebration.win .celebration-amount { color:#A6FF3B; }
+.result-celebration.loss .celebration-amount { color:#FF6B75; }
+.celebration-caption { font-size:12px;color:var(--text2);margin-bottom:24px; }
+.celebration-card button { width:100%;padding:13px;border:0;border-radius:10px;background:var(--wina);color:#101010;font-weight:800;font-size:13px; }
+@media (prefers-reduced-motion: reduce) { .panel.active .panel-inner,.chart-wrap,.celebration-card,.scoreboard-value.number-pop { animation:none; } }
 
 /* ── Toast ── */
 #toast {
@@ -661,6 +688,15 @@ body {
 </div>
 
 <div id="toast"></div>
+<div id="result-celebration" class="result-celebration" role="dialog" aria-modal="true" aria-live="polite" onclick="closeResultCelebration()">
+  <div class="celebration-card" onclick="event.stopPropagation()">
+    <div class="celebration-symbol" id="celebration-symbol">✓</div>
+    <div class="celebration-title" id="celebration-title">PARI GAGNÉ</div>
+    <div class="celebration-amount" id="celebration-amount">+0 €</div>
+    <div class="celebration-caption" id="celebration-caption">Bénéfice net</div>
+    <button type="button" onclick="closeResultCelebration()">Continuer</button>
+  </div>
+</div>
 
 <div class="modal-overlay" id="sync-overlay" onclick="handleSyncOverlayClick(event)">
   <div class="modal-sheet" onclick="event.stopPropagation()">
@@ -1222,8 +1258,14 @@ function renderDashboard() {
   const gs = calcStats(bets);
 
   const bilanEl = document.getElementById('sb-bilan');
+  const previousBilan = bilanEl.textContent;
   bilanEl.textContent = fmtEur(gs.bilanNet, true);
   bilanEl.className = 'scoreboard-value ' + (gs.bilanNet > 0 ? 'pos' : gs.bilanNet < 0 ? 'neg' : 'neu');
+  if (previousBilan !== bilanEl.textContent) {
+    bilanEl.classList.remove('number-pop');
+    void bilanEl.offsetWidth;
+    bilanEl.classList.add('number-pop');
+  }
   document.getElementById('sb-sub').textContent =
     `ROI ${gs.roi > 0 ? '+' : ''}${gs.roi.toFixed(1)}%  ·  ${gs.nbParis} paris  ·  ${gs.tauxReussite.toFixed(0)}% gagnants`;
 
@@ -1447,7 +1489,22 @@ function addBet() {
   updatePreview();
   renderDashboard();
   const isWin = gain > mise;
-  showToast(isWin ? `✓ +${fmtEurPlain(gain - mise)} enregistré !` : `✗ Perte de ${fmtEurPlain(mise)} enregistrée`, isWin ? 'win' : 'loss');
+  const net = r2(gain - mise);
+  showToast(isWin ? `✓ +${fmtEurPlain(net)} enregistré !` : `✗ Perte de ${fmtEurPlain(mise)} enregistrée`, isWin ? 'win' : 'loss');
+  showResultCelebration(isWin, isWin ? net : mise);
+}
+
+function showResultCelebration(isWin, amount) {
+  const modal = document.getElementById('result-celebration');
+  modal.className = 'result-celebration show ' + (isWin ? 'win' : 'loss');
+  document.getElementById('celebration-symbol').textContent = isWin ? '✓' : '×';
+  document.getElementById('celebration-title').textContent = isWin ? 'PARI GAGNÉ' : 'PARI PERDU';
+  document.getElementById('celebration-amount').textContent = (isWin ? '+' : '−') + fmtEurPlain(amount);
+  document.getElementById('celebration-caption').textContent = isWin ? 'Bénéfice net' : 'Mise perdue';
+}
+function closeResultCelebration() {
+  const modal = document.getElementById('result-celebration');
+  if (modal) modal.classList.remove('show');
 }
 
 /* ─── Toast ─────────────────────────────────────────────────────────── */
@@ -1572,6 +1629,14 @@ function drawChart(canvas, data) {
     }
     ctx.fill();
 
+    // Valeur affichée en permanence au-dessus / au-dessous de chaque barre
+    ctx.fillStyle = isPos ? '#A6FF3B' : '#FF6B75';
+    ctx.font = 'bold 9px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    const valueLabel = (m.bilan > 0 ? '+' : m.bilan < 0 ? '−' : '') + Math.round(Math.abs(m.bilan));
+    const labelY = isPos ? Math.max(10, top - 4) : Math.min(H - 28, top + h + 11);
+    ctx.fillText(valueLabel, cx, labelY);
+
     // label mois
     ctx.fillStyle = '#787878';
     ctx.font = '9px Inter, sans-serif';
@@ -1684,6 +1749,7 @@ function renderHistory() {
           <div class="chart-title">Bilan par mois — touche une barre pour le détail</div>
           <canvas data-year="${year}"></canvas>
         </div>
+        <button class="history-toggle" type="button" onclick="toggleBetList(this)">Afficher tout l’historique (${yBets.length})</button>
         <div class="bet-list">
           ${yBets.map(b => {
             const isWin = b.gain > b.mise;
@@ -1721,6 +1787,12 @@ function renderHistory() {
       if (canvas) drawChart(canvas, yBets);
     });
   });
+}
+
+function toggleBetList(btn) {
+  const list = btn.nextElementSibling;
+  const open = list.classList.toggle('show');
+  btn.textContent = open ? 'Masquer l’historique' : `Afficher tout l’historique (${list.children.length})`;
 }
 
 function toggleYear(btn) {
