@@ -1338,12 +1338,40 @@ function haptique(niveau = 'leger') {
   try { navigator.vibrate(motifs[niveau] || motifs.leger); } catch (e) {}
 }
 
+let tabTransitionToken = 0;
 function switchTab(name) {
-  const current = document.querySelector('.tab-btn.active')?.dataset.tab;
-  if (current !== name) haptique('leger');
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
-  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === `panel-${name}`));
-  if (name === 'history') renderHistory();
+  const currentName = document.querySelector('.tab-btn.active')?.dataset.tab;
+  if (currentName === name) return;
+  haptique('leger');
+
+  const token = ++tabTransitionToken;
+  const currentPanel = document.getElementById(`panel-${currentName}`);
+  const nextPanel = document.getElementById(`panel-${name}`);
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const activate = () => {
+    if (token !== tabTransitionToken) return;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+    document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === `panel-${name}`));
+    if (name === 'history') renderHistory();
+    if (nextPanel && !reducedMotion && typeof nextPanel.animate === 'function') {
+      nextPanel.animate(
+        [{ opacity: 0, transform: 'translateY(7px) scale(.995)' }, { opacity: 1, transform: 'translateY(0) scale(1)' }],
+        { duration: 240, easing: 'cubic-bezier(.22,1,.36,1)' }
+      );
+    }
+  };
+
+  if (!currentPanel || !nextPanel || reducedMotion || typeof currentPanel.animate !== 'function') {
+    activate();
+    return;
+  }
+
+  const exit = currentPanel.animate(
+    [{ opacity: 1, transform: 'translateY(0) scale(1)' }, { opacity: 0, transform: 'translateY(-3px) scale(.998)' }],
+    { duration: 110, easing: 'cubic-bezier(.4,0,1,1)' }
+  );
+  exit.onfinish = activate;
 }
 
 /* ─── Dashboard ─────────────────────────────────────────────────────── */
