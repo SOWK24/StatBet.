@@ -608,6 +608,29 @@ button:focus-visible,canvas:focus-visible{outline:2px solid var(--wina);outline-
 @keyframes dismissPulse{0%,100%{opacity:.55}50%{opacity:1}}
 @media(hover:hover){.stat-card:hover,.record-card:hover{border-color:rgba(166,255,59,.20);transform:translateY(-1px)}.tab-btn:hover{background:rgba(255,255,255,.035)}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+
+/* ── Finition des micro-interactions tactiles ── */
+button,.pill,.year-header,.bet-row{ -webkit-tap-highlight-color:transparent; }
+button:not(:disabled),.pill,.year-header{ transition:transform .16s cubic-bezier(.2,.8,.2,1),border-color .2s ease,background-color .2s ease,box-shadow .2s ease,color .2s ease; }
+button:not(:disabled):active,.pill:active,.year-header:active{ transform:scale(.975); }
+.btn-submit:not(:disabled):active{ transform:scale(.985); box-shadow:0 0 0 3px rgba(166,255,59,.09); }
+.btn-secondary:active{ background:var(--surface); }
+.btn-danger-text:active{ opacity:.72; }
+.bet-row{ transition:background-color .18s ease,border-color .18s ease; }
+.scoreboard,.stat-card,.record-card{ transform-origin:center; }
+.scoreboard{ transition:border-color .24s ease,box-shadow .24s ease; }
+.scoreboard.updating{ animation:scoreboardRefresh .46s cubic-bezier(.22,1,.36,1); }
+@keyframes scoreboardRefresh{0%{transform:scale(1)}38%{transform:scale(1.008)}100%{transform:scale(1)}}
+@media(hover:hover){
+  button:not(:disabled):hover{filter:brightness(1.06)}
+  .btn-submit:not(:disabled):hover{box-shadow:0 5px 22px rgba(166,255,59,.12)}
+  .bet-row:hover{background-color:rgba(255,255,255,.025)}
+  .scoreboard:hover{border-color:rgba(166,255,59,.2)}
+}
+@media(prefers-reduced-motion:reduce){
+  .scoreboard.updating{animation:none!important}
+  button:not(:disabled):active,.pill:active,.year-header:active{transform:none}
+}
 </style>
 </head>
 <body>
