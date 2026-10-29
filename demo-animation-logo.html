@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>Pauly’Bet — Démo animation logo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;900&family=Bricolage+Grotesque:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--green:#5CFF2E}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#000;color:#fff;font-family:'Bricolage Grotesque',sans-serif}
+body{min-height:100svh;overflow:hidden}
+#stage{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100svh;padding:24px 20px 120px;isolation:isolate}
+#ambient{position:absolute;inset:0;z-index:-2;overflow:hidden;pointer-events:none}
+.orbit-line{position:absolute;border:1px solid rgba(92,255,46,.15);border-radius:50%;width:130vw;height:44vw;left:-15vw;top:22%;transform:rotate(-27deg);animation:drift 12s ease-in-out infinite alternate}
+.orbit-line:nth-child(2){width:100vw;height:32vw;left:0;top:32%;animation-duration:16s;animation-direction:alternate-reverse}
+@keyframes drift{to{transform:translate3d(0,-18px,0) rotate(-23deg)}}
+#shock{position:absolute;width:20px;height:20px;border:1px solid var(--green);border-radius:50%;opacity:0;pointer-events:none}
+#logoWrap{width:min(76vw,380px);aspect-ratio:1;display:grid;place-items:center;transform-origin:50% 65%;will-change:transform}
+#logo{display:block;width:100%;height:100%;object-fit:contain;will-change:transform}
+#amount{font-family:'Unbounded',sans-serif;font-weight:900;font-size:clamp(32px,8vw,60px);letter-spacing:-.055em;text-align:center;margin-top:8px;opacity:0;transform:translateY(18px);font-variant-numeric:tabular-nums}
+#phrase{max-width:90vw;margin-top:18px;font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:clamp(18px,4.8vw,27px);text-align:center;line-height:1.2;opacity:0;overflow:hidden}
+#phrase span{display:inline-block;opacity:0;transform:translateY(110%)}
+#status{position:absolute;top:18px;left:18px;right:18px;text-align:center;color:#777;font-size:11px;letter-spacing:.18em;text-transform:uppercase}
+#controls{position:fixed;bottom:max(18px,env(safe-area-inset-bottom));left:12px;right:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;z-index:5}
+button,select{background:#101310;border:1px solid #343a34;color:white;border-radius:999px;padding:12px 15px;font:700 12px 'Bricolage Grotesque',sans-serif;letter-spacing:.04em}
+button:active{transform:scale(.97)}button.primary{border-color:var(--green);color:var(--green)}
+#stage.loss{--green:#ff625c}
+#stage.loss #amount{color:#ff625c}
+#stage.win #amount{color:#5CFF2E}
+#grain{position:absolute;inset:0;z-index:-1;opacity:.045;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E")}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<main id="stage" class="win">
+  <div id="ambient" aria-hidden="true"><div class="orbit-line"></div><div class="orbit-line"></div></div>
+  <div id="grain" aria-hidden="true"></div>
+  <div id="status">Démo isolée · logo original non redessiné</div>
+  <div id="shock" aria-hidden="true"></div>
+  <div id="logoWrap"><img id="logo" src="./icon.png" alt="Logo original Pauly’Bet"></div>
+  <div id="amount" aria-live="polite">+45,00 €</div>
+  <div id="phrase"></div>
+</main>
+<div id="controls">
+  <button class="primary" id="winBtn">Victoire</button>
+  <button id="lossBtn">Défaite</button>
+  <button id="exitBtn">Rejouer la sortie</button>
+  <label style="display:flex;align-items:center;gap:6px;color:#999;font-size:12px">Vitesse
+    <select id="speed"><option value=".5">x0,5</option><option value="1" selected>x1</option><option value="1.25">x1,25</option></select>
+  </label>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script>
+const stage=document.querySelector('#stage'), logoWrap=document.querySelector('#logoWrap'), logo=document.querySelector('#logo'), amount=document.querySelector('#amount'), phrase=document.querySelector('#phrase'), shock=document.querySelector('#shock'), speed=document.querySelector('#speed');
+const phrases={
+ win:["Le bookmaker pleure","Ça sent le yacht","Petit braquage propre","Le flair paie","Budget vacances relancé","Ça rentre tranquille","Le compte respire","Joli coup, patron","Les stats respectées","Un peu de génie","Le café est offert","On connaît la musique","La cote a craqué","Le destin rembourse","Le portefeuille sourit","Belle lecture du match","Les maths valident","Ça fait plaisir","Un dimanche rentable","On garde la tête froide"],
+ loss:["Next.","Le VAR t’a eu","Pas ton jour","Les stats se vengent","Le flair était en pause","On dira rien","Le bookmaker respire","Un don au football","Ça arrive aux meilleurs","Le karma encaisse","Leçon à petit prix","On passe à autre chose","La cote était jolie","Le compte fait la moue","On avait presque","Le suspense était gratuit","Le ballon est rond","L’analyse était optimiste","Leçon numéro mille","Demain on réfléchit"]
+};
+let last={win:-1,loss:-1}, tl=null, exiting=false, current='win';
+function vibrate(pattern){try{if(navigator.vibrate&&!matchMedia('(prefers-reduced-motion: reduce)').matches)navigator.vibrate(pattern)}catch(e){}}
+function pick(type){let n;do{n=Math.floor(Math.random()*phrases[type].length)}while(n===last[type]&&phrases[type].length>1);last[type]=n;return phrases[type][n]}
+function revealPhrase(text){phrase.innerHTML='';text.split(' ').forEach((word,i)=>{const span=document.createElement('span');span.textContent=word+(i<text.split(' ').length-1?' ':'');phrase.appendChild(span)});}
+function setSpeed(){if(tl)tl.timeScale(Number(speed.value))}
+function play(type){
+ if(tl)tl.kill();exiting=false;current=type;stage.className=type;const win=type==='win';const value=win?45:10;
+ amount.textContent=win?'+45,00 €':'−10,00 €';revealPhrase(pick(type));
+ gsap.set([logoWrap,logo],{clearProps:'all'});gsap.set(logoWrap,{scale:0.7,rotation:win?-9:8,y:80});gsap.set(amount,{opacity:0,y:22});gsap.set(phrase,{opacity:1});gsap.set(phrase.children,{opacity:0,yPercent:110});gsap.set(shock,{scale:.2,opacity:0});
+ tl=gsap.timeline({defaults:{ease:'power3.out'}});tl.timeScale(Number(speed.value));
+ tl.addLabel('eparpille',0).to(logoWrap,{duration:.3,scale:.82,rotation:win?10:-5,y:25,ease:'power1.inOut'})
+ .addLabel('balade').to(logoWrap,{duration:.65,x:win?35:-20,y:-55,rotation:win?-11:10,scaleX:1.08,scaleY:.92,ease:'power2.inOut'})
+ .to(logoWrap,{duration:.25,x:win?-8:6,y:15,rotation:win?4:-2,scaleX:.94,scaleY:1.08,ease:'back.out(2)'})
+ .addLabel('reconstruction').to(logoWrap,{duration:.55,x:0,y:0,rotation:0,scaleX:1.04,scaleY:.94,ease:'back.out(2.4)'})
+ .to(logoWrap,{duration:.18,scaleX:.98,scaleY:1.05,ease:'power2.out'})
+ .addLabel('impact').call(()=>{vibrate(win?[35,35,60]:[20,35]);gsap.set(shock,{x:innerWidth/2-10,y:innerHeight*.42-10});gsap.fromTo(shock,{scale:.2,opacity:.8},{scale:18,opacity:0,duration:.5,ease:'power2.out'})})
+ .to(logoWrap,{duration:.12,x:win?6:-4,rotation:win?2:-2,y:-4,ease:'power1.inOut'},'impact')
+ .to(logoWrap,{duration:.18,x:0,rotation:0,y:0,ease:'power2.out'})
+ .to(amount,{duration:.45,opacity:1,y:0,ease:'back.out(1.6)'},'impact+=0.12')
+ .call(()=>vibrate(12),'impact+=0.25')
+ .to(phrase.children,{duration:.32,opacity:1,yPercent:0,stagger:.055,ease:'power2.out'},'impact+=0.24')
+ .addLabel('final')
+ .to(logoWrap,{duration:1.5,y:-8,repeat:-1,yoyo:true,ease:'sine.inOut'},'final+=0.35')
+ .to(logo,{duration:4,rotation:1.5,repeat:-1,yoyo:true,ease:'sine.inOut'},'final+=0.35');
+}
+function exit(){
+ if(exiting)return;exiting=true;if(tl)tl.kill();const win=current==='win';
+ const out=gsap.timeline({defaults:{ease:'power2.inOut'},onComplete:()=>{gsap.set([logoWrap,logo,amount,phrase],{clearProps:'all'});gsap.set(amount,{opacity:0});gsap.set(phrase,{opacity:0});exiting=false;stage.className='win';}});
+ out.timeScale(Number(speed.value));out.to([amount,phrase],{duration:.18,y:24,opacity:0,stagger:.02},0)
+ .to(logoWrap,{duration:.12,scaleY:.92,scaleX:1.05,y:8,onStart:()=>vibrate(12)},0)
+ .to(logoWrap,{duration:.48,y:-innerHeight*.9,rotation:win?-12:10,scaleX:.78,scaleY:1.16,ease:'power3.in',onStart:()=>vibrate(25)},.12)
+ .to('#stage',{duration:.25,clipPath:'circle(150% at 50% 50%)',ease:'power1.in'},.42)
+ .set(logoWrap,{y:0,x:0,rotation:0,scale:1}).set('#stage',{clearProps:'clipPath'});
+}
+document.querySelector('#winBtn').addEventListener('click',()=>play('win'));
+document.querySelector('#lossBtn').addEventListener('click',()=>play('loss'));
+document.querySelector('#exitBtn').addEventListener('click',exit);
+speed.addEventListener('change',setSpeed);
+play('win');
+</script>
+</body>
+</html>
