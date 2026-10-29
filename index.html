@@ -1324,7 +1324,23 @@ function disconnectSync() {
 let bets = loadBets();
 
 /* ─── Navigation ────────────────────────────────────────────────────── */
+/* Retours haptiques centralisés : discrets, facultatifs et sans effet sur les navigateurs incompatibles. */
+function haptique(niveau = 'leger') {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (!('vibrate' in navigator)) return;
+  const motifs = {
+    leger: 8,
+    moyen: 18,
+    fort: [25, 35, 25],
+    victoire: [20, 35, 30, 45, 18],
+    defaite: [12, 35, 8]
+  };
+  try { navigator.vibrate(motifs[niveau] || motifs.leger); } catch (e) {}
+}
+
 function switchTab(name) {
+  const current = document.querySelector('.tab-btn.active')?.dataset.tab;
+  if (current !== name) haptique('leger');
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
   document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === `panel-${name}`));
   if (name === 'history') renderHistory();
@@ -1625,9 +1641,7 @@ function showResultCelebration(isWin, amount) {
       line.style.width = (20 + Math.random() * 42) + '%';
       lines.appendChild(line);
     }
-    if (navigator.vibrate) {
-      try { navigator.vibrate(isWin ? [20, 35, 30, 45, 18] : [12, 35, 8]); } catch(e) {}
-    }
+    haptique(isWin ? 'victoire' : 'defaite');
   }
   clearTimeout(resultCelebrationTimer);
   // L'animation reste affichée jusqu'à une action explicite de l'utilisateur.
@@ -1869,7 +1883,7 @@ function drawChart(canvas, data) {
     const bar = findBar(e.clientX);
     if (bar && activeBarKey !== bar.m.key) {
       activeBarKey = bar.m.key;
-      if (navigator.vibrate) { try { navigator.vibrate(8); } catch(err) {} }
+      haptique('leger');
     }
   };
   canvas.onpointerup = e => {
@@ -1904,7 +1918,7 @@ document.addEventListener('click', function(e) {
   ripple.style.top = (e.clientY - rect.top) + 'px';
   el.appendChild(ripple);
   setTimeout(() => ripple.remove(), 500);
-  if (navigator.vibrate) { try { navigator.vibrate(10); } catch(err) {} }
+  haptique('moyen');
 });
 
 /* ─── History ───────────────────────────────────────────────────────── */
