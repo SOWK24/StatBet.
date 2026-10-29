@@ -992,16 +992,16 @@ button:not(:disabled):active,.pill:active,.year-header:active{ transform:scale(.
 <div id="result-celebration" class="result-celebration" role="dialog" aria-modal="true" aria-live="polite" aria-label="Résultat du pari" onclick="closeResultCelebration()">
   <div class="brand-result-bg" aria-hidden="true"><div class="brand-result-orbit orbit-a"></div><div class="brand-result-orbit orbit-b"></div><div class="brand-result-flash"></div></div>
   <div class="brand-result-shards" id="celebration-particles" aria-hidden="true">
-    <img class="logo-shard shard-1" src="./275C6C76-2C7B-40CA-9CC4-853F38A703DA.svg?v=2" alt="">
-    <img class="logo-shard shard-2" src="./275C6C76-2C7B-40CA-9CC4-853F38A703DA.svg?v=3" alt="">
-    <img class="logo-shard shard-3" src="./275C6C76-2C7B-40CA-9CC4-853F38A703DA.svg?v=3" alt="">
-    <img class="logo-shard shard-4" src="./275C6C76-2C7B-40CA-9CC4-853F38A703DA.svg?v=3" alt="">
+    <img class="logo-shard shard-1" src="./275C6C76-2C7B-40CA-9CC4-853F38A703DA.svg?v=4" alt="">
+    <img class="logo-shard shard-2" src="./275C6C76-2C7B-40CA-9CC4-853F38A703DA.svg?v=4" alt="">
+    <img class="logo-shard shard-3" src="./275C6C76-2C7B-40CA-9CC4-853F38A703DA.svg?v=4" alt="">
+    <img class="logo-shard shard-4" src="./275C6C76-2C7B-40CA-9CC4-853F38A703DA.svg?v=4" alt="">
   </div>
   <div class="brand-result-content">
     <div class="brand-result-status" id="celebration-title">TICKET VALIDÉ</div>
     <div class="brand-logo-stage">
       <div class="brand-logo-halo"></div>
-      <img class="brand-result-logo" src="./275C6C76-2C7B-40CA-9CC4-853F38A703DA.svg?v=3" alt="Logo Pauly’Bet">
+      <img class="brand-result-logo" src="./275C6C76-2C7B-40CA-9CC4-853F38A703DA.svg?v=4" alt="Logo Pauly’Bet">
     </div>
     <div class="brand-result-word" id="celebration-symbol">VICTOIRE</div>
     <div class="brand-result-amount" id="celebration-amount">+0 €</div>
@@ -1968,12 +1968,65 @@ function showResultCelebration(isWin, amount) {
   document.getElementById('celebration-amount').textContent = (isWin ? '+' : '−') + fmtEurPlain(amount);
   document.getElementById('celebration-caption').textContent = isWin ? 'BÉNÉFICE NET' : 'MISE PERDUE';
   document.getElementById('celebration-encouragement').textContent = pickPunchline(isWin);
-  const shards = document.querySelectorAll('#celebration-particles .logo-shard');
-  shards.forEach(shard => { shard.style.animation = 'none'; void shard.offsetWidth; shard.style.animation = ''; });
+  const shards = [...document.querySelectorAll('#celebration-particles .logo-shard')];
+  const logo = modal.querySelector('.brand-result-logo');
+  const stage = modal.querySelector('.brand-logo-stage');
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Pilote l'animation en JavaScript : elle ne dépend plus des règles CSS
+  // prefers-reduced-motion qui avaient neutralisé l'animation sur certains iPhone.
+  [logo, stage, ...shards].filter(Boolean).forEach(el => {
+    if (el.getAnimations) el.getAnimations().forEach(animation => animation.cancel());
+    el.style.animation = 'none';
+  });
+  if (logo) {
+    logo.style.opacity = '1';
+    logo.style.visibility = 'visible';
+    logo.style.transform = 'none';
+    logo.style.filter = 'none';
+    if (!reduced && logo.animate) {
+      logo.animate([
+        { opacity: 0, transform: 'translateY(34px) rotate(-16deg) scale(.42)', filter: 'blur(7px)' },
+        { opacity: 1, transform: 'translateY(-6px) rotate(3deg) scale(1.08)', filter: 'blur(0)' , offset: .62},
+        { opacity: 1, transform: 'translateY(0) rotate(0) scale(1)', filter: 'none' }
+      ], { duration: 850, easing: 'cubic-bezier(.16,1,.3,1)', fill: 'forwards' });
+      logo.animate([
+        { transform: 'translateY(0) scale(1)' },
+        { transform: 'translateY(-4px) scale(1.025)' },
+        { transform: 'translateY(0) scale(1)' }
+      ], { duration: 1500, delay: 850, iterations: Infinity, easing: 'ease-in-out' });
+    }
+  }
+  if (stage && !reduced && stage.animate) {
+    stage.animate([{ filter: 'brightness(1)' }, { filter: 'brightness(1.22)' }, { filter: 'brightness(1)' }],
+      { duration: 900, easing: 'ease-out' });
+  }
+  shards.forEach((shard, i) => {
+    shard.style.opacity = '0';
+    shard.style.visibility = 'visible';
+    if (reduced || !shard.animate) return;
+    const starts = isWin
+      ? [
+          ['translate(-115vw,-70vh) rotate(-100deg) scale(.45)', 'translate(-50%,-50%) rotate(0) scale(1)'],
+          ['translate(75vw,-70vh) rotate(90deg) scale(.45)', 'translate(-50%,-50%) rotate(0) scale(1)'],
+          ['translate(-110vw,65vh) rotate(80deg) scale(.45)', 'translate(-50%,-50%) rotate(0) scale(1)'],
+          ['translate(80vw,65vh) rotate(-85deg) scale(.45)', 'translate(-50%,-50%) rotate(0) scale(1)']
+        ]
+      : [
+          ['translate(-50%,-50%) scale(.9)', 'translate(-75vw,-55vh) rotate(-85deg) scale(.55)'],
+          ['translate(-50%,-50%) scale(.9)', 'translate(70vw,-60vh) rotate(95deg) scale(.55)'],
+          ['translate(-50%,-50%) scale(.9)', 'translate(-70vw,55vh) rotate(75deg) scale(.5)'],
+          ['translate(-50%,-50%) scale(.9)', 'translate(75vw,60vh) rotate(-90deg) scale(.55)']
+        ];
+    const [from, to] = starts[i] || starts[0];
+    shard.animate(isWin
+      ? [{ opacity: 0, transform: from }, { opacity: .8, offset: .45 }, { opacity: 0, transform: to }]
+      : [{ opacity: 0, transform: from }, { opacity: .85, offset: .2 }, { opacity: 0, transform: to }],
+      { duration: isWin ? 850 : 720, delay: i * 35, easing: isWin ? 'ease-out' : 'ease-in', fill: 'both' });
+  });
   if (!reduced) haptique(isWin ? 'victoire' : 'defaite');
   clearTimeout(resultCelebrationTimer);
-  // Séquence logo + résultat : reste visible jusqu'à une action explicite.
+  // Le logo reste visible au centre, victoire comme défaite, jusqu'à une action explicite.
 }
 let resultCelebrationTimer = null;
 let pendingResultRefresh = false;
