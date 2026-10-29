@@ -179,7 +179,14 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:v
 @keyframes lossAura { 0%{transform:scale(.2);opacity:0} 35%{opacity:.65} 100%{transform:scale(1.35);opacity:.12} }
 .celebration-particles { position:absolute;inset:0;overflow:hidden;pointer-events:none; }
 .celebration-particle { position:absolute;top:-12%;width:7px;height:14px;border-radius:3px;background:#A6FF3B;animation:particleFall var(--dur,2.2s) var(--delay,0s) cubic-bezier(.2,.7,.3,1) both; }
-.result-celebration.loss .celebration-particle { background:#FF6B75; }
+ .result-celebration.loss .celebration-particle { background:#FF6B75; animation-name:lossParticleFall; }
+@keyframes lossParticleFall { 0%{transform:translate3d(0,-8vh,0) rotate(0);opacity:0} 20%{opacity:.75} 100%{transform:translate3d(var(--drift,30px),45vh,0) rotate(100deg);opacity:0} }
+.result-celebration.loss .celebration-card { animation:lossDrop .55s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes lossDrop { 0%{transform:translateY(-34px);opacity:0} 70%{transform:translateY(4px);opacity:1} 100%{transform:translateY(0);opacity:1} }
+.result-celebration.loss.show { animation:lossFlash .35s ease-out; }
+@keyframes lossFlash { 0%{background:rgba(130,0,20,.6)} 100%{background:rgba(0,0,0,.82)} }
+.result-celebration.win.show { animation:winFlash .45s ease-out; }
+@keyframes winFlash { 0%{background:rgba(166,255,59,.34)} 100%{background:rgba(0,0,0,.82)} }
 @keyframes particleFall { 0%{transform:translate3d(0,-10vh,0) rotate(0);opacity:0} 12%{opacity:1} 100%{transform:translate3d(var(--drift,30px),115vh,0) rotate(780deg);opacity:0} }
 .celebration-card { position:relative;z-index:2; backdrop-filter:blur(18px); box-shadow:0 24px 90px rgba(0,0,0,.45); }
 .celebration-symbol { animation:symbolImpact .55s cubic-bezier(.2,1.5,.4,1) both; }
@@ -392,7 +399,8 @@ canvas { display:block; width:100%; cursor:pointer; }
 .ctt-row.ctt-bilan strong.pos { color:var(--win); }
 .ctt-row.ctt-bilan strong.neg { color:var(--loss); }
 
-.bet-list { display:flex; flex-direction:column; gap:6px; }
+ .bet-list { display:flex; flex-direction:column; gap:6px; overflow:hidden; max-height:0; opacity:0; transition:max-height .38s cubic-bezier(.22,1,.36,1),opacity .24s ease; will-change:max-height,opacity; }
+.bet-list.show { opacity:1; }
 .bet-row { display:flex; align-items:center; padding:11px 12px; border-radius:8px; border-left:3px solid; gap:10px; }
 .bet-row.win  { background:var(--win-bg);  border-color:var(--win-border); }
 .bet-row.loss { background:var(--loss-bg); border-color:var(--loss-border); }
@@ -1507,6 +1515,7 @@ function addBet() {
   renderDashboard();
   const isWin = gain > mise;
   const net = r2(gain - mise);
+  if (document.getElementById('panel-history')?.classList.contains('active')) renderHistory();
   showToast(isWin ? `✓ +${fmtEurPlain(net)} enregistré !` : `✗ Perte de ${fmtEurPlain(mise)} enregistrée`, isWin ? 'win' : 'loss');
   showResultCelebration(isWin, isWin ? net : mise);
 }
@@ -1520,22 +1529,29 @@ function showResultCelebration(isWin, amount) {
   document.getElementById('celebration-caption').textContent = isWin ? 'BÉNÉFICE NET' : 'MISE PERDUE';
   const particles = document.getElementById('celebration-particles');
   particles.innerHTML = '';
-  if (isWin && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    for (let i=0;i<46;i++) {
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    for (let i=0;i<(isWin ? 64 : 30);i++) {
       const p=document.createElement('span');
       p.className='celebration-particle';
       p.style.left=(Math.random()*100)+'%';
+      if (!isWin) p.style.background = '#FF6B75';
       p.style.setProperty('--delay',(Math.random()*.75)+'s');
       p.style.setProperty('--dur',(1.7+Math.random()*1.5)+'s');
       p.style.setProperty('--drift',((Math.random()-.5)*180)+'px');
       p.style.transform='rotate('+(Math.random()*360)+'deg)';
       particles.appendChild(p);
     }
+    if (isWin && navigator.vibrate) { try { navigator.vibrate([18,30,24]); } catch(e) {} }
+    else if (!isWin && navigator.vibrate) { try { navigator.vibrate(10); } catch(e) {} }
   }
+  clearTimeout(resultCelebrationTimer);
+  resultCelebrationTimer = setTimeout(closeResultCelebration, 3600);
 }
+let resultCelebrationTimer = null;
 function closeResultCelebration() {
   const modal = document.getElementById('result-celebration');
   if (modal) modal.classList.remove('show');
+  clearTimeout(resultCelebrationTimer);
 }
 
 /* ─── Toast ─────────────────────────────────────────────────────────── */
@@ -1742,6 +1758,28 @@ function drawChart(canvas, data) {
 }
 
 /* ─── History ───────────────────────────────────────────────────────── */
+const HISTORY_VISIBLE_KEY = 'statbet_history_visible_v1';
+let historyVisibleByYear = {};
+try { historyVisibleByYear = JSON.parse(localStorage.getItem(HISTORY_VISIBLE_KEY) || '{}') || {}; } catch(e) { historyVisibleByYear = {}; }
+function persistHistoryVisibility() {
+  try { localStorage.setItem(HISTORY_VISIBLE_KEY, JSON.stringify(historyVisibleByYear)); } catch(e) {}
+}
+function applyHistoryVisibility(container) {
+  if (!container) return;
+  container.querySelectorAll('.year-block').forEach(block => {
+    const year = block.dataset.year;
+    const list = block.querySelector('.bet-list');
+    const btn = block.querySelector('.history-toggle');
+    if (!list || !btn) return;
+    const open = historyVisibleByYear[year] === true;
+    list.classList.toggle('show', open);
+    list.style.display = 'flex';
+    list.style.maxHeight = open ? list.scrollHeight + 'px' : '0px';
+    list.style.opacity = open ? '1' : '0';
+    btn.setAttribute('aria-expanded', String(open));
+    btn.textContent = open ? 'Masquer l’historique' : 'Afficher tout l’historique (' + list.children.length + ')';
+  });
+}
 function renderHistory() {
   const container = document.getElementById('history-container');
   // Garde-fou : réinjecter les deux paris restaurés au moment même où l'historique s'affiche,
@@ -1766,6 +1804,7 @@ function renderHistory() {
     const bilanCls = stats.bilanNet > 0 ? 'pos' : stats.bilanNet < 0 ? 'neg' : '';
     const block = document.createElement('div');
     block.className = 'year-block';
+    block.dataset.year = year;
     block.innerHTML = `
       <button class="year-header${isCurrentYear ? ' open' : ''}" onclick="toggleYear(this)">
         <div class="year-header-left">
@@ -1831,15 +1870,16 @@ function renderHistory() {
       if (canvas) drawChart(canvas, yBets);
     });
   });
+  applyHistoryVisibility(container);
 }
 
 function toggleBetList(btn) {
-  const list = btn.nextElementSibling;
-  const open = list.style.display !== 'flex';
-  list.style.display = open ? 'flex' : 'none';
-  list.classList.toggle('show', open);
-  btn.setAttribute('aria-expanded', String(open));
-  btn.textContent = open ? 'Masquer l’historique' : `Afficher tout l’historique (${list.children.length})`;
+  const block = btn.closest('.year-block');
+  if (!block) return;
+  const year = block.dataset.year;
+  historyVisibleByYear[year] = historyVisibleByYear[year] !== true;
+  persistHistoryVisibility();
+  applyHistoryVisibility(block.parentElement);
 }
 
 function toggleYear(btn) {
