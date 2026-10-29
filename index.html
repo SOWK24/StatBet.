@@ -856,33 +856,10 @@ input[type="submit"]:active, input[type="reset"]:active, summary:active,
 
 </style>
 <style>
-/* Écran résultat — composition reconstruite autour du prototype logo validé */
-#result-celebration{position:fixed!important;inset:0!important;display:none;align-items:center!important;justify-content:center!important;overflow:hidden!important;padding:env(safe-area-inset-top) 18px env(safe-area-inset-bottom)!important;background:radial-gradient(ellipse at 50% 44%,rgba(105,150,75,.16),transparent 58%),#080a08!important}
-#result-celebration.show{display:flex!important}
-#result-celebration.loss{background:radial-gradient(ellipse at 50% 44%,rgba(255,85,105,.13),transparent 58%),#080a08!important}
-#result-celebration .demo-result-rays{position:absolute;inset:-55%;z-index:0;pointer-events:none;background:repeating-conic-gradient(from 0deg at 50% 50%,rgba(190,255,110,.055) 0deg 1deg,transparent 1deg 15deg);animation:demoResultSpin 32s linear infinite}
-#result-celebration.loss .demo-result-rays{background:repeating-conic-gradient(from 0deg at 50% 50%,rgba(255,70,90,.05) 0deg 1deg,transparent 1deg 16deg)}
-#result-celebration .demo-result-marquee{position:absolute;left:-12%;right:-12%;top:18%;z-index:1;white-space:nowrap;overflow:hidden;pointer-events:none;opacity:.075;color:#d9f7c2;font:900 clamp(20px,4vw,42px) 'Space Grotesk',sans-serif;letter-spacing:.12em;animation:demoResultMarquee 24s linear infinite}
-#result-celebration.loss .demo-result-marquee{color:#ff9aa6}
-#result-celebration .brand-result-content{position:relative!important;inset:auto!important;width:min(100%,620px)!important;height:100%!important;min-height:0!important;z-index:5!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:0!important;padding:clamp(24px,5vh,54px) 12px clamp(28px,5vh,52px)!important;overflow:visible!important;text-align:center!important;transform:none!important}
-#result-celebration .brand-result-status{position:relative!important;order:0!important;display:block!important;flex:none!important;margin:0 0 clamp(12px,2.3vh,24px)!important;color:#d4e7c2!important;font:800 clamp(12px,2.2vw,15px)/1.2 'Space Grotesk',sans-serif!important;letter-spacing:.22em!important;text-align:center!important;max-width:100%!important;transform:none!important}
-#result-celebration.loss .brand-result-status{color:#ffb4bd!important}
-#result-celebration .brand-logo-stage-vector{position:relative!important;order:1!important;display:block!important;flex:0 1 auto!important;width:min(72vw,42vh,390px)!important;height:min(72vw,42vh,390px)!important;min-width:190px!important;min-height:190px!important;max-width:390px!important;max-height:390px!important;margin:0 auto!important;padding:0!important;overflow:visible!important;background:transparent!important;border:0!important;box-shadow:none!important;transform:none!important}
-#result-celebration .brand-logo-stage-vector .brand-logo-halo{display:none!important}
-#result-celebration .brand-result-logo-frame{display:block!important;position:absolute!important;inset:0!important;width:100%!important;height:100%!important;border:0!important;background:transparent!important;z-index:2!important;pointer-events:none!important}
-#result-celebration .brand-result-word{display:block!important;order:2!important;position:relative!important;margin:clamp(10px,2vh,20px) 0 0!important;color:#f7f8f4!important;font:900 clamp(36px,9vw,66px)/.95 Anton,sans-serif!important;letter-spacing:.015em!important;text-align:center!important;transform:none!important}
-#result-celebration .brand-result-amount{display:block!important;order:3!important;position:relative!important;margin:clamp(12px,2.2vh,22px) 0 0!important;color:#a6ff3b!important;font:800 clamp(38px,10vw,68px)/1 'Space Grotesk',sans-serif!important;letter-spacing:-.055em!important;font-variant-numeric:tabular-nums!important;text-align:center!important;white-space:nowrap!important;transform:none!important}
-#result-celebration.loss .brand-result-amount{color:#ff8a98!important}
-#result-celebration .brand-result-caption{display:block!important;order:4!important;position:relative!important;margin:8px 0 0!important;color:rgba(255,255,255,.58)!important;font:700 11px/1.2 'Space Grotesk',sans-serif!important;letter-spacing:.2em!important;text-align:center!important}
-#result-celebration .brand-result-tagline{display:block!important;order:5!important;position:relative!important;width:min(100%,440px)!important;margin:clamp(18px,3vh,28px) auto 0!important;color:#e6e9e3!important;font:600 clamp(14px,3.8vw,18px)/1.4 'Inter',sans-serif!important;text-align:center!important;overflow-wrap:anywhere!important}
-#result-celebration .brand-result-dismiss{position:absolute!important;left:0!important;right:0!important;bottom:max(12px,env(safe-area-inset-bottom))!important;order:6!important;margin:0!important;color:rgba(255,255,255,.42)!important;font:700 9px/1.2 'Space Grotesk',sans-serif!important;letter-spacing:.2em!important;text-align:center!important;transform:none!important}
-#result-celebration .brand-result-status,#result-celebration .brand-result-word,#result-celebration .brand-result-amount,#result-celebration .brand-result-caption,#result-celebration .brand-result-tagline,#result-celebration .brand-result-dismiss{animation:none!important;opacity:1!important;visibility:visible!important}
-#result-celebration .brand-result-shards{display:none!important}
-@keyframes demoResultSpin{to{transform:rotate(360deg)}}
-@keyframes demoResultMarquee{to{transform:translateX(-25%)}}
-@media(max-height:700px){#result-celebration .brand-result-content{padding-top:12px!important;padding-bottom:22px!important}#result-celebration .brand-logo-stage-vector{width:min(58vw,34vh,310px)!important;height:min(58vw,34vh,310px)!important;min-width:150px!important;min-height:150px!important}#result-celebration .brand-result-status{margin-bottom:8px!important}#result-celebration .brand-result-word{font-size:clamp(30px,7vw,48px)!important;margin-top:6px!important}#result-celebration .brand-result-amount{font-size:clamp(34px,8vw,54px)!important;margin-top:8px!important}#result-celebration .brand-result-tagline{margin-top:12px!important}}
-@media(max-width:380px){#result-celebration .brand-result-content{padding-left:8px!important;padding-right:8px!important}#result-celebration .brand-result-status{font-size:11px!important;letter-spacing:.16em!important}#result-celebration .brand-result-word{font-size:34px!important}#result-celebration .brand-result-amount{font-size:38px!important}}
-
+/* L'écran de résultat reprend directement demo-animation.html */
+#result-celebration{position:fixed!important;inset:0!important;padding:0!important;overflow:hidden!important;background:#070908!important;z-index:99999!important}
+#result-celebration .brand-result-content{display:none!important}
+#result-celebration #result-demo-frame{display:block!important;position:absolute!important;inset:0!important;width:100%!important;height:100%!important;border:0!important;background:#070908!important}
 </style>
 <style>
 /* Pauly'Bet — nouvelle séquence de résultat pilotée par le logo */
@@ -1168,18 +1145,8 @@ input[type="submit"]:active, input[type="reset"]:active, summary:active,
     <img class="logo-shard shard-3" src="./275C6C76-2C7B-40CA-9CC4-853F38A703DA.svg?v=4" alt="">
     <img class="logo-shard shard-4" src="./275C6C76-2C7B-40CA-9CC4-853F38A703DA.svg?v=4" alt="">
   </div>
-  <div class="brand-result-content">
-    <div class="brand-result-status" id="celebration-title">TICKET VALIDÉ</div>
-    <div class="brand-logo-stage brand-logo-stage-vector">
-      <div class="brand-logo-halo"></div>
-      <iframe id="result-logo-animation" class="brand-result-logo-frame" src="./demo-animation-logo.html?embed=1" title="Animation du logo Pauly’Bet" aria-hidden="true" tabindex="-1"></iframe>
-    </div>
-    <div class="brand-result-word" id="celebration-symbol">VICTOIRE</div>
-    <div class="brand-result-amount" id="celebration-amount">+0 €</div>
-    <div class="brand-result-caption" id="celebration-caption">BÉNÉFICE NET</div>
-    <div class="brand-result-tagline" id="celebration-encouragement">Le ticket est chaud.</div>
-    <div class="brand-result-dismiss">TOUCHE POUR CONTINUER <span>↗</span></div>
-  </div>
+  <iframe id="result-demo-frame" title="Animation du résultat Pauly’Bet" src="./demo-animation.html?embed=1" style="position:absolute;inset:0;width:100%;height:100%;border:0;background:#070908;z-index:10"></iframe>
+  <button type="button" aria-label="Fermer le résultat" onclick="closeResultCelebration()" style="position:absolute;z-index:30;top:max(12px,env(safe-area-inset-top));right:14px;width:38px;height:38px;border:1px solid rgba(255,255,255,.2);border-radius:50%;background:rgba(10,14,10,.7);color:#fff;font-size:22px">×</button>
 </div>
 
 
@@ -2177,19 +2144,32 @@ function showResultCelebration(isWin, amount) {
     } catch (e) {}
   }
   document.getElementById('celebration-encouragement').textContent = pickPunchline(isWin);
-  // Rejoue le prototype validé : dispersion du logo, recomposition et arrivée rebondissante des trois barres.
-  const logoFrame = document.getElementById('result-logo-animation');
-  if (logoFrame) {
-    try {
-      if (logoFrame.contentWindow && typeof logoFrame.contentWindow.playPaulyLogoAnimation === 'function') {
-        logoFrame.contentWindow.playPaulyLogoAnimation();
-      } else {
-        logoFrame.src = './demo-animation-logo.html?embed=1&replay=' + Date.now();
-      }
-    } catch (e) {
-      logoFrame.src = './demo-animation-logo.html?embed=1&replay=' + Date.now();
+  // Rejoue à l'identique la démo plein écran et lui transmet le vrai résultat du pari.
+  const demoFrame = document.getElementById('result-demo-frame');
+  const sendDemoResult = () => {
+    if (demoFrame && demoFrame.contentWindow) {
+      demoFrame.contentWindow.postMessage({
+        type: 'paulybet-result',
+        kind: isWin ? 'gain' : 'loss',
+        amount: amountTarget
+      }, '*');
+    }
+  };
+  if (demoFrame) {
+    if (demoFrame.dataset.ready === '1') sendDemoResult();
+    else {
+      demoFrame.addEventListener('load', () => {
+        demoFrame.dataset.ready = '1';
+        sendDemoResult();
+      }, { once: true });
     }
   }
+  window.addEventListener('message', function resultDemoDismiss(event) {
+    if (event.data && event.data.type === 'paulybet-result-dismiss') {
+      window.removeEventListener('message', resultDemoDismiss);
+      closeResultCelebration();
+    }
+  });
   if (!reduced) haptique(isWin ? 'victoire' : 'defaite');
   clearTimeout(resultCelebrationTimer);
   // Le logo reste visible au centre, victoire comme défaite, jusqu'à une action explicite.
