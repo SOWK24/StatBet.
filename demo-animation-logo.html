@@ -2,103 +2,86 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#000000">
-<title>Pauly’Bet — Démo animation logo</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;900&family=Bricolage+Grotesque:wght@700&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pauly’Bet — Logo en reconstruction</title>
 <style>
-:root{color-scheme:dark;--green:#5CFF2E}
+@import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@700;900&family=Bricolage+Grotesque:wght@500;700&display=swap');
+:root{color-scheme:dark;--green:#5CFF2E;--red:#ff4545}
 *{box-sizing:border-box}
-html,body{margin:0;min-height:100%;background:#000;color:#fff;font-family:'Bricolage Grotesque',sans-serif}
-body{min-height:100svh;overflow:hidden}
-#stage{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100svh;padding:24px 20px 120px;isolation:isolate}
-#ambient{position:absolute;inset:0;z-index:-2;overflow:hidden;pointer-events:none}
-.orbit-line{position:absolute;border:1px solid rgba(92,255,46,.15);border-radius:50%;width:130vw;height:44vw;left:-15vw;top:22%;transform:rotate(-27deg);animation:drift 12s ease-in-out infinite alternate}
-.orbit-line:nth-child(2){width:100vw;height:32vw;left:0;top:32%;animation-duration:16s;animation-direction:alternate-reverse}
-@keyframes drift{to{transform:translate3d(0,-18px,0) rotate(-23deg)}}
-#shock{position:absolute;width:20px;height:20px;border:1px solid var(--green);border-radius:50%;opacity:0;pointer-events:none}
-#logoWrap{width:min(76vw,380px);aspect-ratio:1;display:grid;place-items:center;transform-origin:50% 65%;will-change:transform}
-#logo{display:block;width:100%;height:100%;object-fit:contain;will-change:transform}
-#amount{font-family:'Unbounded',sans-serif;font-weight:900;font-size:clamp(32px,8vw,60px);letter-spacing:-.055em;text-align:center;margin-top:8px;opacity:0;transform:translateY(18px);font-variant-numeric:tabular-nums}
-#phrase{max-width:90vw;margin-top:18px;font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:clamp(18px,4.8vw,27px);text-align:center;line-height:1.2;opacity:0;overflow:hidden}
-#phrase span{display:inline-block;opacity:0;transform:translateY(110%)}
-#status{position:absolute;top:18px;left:18px;right:18px;text-align:center;color:#777;font-size:11px;letter-spacing:.18em;text-transform:uppercase}
-#controls{position:fixed;bottom:max(18px,env(safe-area-inset-bottom));left:12px;right:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;z-index:5}
-button,select{background:#101310;border:1px solid #343a34;color:white;border-radius:999px;padding:12px 15px;font:700 12px 'Bricolage Grotesque',sans-serif;letter-spacing:.04em}
-button:active{transform:scale(.97)}button.primary{border-color:var(--green);color:var(--green)}
-#stage.loss{--green:#ff625c}
-#stage.loss #amount{color:#ff625c}
-#stage.win #amount{color:#5CFF2E}
-#grain{position:absolute;inset:0;z-index:-1;opacity:.045;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E")}
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+body{margin:0;min-height:100svh;background:#050605;color:#f5f5f5;font-family:'Bricolage Grotesque',sans-serif;display:flex;align-items:center;justify-content:center;overflow:hidden}
+main{width:min(100%,900px);padding:28px 20px 24px;text-align:center}
+.kicker{font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#8d958b;margin-bottom:18px}
+h1{font-family:Unbounded,sans-serif;font-size:clamp(24px,5vw,48px);line-height:1.1;letter-spacing:-.06em;margin:0 0 10px;font-weight:900}
+.sub{color:#92978f;font-size:14px;margin:0 auto 16px}
+#stage{position:relative;width:min(76vw,460px);aspect-ratio:1;margin:0 auto 12px}
+canvas{width:100%;height:100%;display:block}
+.controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px}
+button{font:700 12px 'Bricolage Grotesque',sans-serif;letter-spacing:.04em;padding:12px 17px;border:1px solid #3b4238;border-radius:3px;background:#10130f;color:#f4f5f2;cursor:pointer}
+button.primary{background:var(--green);border-color:var(--green);color:#071006}
+button:hover{filter:brightness(1.1)}
+.note{font-size:11px;color:#626a60;margin-top:18px}
 </style>
 </head>
 <body>
-<main id="stage" class="win">
-  <div id="ambient" aria-hidden="true"><div class="orbit-line"></div><div class="orbit-line"></div></div>
-  <div id="grain" aria-hidden="true"></div>
-  <div id="status">Démo isolée · logo original non redessiné</div>
-  <div id="shock" aria-hidden="true"></div>
-  <div id="logoWrap"><img id="logo" src="./icon.png" alt="Logo original Pauly’Bet"></div>
-  <div id="amount" aria-live="polite">+45,00 €</div>
-  <div id="phrase"></div>
-</main>
-<div id="controls">
-  <button class="primary" id="winBtn">Victoire</button>
-  <button id="lossBtn">Défaite</button>
-  <button id="exitBtn">Rejouer la sortie</button>
-  <label style="display:flex;align-items:center;gap:6px;color:#999;font-size:12px">Vitesse
-    <select id="speed"><option value=".5">x0,5</option><option value="1" selected>x1</option><option value="1.25">x1,25</option></select>
-  </label>
+<main>
+<div class="kicker">Pauly’Bet · Logo motion study</div>
+<h1 id="headline">Tout se disperse.<br>Tout se rassemble.</h1>
+<p class="sub" id="sub">Les pixels du logo original s’éparpillent puis reviennent à leur place.</p>
+<div id="stage"><canvas id="scene" aria-label="Animation du logo Pauly’Bet"></canvas></div>
+<div class="controls">
+<button class="primary" id="replay">Rejouer l’animation</button>
+<button id="scatter">Disperser</button>
+<button id="assemble">Reformer le logo</button>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<div class="note">Prototype indépendant · le site principal n’est pas modifié</div>
+</main>
 <script>
-const stage=document.querySelector('#stage'), logoWrap=document.querySelector('#logoWrap'), logo=document.querySelector('#logo'), amount=document.querySelector('#amount'), phrase=document.querySelector('#phrase'), shock=document.querySelector('#shock'), speed=document.querySelector('#speed');
-const phrases={
- win:["Le bookmaker pleure","Ça sent le yacht","Petit braquage propre","Le flair paie","Budget vacances relancé","Ça rentre tranquille","Le compte respire","Joli coup, patron","Les stats respectées","Un peu de génie","Le café est offert","On connaît la musique","La cote a craqué","Le destin rembourse","Le portefeuille sourit","Belle lecture du match","Les maths valident","Ça fait plaisir","Un dimanche rentable","On garde la tête froide"],
- loss:["Next.","Le VAR t’a eu","Pas ton jour","Les stats se vengent","Le flair était en pause","On dira rien","Le bookmaker respire","Un don au football","Ça arrive aux meilleurs","Le karma encaisse","Leçon à petit prix","On passe à autre chose","La cote était jolie","Le compte fait la moue","On avait presque","Le suspense était gratuit","Le ballon est rond","L’analyse était optimiste","Leçon numéro mille","Demain on réfléchit"]
-};
-let last={win:-1,loss:-1}, tl=null, exiting=false, current='win';
-function vibrate(pattern){try{if(navigator.vibrate&&!matchMedia('(prefers-reduced-motion: reduce)').matches)navigator.vibrate(pattern)}catch(e){}}
-function pick(type){let n;do{n=Math.floor(Math.random()*phrases[type].length)}while(n===last[type]&&phrases[type].length>1);last[type]=n;return phrases[type][n]}
-function revealPhrase(text){phrase.innerHTML='';text.split(' ').forEach((word,i)=>{const span=document.createElement('span');span.textContent=word+(i<text.split(' ').length-1?' ':'');phrase.appendChild(span)});}
-function setSpeed(){if(tl)tl.timeScale(Number(speed.value))}
-function play(type){
- if(tl)tl.kill();exiting=false;current=type;stage.className=type;const win=type==='win';const value=win?45:10;
- amount.textContent=win?'+45,00 €':'−10,00 €';revealPhrase(pick(type));
- gsap.set([logoWrap,logo],{clearProps:'all'});gsap.set(logoWrap,{scale:0.7,rotation:win?-9:8,y:80});gsap.set(amount,{opacity:0,y:22});gsap.set(phrase,{opacity:1});gsap.set(phrase.children,{opacity:0,yPercent:110});gsap.set(shock,{scale:.2,opacity:0});
- tl=gsap.timeline({defaults:{ease:'power3.out'}});tl.timeScale(Number(speed.value));
- tl.addLabel('eparpille',0).to(logoWrap,{duration:.3,scale:.82,rotation:win?10:-5,y:25,ease:'power1.inOut'})
- .addLabel('balade').to(logoWrap,{duration:.65,x:win?35:-20,y:-55,rotation:win?-11:10,scaleX:1.08,scaleY:.92,ease:'power2.inOut'})
- .to(logoWrap,{duration:.25,x:win?-8:6,y:15,rotation:win?4:-2,scaleX:.94,scaleY:1.08,ease:'back.out(2)'})
- .addLabel('reconstruction').to(logoWrap,{duration:.55,x:0,y:0,rotation:0,scaleX:1.04,scaleY:.94,ease:'back.out(2.4)'})
- .to(logoWrap,{duration:.18,scaleX:.98,scaleY:1.05,ease:'power2.out'})
- .addLabel('impact').call(()=>{vibrate(win?[35,35,60]:[20,35]);gsap.set(shock,{x:innerWidth/2-10,y:innerHeight*.42-10});gsap.fromTo(shock,{scale:.2,opacity:.8},{scale:18,opacity:0,duration:.5,ease:'power2.out'})})
- .to(logoWrap,{duration:.12,x:win?6:-4,rotation:win?2:-2,y:-4,ease:'power1.inOut'},'impact')
- .to(logoWrap,{duration:.18,x:0,rotation:0,y:0,ease:'power2.out'})
- .to(amount,{duration:.45,opacity:1,y:0,ease:'back.out(1.6)'},'impact+=0.12')
- .call(()=>vibrate(12),'impact+=0.25')
- .to(phrase.children,{duration:.32,opacity:1,yPercent:0,stagger:.055,ease:'power2.out'},'impact+=0.24')
- .addLabel('final')
- .to(logoWrap,{duration:1.5,y:-8,repeat:-1,yoyo:true,ease:'sine.inOut'},'final+=0.35')
- .to(logo,{duration:4,rotation:1.5,repeat:-1,yoyo:true,ease:'sine.inOut'},'final+=0.35');
+const canvas=document.querySelector('#scene'),ctx=canvas.getContext('2d',{willReadFrequently:true);
+const img=new Image();img.src='./icon.png';
+let W=700,H=700,particles=[],raf=0,mode='assembled',start=0;
+function resize(){const dpr=Math.min(devicePixelRatio||1,2);const rect=canvas.getBoundingClientRect();W=Math.max(1,Math.round(rect.width*dpr));H=Math.max(1,Math.round(rect.height*dpr));canvas.width=W;canvas.height=H;if(img.complete&&img.naturalWidth)build();drawStatic();}
+function build(){
+ const off=document.createElement('canvas'),size=360;off.width=size;off.height=size;
+ const o=off.getContext('2d',{willReadFrequently:true});o.clearRect(0,0,size,size);o.drawImage(img,0,0,size,size);
+ const data=o.getImageData(0,0,size,size).data;particles=[];
+ // Sampling the actual PNG preserves the real silhouette, colors and orbit rather than redrawing the mark.
+ const step=3;
+ for(let y=0;y<size;y+=step)for(let x=0;x<size;x+=step){
+  const i=(y*size+x)*4,r=data[i],g=data[i+1],b=data[i+2],a=data[i+3];
+  if(a>80 && (r>65||g>65||b>65)){
+   const green=g>r*1.35&&g>b*1.2;
+   const tx=(x/size)*W,ty=(y/size)*H;
+   particles.push({x:tx,y:ty,tx,ty,vx:0,vy:0,delay:Math.random()*420,color:'rgb('+r+','+g+','+b+')',green,phase:Math.random()*Math.PI*2,size:step*(W/size)*(.7+Math.random()*.45)});
+  }
+ }
 }
-function exit(){
- if(exiting)return;exiting=true;if(tl)tl.kill();const win=current==='win';
- const out=gsap.timeline({defaults:{ease:'power2.inOut'},onComplete:()=>{gsap.set([logoWrap,logo,amount,phrase],{clearProps:'all'});gsap.set(amount,{opacity:0});gsap.set(phrase,{opacity:0});exiting=false;stage.className='win';}});
- out.timeScale(Number(speed.value));out.to([amount,phrase],{duration:.18,y:24,opacity:0,stagger:.02},0)
- .to(logoWrap,{duration:.12,scaleY:.92,scaleX:1.05,y:8,onStart:()=>vibrate(12)},0)
- .to(logoWrap,{duration:.48,y:-innerHeight*.9,rotation:win?-12:10,scaleX:.78,scaleY:1.16,ease:'power3.in',onStart:()=>vibrate(25)},.12)
- .to('#stage',{duration:.25,clipPath:'circle(150% at 50% 50%)',ease:'power1.in'},.42)
- .set(logoWrap,{y:0,x:0,rotation:0,scale:1}).set('#stage',{clearProps:'clipPath'});
+function drawStatic(){if(!particles.length)return;ctx.clearRect(0,0,W,H);for(const p of particles){ctx.fillStyle=p.color;ctx.fillRect(p.tx,p.ty,p.size,p.size)}}
+function scatter(){cancelAnimationFrame(raf);mode='scatter';start=performance.now();const cx=W/2,cy=H/2;for(const p of particles){const angle=Math.random()*Math.PI*2,dist=(.18+Math.random()*.75)*Math.min(W,H);p.x=p.tx;p.y=p.ty;p.sx=p.tx;p.sy=p.ty;p.ex=Math.max(-W*.1,Math.min(W*1.1,cx+Math.cos(angle)*dist));p.ey=Math.max(-H*.1,Math.min(H*1.1,cy+Math.sin(angle)*dist));p.delay=Math.random()*650;p.spin=(Math.random()-.5)*Math.PI*5;}raf=requestAnimationFrame(tick)}
+function assemble(){cancelAnimationFrame(raf);mode='assemble';start=performance.now();for(const p of particles){p.sx=p.x;p.sy=p.y;p.delay=Math.random()*420;}raf=requestAnimationFrame(tick)}
+function ease(t){return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2}
+function tick(now){const elapsed=now-start;ctx.clearRect(0,0,W,H);
+ let allDone=true;
+ for(const p of particles){
+  let t=Math.max(0,Math.min(1,(elapsed-p.delay)/(mode==='scatter'?1250:1050)));
+  if(t<1)allDone=false;
+  const e=ease(t);
+  if(mode==='scatter'){p.x=p.sx+(p.ex-p.sx)*e;p.y=p.sy+(p.ey-p.sy)*e;}
+  else {p.x=p.sx+(p.tx-p.sx)*e;p.y=p.sy+(p.ty-p.sy)*e;}
+  const wobble=t<1?Math.sin(t*Math.PI*5+p.phase)*(1-t)*7:0;
+  ctx.globalAlpha=mode==='scatter'?.98:1;
+  ctx.fillStyle=p.color;const s=p.size*(mode==='scatter'?1+Math.sin(t*Math.PI)*.35:1);
+  ctx.save();ctx.translate(p.x+wobble,p.y-wobble);ctx.rotate(mode==='scatter'?p.spin*e*(1-t):0);ctx.fillRect(-s/2,-s/2,s,s);ctx.restore();
+ }
+ ctx.globalAlpha=1;
+ if(allDone){if(mode==='scatter'){setTimeout(()=>{if(mode==='scatter')assemble()},500);return;}mode='assembled';return}
+ raf=requestAnimationFrame(tick)
 }
-document.querySelector('#winBtn').addEventListener('click',()=>play('win'));
-document.querySelector('#lossBtn').addEventListener('click',()=>play('loss'));
-document.querySelector('#exitBtn').addEventListener('click',exit);
-speed.addEventListener('change',setSpeed);
-play('win');
+function replay(){cancelAnimationFrame(raf);if(!particles.length)return;for(const p of particles){p.x=p.tx;p.y=p.ty;}drawStatic();setTimeout(scatter,500)}
+img.onload=()=>{resize();setTimeout(replay,450)};img.onerror=()=>{document.querySelector('#sub').textContent='Impossible de charger icon.png. Vérifie que le fichier est dans le même dossier.'};
+window.addEventListener('resize',resize);
+document.querySelector('#replay').addEventListener('click',replay);
+document.querySelector('#scatter').addEventListener('click',scatter);
+document.querySelector('#assemble').addEventListener('click',assemble);
 </script>
 </body>
 </html>
