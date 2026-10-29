@@ -127,7 +127,8 @@ function renderDemo(kind,amountOverride){current=kind;const stage=document.getEl
 const embedded=new URLSearchParams(location.search).has('embed');
 document.getElementById('stage').addEventListener('click',e=>{if(!e.target.closest('.controls')){if(embedded)parent.postMessage({type:'paulybet-result-dismiss'},'*');else renderDemo(current)}});
 window.addEventListener('message',e=>{if(e.data&&e.data.type==='paulybet-result'){renderDemo(e.data.kind,e.data.amount)}});
-renderDemo('gain');
+const initialParams=new URLSearchParams(location.search);
+renderDemo(initialParams.get('kind')==='loss'?'loss':'gain', initialParams.has('amount')?Number(initialParams.get('amount')):undefined);
 </script>
 </body>
 </html>
