@@ -2026,7 +2026,7 @@ function addBet() {
   document.getElementById('btn-loss').className = 'result-btn';
   gainRow.style.display = 'none';
   updatePreview();
-  const isWin = gain > mise;
+  const isWin = selectedResult === 'win';
   const net = r2(gain - mise);
   pendingResultRefresh = true;
   showToast(isWin ? `✓ +${fmtEurPlain(net)} enregistré !` : `✗ Perte de ${fmtEurPlain(mise)} enregistrée`, isWin ? 'win' : 'loss');
@@ -2164,27 +2164,14 @@ function showResultCelebration(isWin, amount) {
   document.getElementById('celebration-encouragement').textContent = pickPunchline(isWin);
   // Rejoue à l'identique la démo plein écran et lui transmet le vrai résultat du pari.
   const demoFrame = document.getElementById('result-demo-frame');
-  const sendDemoResult = () => {
-    if (demoFrame && demoFrame.contentWindow) {
-      demoFrame.contentWindow.postMessage({
-        type: 'paulybet-result',
-        kind: isWin ? 'gain' : 'loss',
-        amount: amountTarget
-      }, '*');
-    }
-  };
   if (demoFrame) {
-    // Le cadre peut avoir fini de charger avant l'ouverture du résultat :
-    // on envoie directement si son document est prêt, sinon on attend son chargement.
-    try {
-      if (demoFrame.contentDocument && demoFrame.contentDocument.readyState === 'complete') {
-        sendDemoResult();
-      } else {
-        demoFrame.addEventListener('load', sendDemoResult, { once: true });
-      }
-    } catch (e) {
-      demoFrame.addEventListener('load', sendDemoResult, { once: true });
-    }
+    // Paramètres dans l'URL : aucun message ne peut être perdu si l'iframe charge trop tôt.
+    const demoUrl = new URL('./demo-animation.html', window.location.href);
+    demoUrl.searchParams.set('embed', '1');
+    demoUrl.searchParams.set('kind', isWin ? 'gain' : 'loss');
+    demoUrl.searchParams.set('amount', String(amountTarget));
+    demoUrl.searchParams.set('v', '3');
+    demoFrame.src = demoUrl.toString();
   }
   if (!reduced) haptique(isWin ? 'victoire' : 'defaite');
   clearTimeout(resultCelebrationTimer);
