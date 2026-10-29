@@ -1784,19 +1784,22 @@ function drawChart(canvas, data) {
   }
 
   let activeBarKey = '';
-  function activateAt(clientX) {
-    const bar = findBar(clientX);
-    if (!bar) return;
-    if (activeBarKey !== bar.m.key) {
+  canvas.onclick = (e) => {
+    const bar = findBar(e.clientX);
+    if (bar) { showTip(bar, e.clientX); activeBarKey = bar.m.key; }
+  };
+  // Le glissement explore les barres sans ouvrir le sheet avant le relâchement.
+  canvas.onpointermove = e => {
+    if (e.pointerType === 'mouse' && e.buttons === 0) return;
+    const bar = findBar(e.clientX);
+    if (bar && activeBarKey !== bar.m.key) {
       activeBarKey = bar.m.key;
-      if (navigator.vibrate) { try { navigator.vibrate(8); } catch(e) {} }
-      showTip(bar, clientX);
+      canvas.style.filter = 'drop-shadow(0 0 5px rgba(166,255,59,.18))';
+      if (navigator.vibrate) { try { navigator.vibrate(8); } catch(err) {} }
     }
-  }
-  canvas.onclick = (e) => { const bar = findBar(e.clientX); if (bar) { showTip(bar, e.clientX); activeBarKey = bar.m.key; } };
-  canvas.onpointermove = e => { if (e.pointerType === 'touch' || e.buttons) activateAt(e.clientX); };
-  canvas.onpointerleave = () => {};
-  canvas.ontouchstart = e => { if (e.touches[0]) activateAt(e.touches[0].clientX); };
+  };
+  canvas.onpointerleave = () => { canvas.style.filter = ''; };
+  canvas.ontouchstart = null;
   canvas.setAttribute('aria-label','Graphique interactif : touchez une barre pour afficher les statistiques du mois');
 }
 
