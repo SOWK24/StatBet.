@@ -1628,54 +1628,77 @@ function drawChart(canvas, data) {
   ctx.lineTo(PAD.left + cW, y0);
   ctx.stroke();
 
-  const bars = [];
-  cd.forEach((m, i) => {
-    const cx = PAD.left + slot * i + slot / 2;
-    const yVal = toY(m.bilan);
+  const bars = cd.map((m, i) => ({ x: PAD.left + slot * i, w: slot, cx: PAD.left + slot * i + slot / 2, m }));
+  const drawBar = (bar, progress) => {
+    const m = bar.m, i = cd.indexOf(m), cx = bar.cx;
+    const xSlot = PAD.left + slot * i;
+    // Efface uniquement la zone de cette barre, puis redessine la grille derrière.
+    ctx.clearRect(xSlot + 0.5, PAD.top, Math.max(0, slot - 1), cH + 1);
+    ctx.strokeStyle = '#242424'; ctx.lineWidth = 1;
+    for (let g = 0; g <= gridSteps; g++) {
+      const gy = PAD.top + (cH / gridSteps) * g;
+      ctx.beginPath(); ctx.moveTo(xSlot, gy); ctx.lineTo(xSlot + slot, gy); ctx.stroke();
+    }
+    ctx.strokeStyle = '#555'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(xSlot, y0); ctx.lineTo(xSlot + slot, y0); ctx.stroke();
+
+    const targetY = toY(m.bilan);
+    const yVal = y0 + (targetY - y0) * progress;
     const top = Math.min(yVal, y0);
-    const h = Math.max(Math.abs(yVal - y0), 1.5);
+    const h = Math.max(Math.abs(yVal - y0), progress > 0 ? 1.5 : 0);
     const isPos = m.bilan >= 0;
     const color = isPos ? '#A6FF3B' : '#FF6B75';
-
-    ctx.fillStyle = color;
     const x = cx - barW / 2;
     const r = Math.min(4, barW / 2, h);
-    ctx.beginPath();
-    if (isPos) {
-      // coins arrondis en haut
-      ctx.moveTo(x, top + r);
-      ctx.arcTo(x, top, x + r, top, r);
-      ctx.arcTo(x + barW, top, x + barW, top + r, r);
-      ctx.lineTo(x + barW, top + h);
-      ctx.lineTo(x, top + h);
-      ctx.closePath();
-    } else {
-      // coins arrondis en bas
-      ctx.moveTo(x, top);
-      ctx.lineTo(x + barW, top);
-      ctx.lineTo(x + barW, top + h - r);
-      ctx.arcTo(x + barW, top + h, x + barW - r, top + h, r);
-      ctx.arcTo(x, top + h, x, top + h - r, r);
-      ctx.closePath();
+    if (progress > 0) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      if (isPos) {
+        ctx.moveTo(x, top + r);
+        ctx.arcTo(x, top, x + r, top, r);
+        ctx.arcTo(x + barW, top, x + barW, top + r, r);
+        ctx.lineTo(x + barW, top + h); ctx.lineTo(x, top + h); ctx.closePath();
+      } else {
+        ctx.moveTo(x, top); ctx.lineTo(x + barW, top);
+        ctx.lineTo(x + barW, top + h - r);
+        ctx.arcTo(x + barW, top + h, x + barW - r, top + h, r);
+        ctx.arcTo(x, top + h, x, top + h - r, r); ctx.closePath();
+      }
+      ctx.fill();
     }
-    ctx.fill();
-
-    // Valeur affichée en permanence au-dessus / au-dessous de chaque barre
-    ctx.fillStyle = isPos ? '#A6FF3B' : '#FF6B75';
-    ctx.font = 'bold 9px Inter, sans-serif';
-    ctx.textAlign = 'center';
-    const valueLabel = (m.bilan > 0 ? '+' : m.bilan < 0 ? '−' : '') + Math.round(Math.abs(m.bilan));
-    const labelY = isPos ? Math.max(10, top - 4) : Math.min(H - 28, top + h + 11);
-    ctx.fillText(valueLabel, cx, labelY);
-
-    // label mois
-    ctx.fillStyle = '#787878';
-    ctx.font = '9px Inter, sans-serif';
-    ctx.textAlign = 'center';
+    // Valeurs uniquement à la fin de la montée, pour un rendu net.
+    if (progress >= 1) {
+      ctx.fillStyle = isPos ? '#A6FF3B' : '#FF6B75';
+      ctx.font = 'bold 9px Inter, sans-serif'; ctx.textAlign = 'center';
+      const valueLabel = (m.bilan > 0 ? '+' : m.bilan < 0 ? '−' : '') + Math.round(Math.abs(m.bilan));
+      const labelY = isPos ? Math.max(10, toY(m.bilan) - 4) : Math.min(H - 28, toY(m.bilan) + 11);
+      ctx.fillText(valueLabel, cx, labelY);
+    }
+    ctx.fillStyle = '#787878'; ctx.font = '9px Inter, sans-serif'; ctx.textAlign = 'center';
     ctx.fillText(m.label, cx, H - 8);
+  };
 
-    bars.push({ x: PAD.left + slot * i, w: slot, cx, m });
-  });
+  // Les barres montent une par une, comme une courte séquence motion-design.
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    bars.forEach(bar => drawBar(bar, 1));
+  } else {
+    let index = 0, startedAt = null;
+    const barDuration = 250, stagger = 58;
+    function animateBars(timestamp) {
+      if (index >= bars.length) return;
+      if (startedAt === null) startedAt = timestamp;
+      const elapsed = timestamp - startedAt;
+      const raw = Math.min(1, elapsed / barDuration);
+      const eased = 1 - Math.pow(1 - raw, 3);
+      drawBar(bars[index], eased);
+      if (raw >= 1) {
+        index++;
+        startedAt = timestamp - Math.max(0, elapsed - barDuration + stagger);
+      }
+      requestAnimationFrame(animateBars);
+    }
+    requestAnimationFrame(animateBars);
+  }
 
   // ─ Tooltip interactif ─
   const tip = document.createElement('div');
