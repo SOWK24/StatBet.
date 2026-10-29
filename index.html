@@ -587,6 +587,27 @@ body {
 .panel.active .panel-inner{animation:pageEnter .48s cubic-bezier(.2,.75,.25,1) both}
 .chart-wrap{animation:chartIn .6s ease both}
 @keyframes chartIn{from{opacity:.25;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* Pauly'Bet premium mobile polish */
+body{background:radial-gradient(ellipse at 50% -15%,rgba(166,255,59,.075),transparent 48%),var(--bg)}
+#tabbar{background:rgba(9,12,9,.88);border:1px solid rgba(255,255,255,.075);box-shadow:0 12px 36px rgba(0,0,0,.32),inset 0 1px rgba(255,255,255,.035);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
+.tab-btn{position:relative;overflow:hidden;min-height:46px;border-radius:10px;transition:color .22s ease,background .22s ease,transform .18s ease}
+.tab-btn svg{width:17px;height:17px;transition:transform .22s cubic-bezier(.2,.8,.2,1)}
+.tab-btn.active{color:var(--wina);background:linear-gradient(135deg,rgba(166,255,59,.12),rgba(166,255,59,.035));box-shadow:inset 0 0 0 1px rgba(166,255,59,.10)}
+.tab-btn.active:after{content:'';position:absolute;height:2px;width:28px;left:50%;bottom:1px;transform:translateX(-50%);border-radius:3px;background:var(--wina);box-shadow:0 0 12px rgba(166,255,59,.55);animation:navIndicator .24s ease-out both}
+.tab-btn.active svg{transform:translateY(-1px) scale(1.06)}
+@keyframes navIndicator{from{opacity:0;transform:translateX(-50%) scaleX(.25)}to{opacity:1;transform:translateX(-50%) scaleX(1)}}
+.scoreboard{background:linear-gradient(145deg,rgba(26,34,25,.98),rgba(14,18,14,.98));border:1px solid rgba(166,255,59,.12);box-shadow:0 12px 30px rgba(0,0,0,.16),inset 0 1px rgba(255,255,255,.035)}
+.scoreboard:after{content:'';position:absolute;width:180px;height:180px;right:-95px;top:-115px;border-radius:50%;background:rgba(166,255,59,.055);pointer-events:none}
+.stat-card,.record-card{background:linear-gradient(145deg,rgba(24,30,24,.98),rgba(15,19,15,.98));border-color:rgba(200,225,190,.12);box-shadow:0 7px 20px rgba(0,0,0,.12),inset 0 1px rgba(255,255,255,.025);transition:transform .2s ease,border-color .2s ease,background .2s ease}
+.stat-card:active,.record-card:active{transform:scale(.985)}
+.section-label{letter-spacing:1.7px}.app-logo{text-shadow:0 4px 22px rgba(166,255,59,.08)}
+button{-webkit-tap-highlight-color:transparent}button:not(:disabled){touch-action:manipulation}
+button:focus-visible,canvas:focus-visible{outline:2px solid var(--wina);outline-offset:3px}
+.result-celebration{-webkit-tap-highlight-color:transparent}.motion-dismiss{animation:dismissPulse 2s ease-in-out infinite}
+@keyframes dismissPulse{0%,100%{opacity:.55}50%{opacity:1}}
+@media(hover:hover){.stat-card:hover,.record-card:hover{border-color:rgba(166,255,59,.20);transform:translateY(-1px)}.tab-btn:hover{background:rgba(255,255,255,.035)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 </style>
 </head>
 <body>
@@ -1609,7 +1630,7 @@ function showResultCelebration(isWin, amount) {
     }
   }
   clearTimeout(resultCelebrationTimer);
-  resultCelebrationTimer = setTimeout(closeResultCelebration, 3600);
+  // L'animation reste affichée jusqu'à une action explicite de l'utilisateur.
 }
 let resultCelebrationTimer = null;
 let pendingResultRefresh = false;
@@ -2140,8 +2161,9 @@ function doEdit() {
 /* ─── Init ──────────────────────────────────────────────────────────── */
 renderDashboard();
 document.addEventListener('keydown', e => {
-  if (e.key !== 'Escape') return;
   const celebration = document.getElementById('result-celebration');
+  if (celebration?.classList.contains('show') && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); closeResultCelebration(); return; }
+  if (e.key !== 'Escape') return;
   if (celebration?.classList.contains('show')) {
     e.preventDefault();
     closeResultCelebration();
