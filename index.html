@@ -1579,9 +1579,13 @@ function pickPunchline(isWin) {
   if (isWin) lastWinPunchline = selected; else lastLossPunchline = selected;
   return selected;
 }
+let resultCelebrationPreviousFocus = null;
 function showResultCelebration(isWin, amount) {
   const modal = document.getElementById('result-celebration');
+  resultCelebrationPreviousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  modal.setAttribute('tabindex', '-1');
   modal.className = 'result-celebration show ' + (isWin ? 'win' : 'loss');
+  try { modal.focus({ preventScroll: true }); } catch(e) { modal.focus(); }
   modal.setAttribute('aria-label', isWin ? 'Victoire au pari' : 'Défaite au pari');
   document.getElementById('celebration-symbol').textContent = isWin ? 'VICTOIRE' : 'AÏE';
   document.getElementById('celebration-title').textContent = isWin ? 'PARI VALIDÉ / +1 AU COMPTEUR' : 'LE SPORT A TRANCHÉ';
@@ -1611,8 +1615,13 @@ let resultCelebrationTimer = null;
 let pendingResultRefresh = false;
 function closeResultCelebration() {
   const modal = document.getElementById('result-celebration');
+  const wasOpen = !!modal && modal.classList.contains('show');
   if (modal) modal.classList.remove('show');
   clearTimeout(resultCelebrationTimer);
+  if (wasOpen && resultCelebrationPreviousFocus && document.contains(resultCelebrationPreviousFocus)) {
+    try { resultCelebrationPreviousFocus.focus({ preventScroll: true }); } catch(e) { resultCelebrationPreviousFocus.focus(); }
+  }
+  resultCelebrationPreviousFocus = null;
   if (pendingResultRefresh) {
     pendingResultRefresh = false;
     renderDashboard();
@@ -2130,7 +2139,13 @@ function doEdit() {
 
 /* ─── Init ──────────────────────────────────────────────────────────── */
 renderDashboard();
-inputGain.addEventListener('keydown', e => { if (e.key === 'Enter') addBet(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('result-celebration')?.classList.contains('show')) {
+    e.preventDefault();
+    closeResultCelebration();
+  }
+});
+inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.getElementById('result-celebration')?.classList.contains('show')) addBet(); });
 
 (function initSync() {
   setSyncIndicator(getSyncCfg() ? 'ok' : '');
