@@ -15,18 +15,15 @@ h1{font-size:clamp(24px,5vw,46px);line-height:1.1;letter-spacing:-.05em;margin:0
 .sub{color:#92978f;font-size:14px;margin:0 auto 12px}
 #stage{width:min(78vw,480px);aspect-ratio:1;margin:0 auto 12px;display:grid;place-items:center}
 svg{width:100%;height:100%;overflow:visible}
-.piece{transform-box:fill-box;transform-origin:center;will-change:transform,opacity;transition:transform 1.25s cubic-bezier(.2,.75,.2,1),opacity .9s ease}
-body.scattered .piece{opacity:.95}
-body.scattered .piece-0{transform:translate(-34vw,-27vh) rotate(-31deg) scale(.8)}
-body.scattered .piece-1{transform:translate(30vw,-30vh) rotate(48deg) scale(.72)}
-body.scattered .piece-2{transform:translate(-28vw,31vh) rotate(22deg) scale(.9)}
-body.scattered .piece-3{transform:translate(33vw,26vh) rotate(-42deg) scale(.75)}
+.piece{transform-box:fill-box;transform-origin:center;will-change:transform,opacity;transition:transform 1.15s cubic-bezier(.18,.78,.18,1),opacity .8s ease}
+body.scattered .piece{transform:translate(var(--dx),var(--dy)) rotate(var(--rot)) scale(var(--scale,.76));opacity:.92;transition-duration:1.25s;transition-delay:var(--delay,0ms)}
+body.assembling .piece{transition-duration:1.2s;transition-delay:var(--backdelay,0ms)}
 .controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px}
 button{font:700 12px system-ui,sans-serif;letter-spacing:.04em;padding:12px 17px;border:1px solid #3b4238;border-radius:4px;background:#10130f;color:#f4f5f2;cursor:pointer}
 button.primary{background:var(--green);border-color:var(--green);color:#071006}
 button:hover{filter:brightness(1.1)}
 .note{font-size:11px;color:#626a60;margin-top:18px}
-@media(max-width:600px){body.scattered .piece-0{transform:translate(-28vw,-25vh) rotate(-31deg) scale(.8)}body.scattered .piece-1{transform:translate(28vw,-24vh) rotate(48deg) scale(.72)}body.scattered .piece-2{transform:translate(-25vw,25vh) rotate(22deg) scale(.9)}body.scattered .piece-3{transform:translate(26vw,24vh) rotate(-42deg) scale(.75)}}
+@media(max-width:600px){main{padding:18px 12px}.sub{max-width:310px;font-size:12px}#stage{width:min(88vw,420px)}}
 </style>
 </head>
 <body>
@@ -50,14 +47,52 @@ button:hover{filter:brightness(1.1)}
 <div class="note">Prototype indépendant · index.html n’est pas modifié</div>
 </main>
 <script>
-const body=document.body;
-let timer;
-function scatter(){clearTimeout(timer);body.classList.add('scattered');document.querySelector('#sub').textContent='Les formes vectorielles s’éparpillent dans toutes les directions.';}
-function assemble(){clearTimeout(timer);body.classList.remove('scattered');document.querySelector('#sub').textContent='Le logo original se reforme.';}
-function replay(){assemble();timer=setTimeout(()=>{scatter();timer=setTimeout(assemble,2100)},650);}
+const body=document.body, svg=document.querySelector('#logo');
+let timer, pieces=[];
+function splitLogoIntoPieces(){
+  const originals=[...svg.querySelectorAll('path')];
+  originals.forEach((path,layer)=>{
+    const d=path.getAttribute('d'), fill=path.getAttribute('fill');
+    // Keep every original vector subpath independent so the logo can truly break apart.
+    const chunks=d.split(/(?=M\\s)/).map(s=>s.trim()).filter(s=>/[MLC]/.test(s)&&s.length>8);
+    chunks.forEach((chunk,i)=>{
+      const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+      p.setAttribute('d',chunk);p.setAttribute('fill',fill);p.classList.add('piece');
+      const angle=Math.random()*Math.PI*2;
+      const radius=.22+Math.random()*.55;
+      const dx=Math.cos(angle)*innerWidth*radius;
+      const dy=Math.sin(angle)*innerHeight*radius;
+      p.style.setProperty('--dx',dx.toFixed(0)+'px');
+      p.style.setProperty('--dy',dy.toFixed(0)+'px');
+      p.style.setProperty('--rot',((Math.random()-.5)*900).toFixed(0)+'deg');
+      p.style.setProperty('--scale',(0.35+Math.random()*.65).toFixed(2));
+      p.style.setProperty('--delay',Math.round(Math.random()*460)+'ms');
+      p.style.setProperty('--backdelay',Math.round(Math.random()*360)+'ms');
+      // The dominant white P and green sweep get a more playful, longer orbit.
+      if(layer===3){p.style.setProperty('--dx',(dx*1.08).toFixed(0)+'px');p.style.setProperty('--dy',(dy*1.08).toFixed(0)+'px');}
+      pieces.push(p);svg.appendChild(p);
+    });
+    path.remove();
+  });
+}
+function scatter(){
+  clearTimeout(timer);body.classList.remove('assembling');body.classList.add('scattered');
+  document.querySelector('#sub').textContent='Le P et les fragments tourbillonnent dans l’espace avant de revenir à leur place.';
+}
+function assemble(){
+  clearTimeout(timer);body.classList.add('assembling');body.classList.remove('scattered');
+  document.querySelector('#sub').textContent='Tous les éléments se rassemblent pour reformer le logo Pauly’Bet.';
+  timer=setTimeout(()=>body.classList.remove('assembling'),1700);
+}
+function replay(){
+  assemble();
+  timer=setTimeout(()=>{scatter();timer=setTimeout(assemble,2450)},650);
+}
+splitLogoIntoPieces();
 document.querySelector('#replay').addEventListener('click',replay);
 document.querySelector('#scatter').addEventListener('click',scatter);
 document.querySelector('#assemble').addEventListener('click',assemble);
+window.addEventListener('resize',()=>{if(body.classList.contains('scattered')){body.classList.remove('scattered');setTimeout(()=>{pieces.forEach(p=>{const a=Math.random()*Math.PI*2,r=.25+Math.random()*.55;p.style.setProperty('--dx',(Math.cos(a)*innerWidth*r).toFixed(0)+'px');p.style.setProperty('--dy',(Math.sin(a)*innerHeight*r).toFixed(0)+'px')});body.classList.add('scattered')},30)}});
 window.addEventListener('load',()=>setTimeout(replay,500));
 </script>
 </body>
