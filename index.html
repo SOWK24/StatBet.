@@ -100,6 +100,12 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:v
 
 .section-label { font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--text2); margin-bottom:10px; }
 
+ .scoreboard,.stat-card,.record-card,.year-header,.pill,.bet-row,.section-label,.chart-title,.app-logo { position:relative; }
+.bulle-tap { animation:bulleTap .42s cubic-bezier(.22,1,.36,1); }
+@keyframes bulleTap { 0%{transform:scale(1)} 35%{transform:scale(.96)} 68%{transform:scale(1.025)} 100%{transform:scale(1)} }
+.bulle-ripple { position:absolute; width:14px;height:14px;border-radius:50%;pointer-events:none;z-index:5;background:rgba(166,255,59,.18);border:1px solid rgba(166,255,59,.45);transform:translate(-50%,-50%) scale(0);animation:ripplePop .45s ease-out forwards; }
+@keyframes ripplePop { to{transform:translate(-50%,-50%) scale(7);opacity:0} }
+@media (prefers-reduced-motion: reduce) { .bulle-tap { animation:none!important; } .bulle-ripple { display:none!important; } }
 .scoreboard { background:var(--surface); border-radius:10px; padding:20px 18px 16px; margin-bottom:12px; position:relative; overflow:hidden; }
 .scoreboard::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--wina); transform-origin:left; }
 .scoreboard.updating::before { animation:scan .5s ease; }
@@ -379,6 +385,9 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:v
 .pill-value.neg { color:var(--loss); }
 
 .chart-wrap { background:var(--surface2); border-radius:8px; padding:12px 8px 8px; margin-bottom:14px; position:relative; }
+ .chart-title-row { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:4px; }
+.chart-replay { flex-shrink:0; border:1px solid var(--border); border-radius:20px; padding:5px 9px; color:var(--text2); background:var(--surface); font-size:10px; font-weight:700; }
+.chart-replay:active { transform:scale(.96); }
 .chart-title { font-size:10px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--text2); margin-bottom:10px; padding:0 4px; }
 canvas { display:block; width:100%; cursor:pointer; }
 
@@ -972,7 +981,7 @@ function chartData(data) {
   return order.map(k => {
     const m = byMonth[k];
     const bilan = r2(m.gains - m.mises);
-    return { key:k, label:m.label, mises:r2(m.mises), gains:r2(m.gains), bilan, nb:m.nb };
+    return { key:k, label:m.label, year:Number(k.slice(0,4)), monthIndex:Number(k.slice(5,7))-1, mises:r2(m.mises), gains:r2(m.gains), bilan, nb:m.nb };
   });
 }
 
@@ -1573,8 +1582,7 @@ function drawChart(canvas, data) {
   const cd = chartData(data);
   const wrap = canvas.parentElement;
   // Reset any previous tooltip dom for this canvas
-  const prevTip = wrap.querySelector('.chart-tooltip');
-  if (prevTip) prevTip.remove();
+  document.querySelectorAll('.chart-tooltip').forEach(el => el.remove());
 
   if (!cd || cd.length < 1) {
     canvas.height = 40;
@@ -1692,11 +1700,12 @@ function drawChart(canvas, data) {
       ctx.restore();
     }
     // Valeurs uniquement à la fin de la montée, pour un rendu net.
-    if (progress >= 1) {
+    if (progress > 0) {
       ctx.fillStyle = isPos ? '#A6FF3B' : '#FF6B75';
       ctx.font = 'bold 9px Inter, sans-serif'; ctx.textAlign = 'center';
-      const valueLabel = (m.bilan > 0 ? '+' : m.bilan < 0 ? '−' : '') + Math.round(Math.abs(m.bilan));
-      const labelY = isPos ? Math.max(10, toY(m.bilan) - 4) : Math.min(H - 28, toY(m.bilan) + 11);
+      const animatedValue = m.bilan * progress;
+      const valueLabel = (animatedValue > 0 ? '+' : animatedValue < 0 ? '−' : '') + Math.round(Math.abs(animatedValue));
+      const labelY = isPos ? Math.max(10, top - 4) : Math.min(H - 28, top + h + 11);
       ctx.fillText(valueLabel, cx, labelY);
     }
     ctx.fillStyle = '#787878'; ctx.font = '9px Inter, sans-serif'; ctx.textAlign = 'center';
@@ -1780,6 +1789,25 @@ function drawChart(canvas, data) {
   canvas.setAttribute('aria-label','Graphique interactif : touchez une barre pour afficher les statistiques du mois');
 }
 
+/* ─── Subtle tactile motion for decorative, non-interactive surfaces ─── */
+document.addEventListener('click', function(e) {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (e.target.closest('button,a,input,select,textarea,[role="button"],canvas,.chart-tooltip')) return;
+  const el = e.target.closest('.scoreboard,.stat-card,.record-card,.year-header,.pill,.bet-row,.section-label,.chart-title,.app-logo');
+  if (!el) return;
+  el.classList.remove('bulle-tap');
+  void el.offsetWidth;
+  el.classList.add('bulle-tap');
+  const rect = el.getBoundingClientRect();
+  const ripple = document.createElement('span');
+  ripple.className = 'bulle-ripple';
+  ripple.style.left = (e.clientX - rect.left) + 'px';
+  ripple.style.top = (e.clientY - rect.top) + 'px';
+  el.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 500);
+  if (navigator.vibrate) { try { navigator.vibrate(10); } catch(err) {} }
+});
+
 /* ─── History ───────────────────────────────────────────────────────── */
 const HISTORY_VISIBLE_KEY = 'statbet_history_visible_v1';
 let historyVisibleByYear = {};
@@ -1852,7 +1880,7 @@ function renderHistory() {
           </div>
         </div>
         <div class="chart-wrap">
-          <div class="chart-title">Évolution mensuelle · touchez une barre pour les détails</div>
+          <div class="chart-title-row"><div class="chart-title">Évolution mensuelle · touchez une barre pour les détails</div><button class="chart-replay" type="button" onclick="replayChart(this)" aria-label="Rejouer l’animation du graphique">↻ Rejouer</button></div>
           <canvas data-year="${year}"></canvas>
         </div>
         <button class="history-toggle" type="button" onclick="toggleBetList(this)">Afficher tout l’historique (${yBets.length})</button>
@@ -1903,6 +1931,14 @@ function toggleBetList(btn) {
   historyVisibleByYear[year] = historyVisibleByYear[year] !== true;
   persistHistoryVisibility();
   applyHistoryVisibility(block.parentElement);
+}
+
+function replayChart(btn) {
+  const canvas = btn.closest('.chart-wrap')?.querySelector('canvas');
+  if (!canvas) return;
+  const year = Number(canvas.dataset.year);
+  drawChart(canvas, bets.filter(b => Number(b.year || new Date(b.date).getFullYear()) === year));
+  canvas.dataset.drawn = '1';
 }
 
 function toggleYear(btn) {
