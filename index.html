@@ -15,24 +15,25 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:        #0A0A0A;
-  --surface:   #141414;
-  --surface2:  #1E1E1E;
-  --border:    #2E2E2E;
-  /* Palette Pauly’Bet : vert émeraude, turquoise et tons chauds */
-  --wina:      #20C997;
-  --wina-dark: #159B78;
-  --wina-glow: rgba(32,201,151,.20);
-  --wina-bg:   rgba(32,201,151,.09);
-  --win:       #20C997;
-  --win-bg:    rgba(32,201,151,.10);
-  --win-border:rgba(32,201,151,.38);
-  --loss:      #FF5B5B;
-  --loss-bg:   rgba(255,91,91,.10);
-  --loss-border:rgba(255,91,91,.40);
-  --text:      #FFFFFF;
-  --text2:     #C0C0C0;
-  --text3:     #787878;
+  --bg:        #080A08;
+  --surface:   #111511;
+  --surface2:  #1A201A;
+  --border:    #293229;
+  /* Pauly’Bet — vert pomme lumineux, chiffres lilas, pertes corail */
+  --wina:      #A6FF3B;
+  --wina-dark: #83D926;
+  --wina-glow: rgba(166,255,59,.22);
+  --wina-bg:   rgba(166,255,59,.09);
+  --win:       #A6FF3B;
+  --win-bg:    rgba(166,255,59,.10);
+  --win-border:rgba(166,255,59,.38);
+  --loss:      #FF6B75;
+  --loss-bg:   rgba(255,107,117,.10);
+  --loss-border:rgba(255,107,117,.40);
+  --number:    #C5B6FF;
+  --text:      #F7F8F4;
+  --text2:     #B7BEB4;
+  --text3:     #788276;
   --font-d:    'Barlow Condensed', sans-serif;
   --font-b:    'Inter', sans-serif;
 }
@@ -109,8 +110,8 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:v
 .stat-value.win  { color:var(--win); }
  #g-gains { color:var(--win); }
 .stat-value.loss { color:var(--loss); }
-#g-mises { color:var(--text); }
-#g-gains { color:var(--wina); }
+#g-mises { color:var(--number); text-shadow:0 0 18px rgba(197,182,255,.10); }
+#g-gains { color:var(--wina); text-shadow:0 0 18px var(--wina-glow); }
 .stat-sub { font-size:10px; color:var(--text3); margin-top:2px; }
 
 /* ── Form ── */
@@ -289,7 +290,7 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:v
 }
 .record-edit-row input::-webkit-inner-spin-button,
 .record-edit-row input::-webkit-outer-spin-button { -webkit-appearance: none; }
-.record-edit-row input:focus { border-color: var(--win); box-shadow: 0 0 0 3px rgba(32,201,151,.15); }
+.record-edit-row input:focus { border-color: var(--win); box-shadow: 0 0 0 3px rgba(166,255,59,.15); }
 .record-edit-actions { display: flex; gap: 8px; margin-top: 14px; }
 .record-edit-actions button {
   flex: 1; border: none; border-radius: 8px; padding: 11px;
@@ -354,8 +355,8 @@ canvas { display:block; width:100%; cursor:pointer; }
 .bet-row.loss { background:var(--loss-bg); border-color:var(--loss-border); }
 
 .bet-badge { font-size:9px; font-weight:700; letter-spacing:.6px; padding:3px 7px; border-radius:5px; flex-shrink:0; }
-.win  .bet-badge { color:var(--win);  background:rgba(32,201,151,.18); }
-.loss .bet-badge { color:var(--loss); background:rgba(255,91,91,.18); }
+.win  .bet-badge { color:var(--win);  background:rgba(166,255,59,.18); }
+.loss .bet-badge { color:var(--loss); background:rgba(255,107,117,.18); }
 
 .bet-info { flex:1; min-width:0; }
 .bet-date { font-size:11px; color:var(--text2); margin-bottom:2px; }
@@ -371,7 +372,7 @@ canvas { display:block; width:100%; cursor:pointer; }
   border-radius:7px; border:none; background:transparent; color:var(--text3);
   cursor:pointer; transition:background .15s,color .15s; -webkit-tap-highlight-color:transparent;
 }
-.bet-delete:hover, .bet-delete:active { background:rgba(255,91,91,.15); color:var(--loss); }
+.bet-delete:hover, .bet-delete:active { background:rgba(255,107,117,.15); color:var(--loss); }
 
 .bet-edit {
   flex-shrink:0; width:32px; height:32px; display:flex; align-items:center; justify-content:center;
@@ -391,7 +392,7 @@ canvas { display:block; width:100%; cursor:pointer; }
 .del-actions button { flex:1; padding:14px; border-radius:9px; border:none; font-family:var(--font-d); font-size:16px; font-weight:700; letter-spacing:.5px; cursor:pointer; transition:opacity .15s,transform .1s; }
 .del-actions button:active { transform:scale(.97); }
 #del-cancel  { background:var(--surface2); color:var(--text2); }
-#del-confirm { background:var(--loss);     color:#fff; box-shadow:0 4px 16px rgba(255,91,91,.3); }
+#del-confirm { background:var(--loss);     color:#fff; box-shadow:0 4px 16px rgba(255,107,117,.3); }
 
 /* ── Edit modal (réutilise le style du sheet) ── */
 #edit-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:300; align-items:flex-end; justify-content:center; }
@@ -410,6 +411,100 @@ canvas { display:block; width:100%; cursor:pointer; }
 ::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
 
 @media(min-width:481px){ #app{ border-left:1px solid var(--border); border-right:1px solid var(--border); } }
+
+/* ── Motion design : accueil Pauly’Bet ── */
+body {
+  background:
+    radial-gradient(ellipse at 12% 0%, rgba(166,255,59,.075), transparent 34rem),
+    radial-gradient(ellipse at 100% 28%, rgba(197,182,255,.045), transparent 28rem),
+    var(--bg);
+}
+#app { isolation:isolate; }
+#tabbar {
+  background:rgba(15,19,15,.88);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+  border-bottom-color:rgba(166,255,59,.12);
+}
+.tab-btn { transition:color .25s ease,border-color .25s ease,background .25s ease; }
+.tab-btn.active { color:var(--wina); background:linear-gradient(180deg,rgba(166,255,59,.055),transparent); }
+.panel-inner { animation:pageEnter .55s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes pageEnter { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+.logo-row { margin-bottom:20px; }
+.app-logo { letter-spacing:2.5px; text-shadow:0 0 28px rgba(166,255,59,.08); }
+.app-logo span { color:var(--wina); }
+.logo-row::after {
+  content:'SPORTS DATA · TON SUIVI';
+  display:block;
+  position:absolute;
+  margin-top:58px;
+  font-size:8px;
+  font-weight:700;
+  letter-spacing:2px;
+  color:var(--text3);
+}
+.scoreboard {
+  border:1px solid rgba(166,255,59,.18);
+  border-radius:18px;
+  padding:22px 19px 19px;
+  background:
+    radial-gradient(ellipse at 100% 0%,rgba(166,255,59,.12),transparent 60%),
+    linear-gradient(135deg,#151B13 0%,#101410 65%,#151319 100%);
+  box-shadow:0 14px 38px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.035);
+  animation:heroFloatIn .75s cubic-bezier(.16,1,.3,1) both;
+}
+.scoreboard::before { height:3px; background:linear-gradient(90deg,var(--wina),rgba(166,255,59,.15),transparent); }
+@keyframes heroFloatIn { from { opacity:0; transform:translateY(16px) scale(.985); } to { opacity:1; transform:translateY(0) scale(1); } }
+.scoreboard-label { color:#B9C4B3; letter-spacing:1.8px; }
+.scoreboard-value { font-size:clamp(46px,12vw,58px); letter-spacing:-1.5px; text-shadow:0 0 26px rgba(166,255,59,.10); }
+.scoreboard-value.pos { color:var(--wina); }
+.scoreboard-value.neg { color:var(--loss); }
+.stats-row { gap:10px; margin-bottom:10px; }
+.stat-card {
+  position:relative;
+  overflow:hidden;
+  background:linear-gradient(145deg,rgba(25,31,25,.98),rgba(16,20,16,.98));
+  border:1px solid rgba(255,255,255,.045);
+  border-top:1px solid rgba(255,255,255,.07);
+  border-radius:13px;
+  padding:14px 13px 12px;
+  box-shadow:0 8px 22px rgba(0,0,0,.12);
+  transition:transform .25s ease,border-color .25s ease,background .25s ease;
+  animation:cardRise .65s cubic-bezier(.2,.7,.2,1) both;
+}
+.stat-card:nth-child(2) { animation-delay:.08s; }
+.stat-card:nth-child(3) { animation-delay:.14s; }
+.stat-card::after {
+  content:'';
+  position:absolute;
+  width:70px;height:70px;
+  right:-36px;top:-38px;
+  border-radius:50%;
+  background:var(--wina);
+  opacity:.055;
+  filter:blur(2px);
+  pointer-events:none;
+}
+@keyframes cardRise { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+.stat-card.win-card { border-top:1px solid rgba(166,255,59,.4); }
+.stat-card.loss-card { border-top:1px solid rgba(255,107,117,.4); }
+.stat-label { letter-spacing:1.4px; }
+.stat-value { font-size:23px; letter-spacing:.2px; }
+.stat-value:not(.win):not(.loss) { color:var(--number); }
+.stat-value.win { color:var(--wina); text-shadow:0 0 16px rgba(166,255,59,.12); }
+.stat-value.loss { color:var(--loss); }
+#panel-dashboard .section-label { margin-bottom:11px; }
+.sync-btn { border-radius:11px; transition:transform .2s ease,border-color .2s ease,background .2s ease; }
+.sync-btn:active { transform:rotate(25deg) scale(.94); }
+.btn-submit { color:#10150B; font-weight:800; }
+@media (hover:hover) {
+  .stat-card:hover { transform:translateY(-3px); border-color:rgba(166,255,59,.20); }
+  .sync-btn:hover { border-color:var(--wina); background:var(--wina-bg); }
+}
+@media (prefers-reduced-motion:reduce) {
+  *,*::before,*::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; scroll-behavior:auto !important; transition-duration:.01ms !important; }
+}
+
 </style>
 </head>
 <body>
