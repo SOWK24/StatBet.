@@ -208,9 +208,13 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:v
 .celebration-amount { font-size:clamp(32px,9vw,44px);font-weight:800;letter-spacing:-1.5px;margin:10px 0 2px; }
 .result-celebration.win .celebration-amount { color:#A6FF3B; }
 .result-celebration.loss .celebration-amount { color:#FF6B75; }
-.celebration-caption { font-size:12px;color:var(--text2);margin-bottom:24px; }
+ .celebration-caption { font-size:12px;color:var(--text2);margin-bottom:12px; }
+.celebration-encouragement { font-size:11px;color:var(--text2);opacity:.82;line-height:1.5; }
+.result-celebration.loss.show .celebration-card { animation:lossDrop .55s cubic-bezier(.2,.8,.2,1) both; }
+.result-celebration.loss.show { animation:lossFlash .35s ease-out, lossShake .34s .05s ease-in-out; }
+@keyframes lossShake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 40%{transform:translateX(4px)} 60%{transform:translateX(-3px)} 80%{transform:translateX(2px)} }
 .celebration-card button { width:100%;padding:13px;border:0;border-radius:10px;background:var(--wina);color:#101010;font-weight:800;font-size:13px; }
-@media (prefers-reduced-motion: reduce) { .panel.active .panel-inner,.chart-wrap,.celebration-card,.scoreboard-value.number-pop { animation:none; } }
+@media (prefers-reduced-motion: reduce) { .panel.active .panel-inner,.chart-wrap,.celebration-card,.scoreboard-value.number-pop,.result-celebration.loss.show,.result-celebration.win.show { animation:none!important; } .celebration-particle { animation:none!important; display:none; } }
 
 /* ── Toast ── */
 #toast {
@@ -725,12 +729,12 @@ body {
 <div id="toast"></div>
 <div id="result-celebration" class="result-celebration" role="dialog" aria-modal="true" aria-live="polite" onclick="closeResultCelebration()">
   <div class="celebration-particles" id="celebration-particles" aria-hidden="true"></div>
-  <div class="celebration-card" onclick="event.stopPropagation()">
+  <div class="celebration-card">
     <div class="celebration-symbol" id="celebration-symbol">✓</div>
     <div class="celebration-title" id="celebration-title">PARI GAGNÉ</div>
     <div class="celebration-amount" id="celebration-amount">+0 €</div>
     <div class="celebration-caption" id="celebration-caption">Bénéfice net</div>
-    <button type="button" onclick="closeResultCelebration()">Continuer</button>
+    <div class="celebration-encouragement" id="celebration-encouragement">On continue, un pari à la fois.</div>
   </div>
 </div>
 
@@ -1538,6 +1542,7 @@ function showResultCelebration(isWin, amount) {
   document.getElementById('celebration-title').textContent = isWin ? 'BIEN JOUÉ !' : 'ÇA N’EST PAS PASSÉ';
   document.getElementById('celebration-amount').textContent = (isWin ? '+' : '−') + fmtEurPlain(amount);
   document.getElementById('celebration-caption').textContent = isWin ? 'BÉNÉFICE NET' : 'MISE PERDUE';
+  document.getElementById('celebration-encouragement').textContent = isWin ? 'Savoure le moment. Reste discipliné.' : 'Un résultat ne définit pas ta stratégie.';
   const particles = document.getElementById('celebration-particles');
   particles.innerHTML = '';
   if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -1736,7 +1741,13 @@ function drawChart(canvas, data) {
   tip.setAttribute('role','dialog');
   tip.setAttribute('aria-modal','true');
   document.body.appendChild(tip);
-  tip.addEventListener('click', e => { if (e.target === tip) hideTip(); });
+  tip.addEventListener('click', e => { if (e.target === tip || e.target.classList.contains('chart-sheet-backdrop')) hideTip(); });
+  let sheetTouchStart = 0;
+  tip.addEventListener('touchstart', e => { if (e.touches[0]) sheetTouchStart = e.touches[0].clientY; }, {passive:true});
+  tip.addEventListener('touchend', e => {
+    const touch = e.changedTouches[0];
+    if (touch && touch.clientY - sheetTouchStart > 70) hideTip();
+  }, {passive:true});
 
   function showTip(bar, clientX) {
     const m = bar.m;
@@ -1947,9 +1958,9 @@ function toggleYear(btn) {
   body.classList.toggle('open');
   if (body.classList.contains('open')) {
     const canvas = body.querySelector('canvas');
-    if (canvas && !canvas.dataset.drawn) {
-      const year = canvas.dataset.year;
-      const yBets = bets.filter(b => b.year === parseInt(year));
+    if (canvas) {
+      const year = Number(canvas.dataset.year);
+      const yBets = bets.filter(b => Number(b.year || new Date(b.date).getFullYear()) === year);
       drawChart(canvas, yBets);
       canvas.dataset.drawn = '1';
     }
