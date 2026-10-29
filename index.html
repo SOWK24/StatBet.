@@ -994,7 +994,7 @@ input[type="submit"]:active, input[type="reset"]:active, summary:active,
 #result-celebration .brand-result-shards,
 #result-celebration .brand-result-content{display:none!important}
 #result-celebration #result-demo-frame{display:block!important;position:absolute!important;inset:0!important;width:100%!important;height:100%!important;border:0!important;z-index:2!important;background:#070908!important}
-#result-celebration>button{display:block!important;z-index:5!important}
+#result-celebration #result-demo-dismiss-layer{display:block!important;z-index:4!important}#result-celebration>button{display:block!important;z-index:5!important}
 </style>
 </head>
 <body>
@@ -1156,7 +1156,8 @@ input[type="submit"]:active, input[type="reset"]:active, summary:active,
     <img class="logo-shard shard-3" src="./275C6C76-2C7B-40CA-9CC4-853F38A703DA.svg?v=4" alt="">
     <img class="logo-shard shard-4" src="./275C6C76-2C7B-40CA-9CC4-853F38A703DA.svg?v=4" alt="">
   </div>
-  <iframe id="result-demo-frame" title="Animation du résultat Pauly’Bet" src="./demo-animation.html?embed=1" style="position:absolute;inset:0;width:100%;height:100%;border:0;background:#070908;z-index:10"></iframe>
+  <iframe id="result-demo-frame" title="Animation du résultat Pauly’Bet" src="./demo-animation.html?embed=1" style="position:absolute;inset:0;width:100%;height:100%;border:0;background:#070908;z-index:10;pointer-events:none"></iframe>
+  <div id="result-demo-dismiss-layer" onclick="closeResultCelebration()" aria-label="Fermer le résultat" style="position:absolute;inset:0;z-index:20;cursor:pointer"></div>
   <button type="button" aria-label="Fermer le résultat" onclick="closeResultCelebration()" style="position:absolute;z-index:30;top:max(12px,env(safe-area-inset-top));right:14px;width:38px;height:38px;border:1px solid rgba(255,255,255,.2);border-radius:50%;background:rgba(10,14,10,.7);color:#fff;font-size:22px">×</button>
 </div>
 
@@ -2173,12 +2174,16 @@ function showResultCelebration(isWin, amount) {
     }
   };
   if (demoFrame) {
-    if (demoFrame.dataset.ready === '1') sendDemoResult();
-    else {
-      demoFrame.addEventListener('load', () => {
-        demoFrame.dataset.ready = '1';
+    // Le cadre peut avoir fini de charger avant l'ouverture du résultat :
+    // on envoie directement si son document est prêt, sinon on attend son chargement.
+    try {
+      if (demoFrame.contentDocument && demoFrame.contentDocument.readyState === 'complete') {
         sendDemoResult();
-      }, { once: true });
+      } else {
+        demoFrame.addEventListener('load', sendDemoResult, { once: true });
+      }
+    } catch (e) {
+      demoFrame.addEventListener('load', sendDemoResult, { once: true });
     }
   }
   if (!reduced) haptique(isWin ? 'victoire' : 'defaite');
