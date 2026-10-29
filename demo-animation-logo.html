@@ -29,7 +29,7 @@ button:hover{filter:brightness(1.1)}
 .note{font-size:11px;color:#626a60;margin-top:18px}
 @media(max-width:600px){main{padding:18px 12px}.sub{max-width:310px;font-size:12px}#stage{width:min(88vw,420px)}}
 
-html:has(body.embed),body.embed{background:transparent!important;background-color:transparent!important;background-image:none!important;min-height:100%;height:100%;display:block;overflow:hidden}body.embed main{width:100%;height:100%;background:transparent!important;padding:0;margin:0}body.embed .kicker,body.embed h1,body.embed .sub,body.embed .controls,body.embed .note{display:none}body.embed #stage{width:100%;height:100%;aspect-ratio:auto;margin:0;background:transparent!important}body.embed svg{width:100%;height:100%}
+html,html:has(body.embed),body.embed,body.embed main,body.embed #stage,body.embed svg{background:transparent!important;background-color:transparent!important;background-image:none!important}body.embed,html:has(body.embed){min-height:100%;height:100%;display:block;overflow:hidden}body.embed main{width:100%;height:100%;padding:0;margin:0}body.embed .kicker,body.embed h1,body.embed .sub,body.embed .controls,body.embed .note{display:none}body.embed #stage{width:100%;height:100%;aspect-ratio:auto;margin:0}body.embed svg{width:100%;height:100%;display:block;overflow:visible}
 </style>
 </head>
 <body>
