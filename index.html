@@ -1616,22 +1616,62 @@ function addBet() {
 }
 
 const WIN_PUNCHLINES = [
-  "Le bookmaker pleure en silence.", "Le ticket était plus chaud que le café.",
-  "La cote a cligné des yeux.", "Aujourd’hui, les maths sont dans ton camp.",
-  "Le scénario était écrit en vert.", "Le portefeuille vient de respirer.",
-  "Un point pour la patience.", "Le flair avait mis son maillot.",
-  "Même le VAR valide celle-là.", "Le pronostic avait du répondant.",
-  "Le compte prend un peu de soleil.", "La discipline fait le spectacle.",
-  "Le suspense, c’était pour les autres.", "Le ticket passe en légende."
+  "Le bookmaker vient de fermer l’appli.",
+  "Le ticket a payé son propre loyer.",
+  "Le compte bancaire fait un petit moonwalk.",
+  "Le flair a encore frappé. Appelez la police.",
+  "Les stats ont mis leurs lunettes aujourd’hui.",
+  "Le pronostic était plus précis qu’un GPS.",
+  "La cote vient de se faire recadrer.",
+  "On n’est pas là pour enfiler des cotes.",
+  "Le banquier vient de sourire. C’est rare.",
+  "Même le canapé célèbre avec toi.",
+  "Le ticket est validé, le champagne reste virtuel.",
+  "Le destin a cliqué sur « confirmer ».",
+  "C’est pas de la chance, c’est une très belle coïncidence.",
+  "Les experts ? Aujourd’hui, c’est toi.",
+  "Le portefeuille vient de reprendre connaissance.",
+  "Une analyse propre, un résultat qui fait plaisir.",
+  "Le bookmaker regarde tes stories en silence.",
+  "Le ticket a fait plus de rebondissements qu’une série Netflix.",
+  "Le compte prend l’ascenseur, direction le haut.",
+  "Le cerveau tactique a marqué dans le temps additionnel.",
+  "On garde la tête froide et le ticket au chaud.",
+  "La cote était belle, toi aussi aujourd’hui.",
+  "Le pronostic a mis tout le monde d’accord.",
+  "Celle-là, elle mérite un ralenti."
 ];
 const LOSS_PUNCHLINES = [
-  "Même Mbappé rate des penaltys.", "Le ballon n’a pas voulu rentrer.",
-  "Le scénario a pris un autre virage.", "Le ticket a choisi le cinéma.",
-  "Pas ce soir, champion.", "Le suspense était gratuit, lui.",
-  "On range le costume de devin.", "Le sport adore les rebondissements.",
-  "La prochaine analyse repart à zéro.", "Même les stats ont parfois le trac.",
-  "Le ticket a tenté une sortie artistique.", "Le favori avait besoin d’une sieste.",
-  "Un mauvais résultat, pas une identité.", "On respire, on garde la tête froide."
+  "Le ballon a vu le but et a changé d’avis.",
+  "Le ticket est parti chercher du pain.",
+  "Le bookmaker vient de commander un dessert.",
+  "Le scénario a été écrit par ton pire ennemi.",
+  "Même la VAR n’a pas voulu prendre position.",
+  "Le favori avait visiblement oublié de venir.",
+  "Le ticket a choisi la voie du drama.",
+  "On avait le plan. Le sport avait un autre plan.",
+  "Le portefeuille vient de prendre une petite douche froide.",
+  "C’était donc ça, le fameux plot twist.",
+  "Le pronostic a glissé sur une peau de banane.",
+  "Le ballon rond, les résultats parfois carrés.",
+  "Le ticket est en pause réflexion.",
+  "Le sport vient de rappeler qui commande.",
+  "Le favori a joué comme s’il avait un train.",
+  "Les stats demandent à ne pas être mêlées à cette histoire.",
+  "On va dire que c’était un don au spectacle.",
+  "Le ticket a fait un stage en disparition.",
+  "Pas grave, même les GPS recalculent l’itinéraire.",
+  "Le scénario est signé par un scénariste sous caféine.",
+  "Le portefeuille a demandé cinq minutes seul.",
+  "Ça pique un peu, mais on garde la tête froide.",
+  "Aujourd’hui, le flair était en télétravail.",
+  "On range la boule de cristal, elle est en SAV.",
+  "La prochaine fois, on laisse le ballon finir sa phrase.",
+  "Le ticket a pris une sortie qu’on n’avait pas prévue.",
+  "Le favori a choisi le pire moment pour être humain.",
+  "Le suspense était là. Le résultat, beaucoup moins.",
+  "Ce pari rejoint le musée des occasions manquées.",
+  "Le sport : la seule série où le scénario nous déteste."
 ];
 let lastWinPunchline = '';
 let lastLossPunchline = '';
@@ -1652,8 +1692,11 @@ function showResultCelebration(isWin, amount) {
   modal.className = 'result-celebration show ' + (isWin ? 'win' : 'loss');
   try { modal.focus({ preventScroll: true }); } catch(e) { modal.focus(); }
   modal.setAttribute('aria-label', isWin ? 'Victoire au pari' : 'Défaite au pari');
-  document.getElementById('celebration-symbol').textContent = isWin ? 'VICTOIRE' : 'AÏE';
-  document.getElementById('celebration-title').textContent = isWin ? 'PARI VALIDÉ / +1 AU COMPTEUR' : 'LE SPORT A TRANCHÉ';
+  const winHeadlines = ['ÇA PASSE !', 'ON PREND !', 'MASTERCLASS ?', 'LE TICKET EST CHAUD', 'BANQUIER, ÇA VA ?', 'QUEL RÉGAL'];
+  const lossHeadlines = ['AH. BON.', 'LE SPORT, HEIN…', 'ON VA OUBLIER ÇA', 'PLOT TWIST', 'PAS LE JOUR', 'AÏE AÏE AÏE'];
+  const headlines = isWin ? winHeadlines : lossHeadlines;
+  document.getElementById('celebration-symbol').textContent = headlines[Math.floor(Math.random() * headlines.length)];
+  document.getElementById('celebration-title').textContent = pickPunchline(isWin);
   document.getElementById('celebration-amount').textContent = (isWin ? '+' : '−') + fmtEurPlain(amount);
   document.getElementById('celebration-caption').textContent = isWin ? 'BÉNÉFICE NET' : 'MISE PERDUE';
   document.getElementById('celebration-encouragement').textContent = pickPunchline(isWin);
