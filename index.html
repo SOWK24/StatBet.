@@ -2009,7 +2009,9 @@ inputGain.addEventListener('input', updatePreview);
 function addBet() {
   const mise = parseFloat(inputMise.value);
   if (!(mise > 0) || selectedResult === null) return;
-  const gain = selectedResult === 'loss' ? 0 : (parseFloat(inputGain.value) || 0);
+  // Capturer le résultat AVANT de réinitialiser le formulaire.
+  const isWin = selectedResult === 'win';
+  const gain = isWin ? (parseFloat(inputGain.value) || 0) : 0;
   const now  = new Date();
   const newBet = {
     id: `bet-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
@@ -2026,7 +2028,6 @@ function addBet() {
   document.getElementById('btn-loss').className = 'result-btn';
   gainRow.style.display = 'none';
   updatePreview();
-  const isWin = selectedResult === 'win';
   const net = r2(gain - mise);
   pendingResultRefresh = true;
   showToast(isWin ? `✓ +${fmtEurPlain(net)} enregistré !` : `✗ Perte de ${fmtEurPlain(mise)} enregistrée`, isWin ? 'win' : 'loss');
