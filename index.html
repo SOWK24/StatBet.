@@ -1543,10 +1543,9 @@ function addBet() {
   document.getElementById('btn-loss').className = 'result-btn';
   gainRow.style.display = 'none';
   updatePreview();
-  renderDashboard();
   const isWin = gain > mise;
   const net = r2(gain - mise);
-  if (document.getElementById('panel-history')?.classList.contains('active')) renderHistory();
+  pendingResultRefresh = true;
   showToast(isWin ? `✓ +${fmtEurPlain(net)} enregistré !` : `✗ Perte de ${fmtEurPlain(mise)} enregistrée`, isWin ? 'win' : 'loss');
   showResultCelebration(isWin, isWin ? net : mise);
 }
@@ -1586,7 +1585,7 @@ function showResultCelebration(isWin, amount) {
   modal.setAttribute('aria-label', isWin ? 'Victoire au pari' : 'Défaite au pari');
   document.getElementById('celebration-symbol').textContent = isWin ? 'VICTOIRE' : 'AÏE';
   document.getElementById('celebration-title').textContent = isWin ? 'PARI VALIDÉ / +1 AU COMPTEUR' : 'LE SPORT A TRANCHÉ';
-  document.getElementById('celebration-amount').textContent = (isWin ? '+' : '−') + fmtEurPlain(amount) + ' €';
+  document.getElementById('celebration-amount').textContent = (isWin ? '+' : '−') + fmtEurPlain(amount);
   document.getElementById('celebration-caption').textContent = isWin ? 'BÉNÉFICE NET' : 'MISE PERDUE';
   document.getElementById('celebration-encouragement').textContent = pickPunchline(isWin);
   const lines = document.getElementById('celebration-particles');
@@ -1609,10 +1608,16 @@ function showResultCelebration(isWin, amount) {
   resultCelebrationTimer = setTimeout(closeResultCelebration, 3600);
 }
 let resultCelebrationTimer = null;
+let pendingResultRefresh = false;
 function closeResultCelebration() {
   const modal = document.getElementById('result-celebration');
   if (modal) modal.classList.remove('show');
   clearTimeout(resultCelebrationTimer);
+  if (pendingResultRefresh) {
+    pendingResultRefresh = false;
+    renderDashboard();
+    if (document.getElementById('panel-history')?.classList.contains('active')) renderHistory();
+  }
 }
 
 /* ─── Toast ─────────────────────────────────────────────────────────── */
