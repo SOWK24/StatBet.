@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#070908">
+<title>Pauly’Bet — Démo animation résultat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@900&family=Bricolage+Grotesque:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--green:#a6ff3b;--red:#ff5369;--bg:#070908;--ease:cubic-bezier(.16,1,.3,1)}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#070908;color:#f6f8f3;font-family:"Bricolage Grotesque",sans-serif}
+body{min-height:100svh;overflow:hidden}
+.controls{position:fixed;z-index:20;top:max(14px,env(safe-area-inset-top));left:0;right:0;display:flex;justify-content:center;gap:9px;padding:0 12px}
+.controls button{font:800 12px "Bricolage Grotesque",sans-serif;letter-spacing:.05em;color:#f5f7f2;background:#171b17;border:1px solid #30382c;border-radius:999px;padding:11px 16px;cursor:pointer;transition:transform .2s var(--ease),background .2s}
+.controls button:active{transform:scale(.96)}
+.controls button[aria-pressed="true"]{background:#24351a;border-color:#8dcf42}
+.stage{position:relative;isolation:isolate;min-height:100svh;display:grid;place-items:center;overflow:hidden;background:radial-gradient(ellipse at 50% 44%,rgba(106,173,27,.2),transparent 48%),linear-gradient(150deg,#09110b,#111910 48%,#050706)}
+.stage.loss{background:radial-gradient(ellipse at 50% 44%,rgba(150,24,45,.22),transparent 48%),linear-gradient(150deg,#10090c,#260e14 48%,#060607)}
+.rays{position:absolute;inset:-55%;z-index:-2;background:repeating-conic-gradient(from 0deg at 50% 50%,rgba(190,255,110,.055) 0deg 1deg,transparent 1deg 15deg);animation:spin 32s linear infinite;pointer-events:none}
+.loss .rays{background:repeating-conic-gradient(from 0deg at 50% 50%,rgba(255,70,90,.045) 0deg 1deg,transparent 1deg 16deg);animation-duration:40s}
+.halo{position:absolute;width:78vw;height:78vw;max-width:640px;max-height:640px;border-radius:50%;background:radial-gradient(circle,rgba(166,255,59,.10),transparent 68%);animation:halo 4s ease-in-out infinite;pointer-events:none}
+.loss .halo{background:radial-gradient(circle,rgba(255,55,78,.11),transparent 68%)}
+.marquee{position:absolute;left:-10%;right:-10%;top:18%;transform:rotate(-8deg);overflow:hidden;opacity:.12;pointer-events:none;mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
+.marquee-track{display:flex;white-space:nowrap;width:max-content;animation:marquee 25s linear infinite}
+.marquee-track span{font:900 clamp(20px,4vw,42px) "Unbounded",sans-serif;letter-spacing:.12em;padding-right:2rem}
+.marquee.second{top:auto;bottom:17%;transform:rotate(7deg);opacity:.075}.marquee.second .marquee-track{animation-direction:reverse;animation-duration:32s}
+.content{width:100%;padding:100px 20px max(76px,env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;text-align:center;position:relative}
+.kicker{font:800 10px "Bricolage Grotesque",sans-serif;letter-spacing:.28em;color:#d4e7c2;margin-bottom:clamp(18px,4vh,34px);opacity:0;animation:fadeUp .5s .1s var(--ease) forwards}
+.loss .kicker{color:#ffb4bd}
+.headline{width:100%;max-width:100%;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;column-gap:.24em;row-gap:.12em;font:900 clamp(27px,8.1vw,76px)/1.18 "Unbounded",sans-serif;letter-spacing:-.075em;text-transform:uppercase;overflow-wrap:anywhere;filter:drop-shadow(0 12px 25px rgba(0,0,0,.24));}
+.word{display:inline-flex;white-space:nowrap}
+.letter{display:inline-block;opacity:0;transform:translateY(45%) scale(.72);animation:letterIn .56s var(--ease) forwards;animation-delay:calc(var(--i)*22ms + .12s)}
+.stage:not(.loss) .letter{color:#f4ffe7;text-shadow:0 0 25px rgba(166,255,59,.13)}
+.loss .letter{color:#f2e6e8;text-shadow:0 0 18px rgba(255,70,90,.09)}
+.stage.play .headline{animation:headlineLand 1.08s var(--ease) both,hoverFloat 3.8s 1.08s ease-in-out infinite}
+.stage.loss.play .headline{animation:headlineLand 1.08s var(--ease) both,hoverFloatLoss 4.2s 1.08s ease-in-out infinite}
+.amount{font:800 clamp(32px,9vw,58px)/1.1 "Bricolage Grotesque",sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.045em;margin-top:clamp(22px,4vh,38px);color:var(--green);opacity:0;animation:fadeUp .65s .48s var(--ease) forwards,amountPulse 3.4s 1.2s ease-in-out infinite}
+.loss .amount{color:#ff8a98;animation:fadeUp .65s .48s var(--ease) forwards,lossPulse 3.8s 1.2s ease-in-out infinite}
+.caption{font:800 10px "Bricolage Grotesque",sans-serif;letter-spacing:.22em;color:rgba(255,255,255,.54);margin-top:10px;opacity:0;animation:fadeUp .5s .62s var(--ease) forwards}
+.punchline{max-width:90%;margin-top:clamp(20px,4vh,32px);font:600 clamp(14px,3.8vw,17px)/1.45 "Bricolage Grotesque",sans-serif;color:#e6e9e3}
+.punchline span{display:inline-block;opacity:0;transform:translateY(7px);animation:lineIn .45s var(--ease) forwards;animation-delay:calc(var(--i)*85ms + .72s)}
+.dismiss{position:absolute;bottom:max(26px,env(safe-area-inset-bottom));font:800 9px "Bricolage Grotesque",sans-serif;letter-spacing:.2em;color:rgba(255,255,255,.38);animation:softPulse 2.4s ease-in-out infinite}
+@keyframes spin{to{transform:rotate(360deg)}}@keyframes marquee{to{transform:translateX(-50%)}}@keyframes halo{0%,100%{transform:scale(.94);opacity:.6}50%{transform:scale(1.06);opacity:1}}
+@keyframes headlineLand{0%{transform:scale(2.25) translateY(9%);opacity:0}52%{transform:scale(.91) translateY(-2%);opacity:1}72%{transform:scale(1.045) translateY(1%)}88%{transform:scale(.988)}100%{transform:scale(1);opacity:1}}
+@keyframes hoverFloat{0%,100%{transform:translateY(0) scale(1);filter:drop-shadow(0 12px 25px rgba(0,0,0,.24))}50%{transform:translateY(-3px) scale(1.012);filter:drop-shadow(0 12px 26px rgba(166,255,59,.12))}}
+@keyframes hoverFloatLoss{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(2px) scale(.995)}}
+@keyframes letterIn{to{opacity:1;transform:translateY(0) scale(1)}}@keyframes fadeUp{to{opacity:1;transform:translateY(0)}}@keyframes lineIn{to{opacity:1;transform:translateY(0)}}
+@keyframes amountPulse{0%,100%{transform:scale(1);text-shadow:0 0 0 rgba(166,255,59,0)}50%{transform:scale(1.025);text-shadow:0 0 18px rgba(166,255,59,.2)}}
+@keyframes lossPulse{0%,100%{transform:scale(1)}50%{transform:scale(.99);text-shadow:0 0 14px rgba(255,70,90,.16)}}@keyframes softPulse{0%,100%{opacity:.35}50%{opacity:.8}}
+@media(max-width:380px){.headline{font-size:clamp(25px,7.4vw,32px)}.content{padding-left:14px;padding-right:14px}.marquee{top:23%}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}.rays{animation:none}}
+</style>
+</head>
+<body>
+<div class="controls" aria-label="Choisir une démo">
+<button id="gainBtn" aria-pressed="true" onclick="renderDemo('gain')">APERÇU GAIN</button>
+<button id="lossBtn" aria-pressed="false" onclick="renderDemo('loss')">APERÇU PERTE</button>
+</div>
+<main class="stage play" id="stage" aria-live="polite">
+<div class="rays" aria-hidden="true"></div><div class="halo" aria-hidden="true"></div>
+<div class="marquee" aria-hidden="true"><div class="marquee-track" id="marqueeOne"></div></div>
+<div class="marquee second" aria-hidden="true"><div class="marquee-track" id="marqueeTwo"></div></div>
+<section class="content">
+<div class="kicker">PAULY’BET · COUP DU SOIR</div>
+<div class="headline" id="headline" aria-label="Ça sent le yacht"></div>
+<div class="amount" id="amount">+45,00 €</div>
+<div class="caption" id="caption">BÉNÉFICE NET</div>
+<div class="punchline" id="punchline"></div>
+</section>
+<div class="dismiss">TOUCHE POUR REJOUER L’ANIMATION</div>
+</main>
+<script>
+const phrases={
+gain:[
+["Le bookmaker pleure","La calculatrice demande une pause."],
+["Ça sent le yacht","Bon, au moins un pédalo."],
+["Voyant extralucide","La boule de cristal est en CDI."],
+["Encore du cash","On reste humble. Presque."],
+["Maman avait raison","On va éviter de lui dire."],
+["C’était donc ça","Deux neurones, un grand soir."],
+["Ça rentre tranquille","Le compte reprend des couleurs."],
+["Banco mon coco","Le destin a fait un détour."],
+["On prend merci","Pas de discours, juste le chiffre."],
+["La cote est mienne","Pour une fois, les astres bossent."],
+["Joli petit braquage","Légal, mais avec du suspense."],
+["Le flair fonctionne","Ne surtout pas s’emballer."],
+["Ça paye le resto","Entrée comprise, on respire."],
+["La chance sourit","On lui rendra l’appareil."],
+["Propre et net","Le tableau Excel applaudit."],
+["On connaît le sport","Et parfois, il nous le rend."],
+["Le karma rembourse","Il était temps, franchement."],
+["Le ticket régale","Le banquier peut attendre."],
+["Pas mal du tout","On fait comme si c’était prévu."],
+["Ça fait plaisir","Capture d’écran, puis modestie."]
+],
+loss:[
+["Next","Le générique peut défiler."],
+["On refait pas","Le match est déjà dans les archives."],
+["Ça arrive aux meilleurs","Et aux autres aussi, visiblement."],
+["Le VAR t’a eu","La télé n’a rien arrangé."],
+["Pas ton jour","Demain, on remet le costume."],
+["C’était écrit","Mais apparemment dans une autre langue."],
+["Le sport, hein","Toujours un scénariste imprévisible."],
+["On garde la foi","Et on ferme l’application deux minutes."],
+["Petit détour","Le bénéfice prend des vacances."],
+["Ça pique un peu","Un verre d’eau et on avance."],
+["Le scénario troll","Même Netflix n’aurait pas osé."],
+["Rien à signaler","À part ce petit détail rouge."],
+["On apprend encore","L’expérience coûte parfois un ticket."],
+["Presque légendaire","Le presque fait beaucoup de travail."],
+["On passe à autre","Cette page mérite un swipe."],
+["La cote mentait","Ou alors c’était nous."],
+["Le suspense inutile","Merci pour cette émotion gratuite."],
+["On reste dignes","Le portefeuille, un peu moins."],
+["Ça ira mieux","La boule de cristal est en congé."],
+["Pas de panique","Juste un scénario à oublier."]
+]};
+const gainMoods=["CASH","BANCO","ÇA PASSE","BON SIGNE","JOLI COUP","ÇA RENTRE"];
+const lossMoods=["OUPS","NEXT","ON RESPIRE","PAS GRAVE","RECALAGE","ON AVANCE"];
+let last={gain:-1,loss:-1},current='gain';
+function pick(kind){let n=Math.floor(Math.random()*phrases[kind].length);if(n===last[kind])n=(n+1+Math.floor(Math.random()*(phrases[kind].length-1)))%phrases[kind].length;last[kind]=n;return phrases[kind][n]}
+function fillMarquee(kind){const words=kind==='gain'?gainMoods:lossMoods;const text=Array.from({length:12},(_,i)=>words[i%words.length]).join('　 ·　 ');document.getElementById('marqueeOne').innerHTML='<span>'+text+'</span><span>'+text+'</span>';document.getElementById('marqueeTwo').innerHTML='<span>'+text+'</span><span>'+text+'</span>'}
+function renderDemo(kind){current=kind;const stage=document.getElementById('stage');stage.classList.toggle('loss',kind==='loss');stage.classList.remove('play');void stage.offsetWidth;stage.classList.add('play');document.getElementById('gainBtn').setAttribute('aria-pressed',String(kind==='gain'));document.getElementById('lossBtn').setAttribute('aria-pressed',String(kind==='loss'));const [headline,punchline]=pick(kind);const el=document.getElementById('headline');el.innerHTML='';el.setAttribute('aria-label',headline);const words=headline.split(' ');words.forEach((word,wi)=>{const wordEl=document.createElement('span');wordEl.className='word';for(const [i,char] of Array.from(word).entries()){const letter=document.createElement('span');letter.className='letter';letter.style.setProperty('--i',String(i+wi*word.length));letter.textContent=char;wordEl.appendChild(letter)}el.appendChild(wordEl)});document.getElementById('amount').textContent=(kind==='gain'?'+':'−')+(kind==='gain'?'45,00':'10,00')+' €';document.getElementById('caption').textContent=kind==='gain'?'BÉNÉFICE NET':'MISE PERDUE';const sub=document.getElementById('punchline');sub.innerHTML='';punchline.split(' ').reduce((arr,w)=>{if(!arr.length||arr[arr.length-1].length>18)arr.push([]);arr[arr.length-1].push(w);return arr},[]).forEach((line,i)=>{const span=document.createElement('span');span.style.setProperty('--i',String(i));span.textContent=line.join(' ')+(i===0&&punchline.split(' ').length>0?' ':'');sub.appendChild(span);if(i<punchline.split(' ').length-1)sub.appendChild(document.createTextNode(' '))});fillMarquee(kind)}
+document.getElementById('stage').addEventListener('click',e=>{if(!e.target.closest('.controls'))renderDemo(current)});renderDemo('gain');
+</script>
+</body>
+</html>
