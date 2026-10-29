@@ -773,6 +773,9 @@ button:not(:disabled):active,.pill:active,.year-header:active{ transform:scale(.
   .result-celebration.show .brand-logo-halo{animation:paulyHaloPulse 1.6s ease-in-out infinite!important;animation-duration:1.6s!important;animation-iteration-count:infinite!important}
 }
 
+
+.brand-logo-stage-vector{background:transparent!important;box-shadow:none!important;border-radius:0!important;overflow:visible}
+.brand-logo-stage-vector .brand-logo-halo{z-index:0}
 </style>
 <style>
 /* Pauly'Bet — nouvelle séquence de résultat pilotée par le logo */
@@ -999,9 +1002,9 @@ button:not(:disabled):active,.pill:active,.year-header:active{ transform:scale(.
   </div>
   <div class="brand-result-content">
     <div class="brand-result-status" id="celebration-title">TICKET VALIDÉ</div>
-    <div class="brand-logo-stage">
+    <div class="brand-logo-stage brand-logo-stage-vector">
       <div class="brand-logo-halo"></div>
-      <img class="brand-result-logo" src="./275C6C76-2C7B-40CA-9CC4-853F38A703DA.svg?v=4" alt="Logo Pauly’Bet">
+      <iframe id="result-logo-animation" title="Animation du logo Pauly’Bet" src="./demo-animation-logo.html?embed=1" loading="eager" style="position:absolute;inset:0;width:100%;height:100%;border:0;background:transparent;z-index:3" allow="autoplay"></iframe>
     </div>
     <div class="brand-result-word" id="celebration-symbol">VICTOIRE</div>
     <div class="brand-result-amount" id="celebration-amount">+0 €</div>
@@ -1968,6 +1971,11 @@ function showResultCelebration(isWin, amount) {
   document.getElementById('celebration-amount').textContent = (isWin ? '+' : '−') + fmtEurPlain(amount);
   document.getElementById('celebration-caption').textContent = isWin ? 'BÉNÉFICE NET' : 'MISE PERDUE';
   document.getElementById('celebration-encouragement').textContent = pickPunchline(isWin);
+  const logoAnimationFrame = document.getElementById('result-logo-animation');
+  if (logoAnimationFrame) {
+    try { logoAnimationFrame.contentWindow.playPaulyLogoAnimation(); }
+    catch (e) { logoAnimationFrame.src = './demo-animation-logo.html?embed=1&run=' + Date.now(); }
+  }
   const shards = [...document.querySelectorAll('#celebration-particles .logo-shard')];
   const logo = modal.querySelector('.brand-result-logo');
   const stage = modal.querySelector('.brand-logo-stage');
