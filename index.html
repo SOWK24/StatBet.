@@ -10,7 +10,28 @@
 <meta name="application-name" content="Pauly’Bet">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js">
+/* Retour haptique sur les éléments interactifs, sans bloquer leur action */
+(function initGlobalTapFeedback() {
+  const selector = 'button, a, [onclick], [role="button"], [role="tab"], .clickable, input[type="button"], input[type="submit"], input[type="reset"], select, summary, [data-clickable="true"]';
+  let lastBuzz = 0;
+  document.addEventListener('pointerdown', event => {
+    const target = event.target instanceof Element ? event.target.closest(selector) : null;
+    if (!target || target.disabled || target.getAttribute('aria-disabled') === 'true') return;
+    target.classList.remove('tap-feedback');
+    void target.offsetWidth;
+    target.classList.add('tap-feedback');
+    window.setTimeout(() => target.classList.remove('tap-feedback'), 220);
+    const now = Date.now();
+    if (now - lastBuzz < 45) return;
+    lastBuzz = now;
+    try {
+      if (typeof navigator.vibrate === 'function') navigator.vibrate(12);
+    } catch (_) {}
+  }, { passive: true });
+})();
+
+</script>
 <style>
 @import url("https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@700&display=swap");
 
@@ -794,6 +815,35 @@ button:not(:disabled):active,.pill:active,.year-header:active{ transform:scale(.
 .result-celebration .brand-logo-stage-vector{background:transparent!important;background-color:transparent!important;box-shadow:none!important;border:0!important;border-radius:0!important;isolation:isolate}
 .result-celebration .brand-logo-stage-vector #result-logo-animation{display:block;opacity:1!important;visibility:visible!important;background:transparent!important;z-index:2}
 .result-celebration .brand-result-status,.result-celebration .brand-result-word,.result-celebration .brand-result-amount,.result-celebration .brand-result-caption,.result-celebration .brand-result-tagline,.result-celebration .brand-result-dismiss{opacity:1!important;visibility:visible!important;z-index:30!important}
+
+/* Micro-interactions globales : vibration + gonflement fluide */
+button, a, [onclick], [role="button"], [role="tab"], .clickable,
+input[type="button"], input[type="submit"], input[type="reset"],
+select, label[for], summary, [data-clickable="true"] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transform-origin: center;
+  transition: transform 180ms cubic-bezier(.2,.85,.25,1.25), filter 180ms ease, box-shadow 180ms ease;
+}
+button:active, a:active, [onclick]:active, [role="button"]:active,
+[role="tab"]:active, .clickable:active, input[type="button"]:active,
+input[type="submit"]:active, input[type="reset"]:active, summary:active,
+[data-clickable="true"]:active {
+  transform: scale(.965);
+  filter: brightness(1.12);
+}
+@media (hover: hover) and (pointer: fine) {
+  button:hover, a:hover, [onclick]:hover, [role="button"]:hover, .clickable:hover {
+    transition-duration: 220ms;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  button, a, [onclick], [role="button"], [role="tab"], .clickable,
+  input[type="button"], input[type="submit"], input[type="reset"], select, summary {
+    transition-duration: 1ms !important;
+  }
+}
+
 </style>
 <style>
 /* Animation retenue : grand message aléatoire, ambiance gain/perte */
