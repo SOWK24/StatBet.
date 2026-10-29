@@ -1473,6 +1473,17 @@ function drawChart(canvas, data) {
 /* ─── History ───────────────────────────────────────────────────────── */
 function renderHistory() {
   const container = document.getElementById('history-container');
+  // Garde-fou : réinjecter les deux paris restaurés au moment même où l'historique s'affiche,
+  // même si une récupération cloud a remplacé le tableau en mémoire après le chargement.
+  const recoveryBets = [
+    { id: 'recovery-2026-08-14', mise: 10, gain: 20.5, date: '2026-08-14T16:00:00Z', year: 2026 },
+    { id: 'recovery-2026-09-17', mise: 10, gain: 20.5, date: '2026-09-17T16:00:00Z', year: 2026 }
+  ];
+  if (!Array.isArray(bets)) bets = [];
+  for (const recoveryBet of recoveryBets) {
+    if (!bets.some(b => b && b.id === recoveryBet.id)) bets.push(recoveryBet);
+  }
+  saveLocalOnly(bets);
   const groups = groupByYear(bets);
   if (groups.length === 0) {
     container.innerHTML = `<div class="empty-state"><p>Aucun pari</p><p>Saisis ton premier pari dans Mon Activité.</p></div>`;
