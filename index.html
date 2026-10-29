@@ -175,46 +175,58 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:v
 .btn-submit:active { transform:scale(.98); }
 .btn-submit:disabled { opacity:.35; cursor:not-allowed; transform:none; }
 
-/* ── Result celebration ── */
-.result-celebration { position:fixed; inset:0; z-index:300; display:flex; align-items:center; justify-content:center; padding:24px; background:rgba(0,0,0,.82); backdrop-filter:blur(9px); opacity:0; visibility:hidden; transition:opacity .22s,visibility .22s; }
- .result-celebration.show { opacity:1; visibility:visible; }
-.result-celebration::before,.result-celebration::after { content:''; position:absolute; width:72vw;height:72vw;max-width:520px;max-height:520px;border-radius:50%;filter:blur(65px);opacity:0;pointer-events:none; }
-.result-celebration.win::before { background:rgba(166,255,59,.25); animation:winAura 1.8s ease-out both; }
-.result-celebration.loss::before { background:rgba(255,65,95,.2); animation:lossAura 1.8s ease-out both; }
-@keyframes winAura { 0%{transform:scale(.25);opacity:0} 35%{opacity:.8} 100%{transform:scale(1.5);opacity:.18} }
-@keyframes lossAura { 0%{transform:scale(.2);opacity:0} 35%{opacity:.65} 100%{transform:scale(1.35);opacity:.12} }
-.celebration-particles { position:absolute;inset:0;overflow:hidden;pointer-events:none; }
-.celebration-particle { position:absolute;top:-12%;width:7px;height:14px;border-radius:3px;background:#A6FF3B;animation:particleFall var(--dur,2.2s) var(--delay,0s) cubic-bezier(.2,.7,.3,1) both; }
- .result-celebration.loss .celebration-particle { background:#FF6B75; animation-name:lossParticleFall; }
-@keyframes lossParticleFall { 0%{transform:translate3d(0,-8vh,0) rotate(0);opacity:0} 20%{opacity:.75} 100%{transform:translate3d(var(--drift,30px),45vh,0) rotate(100deg);opacity:0} }
-.result-celebration.loss .celebration-card { animation:lossDrop .55s cubic-bezier(.2,.8,.2,1) both; }
-@keyframes lossDrop { 0%{transform:translateY(-34px);opacity:0} 70%{transform:translateY(4px);opacity:1} 100%{transform:translateY(0);opacity:1} }
-.result-celebration.loss.show { animation:lossFlash .35s ease-out; }
-@keyframes lossFlash { 0%{background:rgba(130,0,20,.6)} 100%{background:rgba(0,0,0,.82)} }
-.result-celebration.win.show { animation:winFlash .45s ease-out; }
-@keyframes winFlash { 0%{background:rgba(166,255,59,.34)} 100%{background:rgba(0,0,0,.82)} }
-@keyframes particleFall { 0%{transform:translate3d(0,-10vh,0) rotate(0);opacity:0} 12%{opacity:1} 100%{transform:translate3d(var(--drift,30px),115vh,0) rotate(780deg);opacity:0} }
-.celebration-card { position:relative;z-index:2; backdrop-filter:blur(18px); box-shadow:0 24px 90px rgba(0,0,0,.45); }
-.celebration-symbol { animation:symbolImpact .55s cubic-bezier(.2,1.5,.4,1) both; }
-@keyframes symbolImpact { 0%{transform:scale(0) rotate(-25deg)} 70%{transform:scale(1.18) rotate(5deg)} 100%{transform:scale(1) rotate(0)} }
-.celebration-amount { animation:amountReveal .65s .12s cubic-bezier(.2,.9,.3,1) both; }
-@keyframes amountReveal { from{opacity:0;transform:translateY(22px) scale(.8);filter:blur(8px)} to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)} }
-.celebration-card { width:min(100%,340px); text-align:center; padding:30px 22px 22px; border:1px solid var(--border); border-radius:22px; background:var(--surface); animation:celebrationPop .38s cubic-bezier(.2,.8,.2,1) both; }
-@keyframes celebrationPop { from{transform:scale(.82) translateY(16px);opacity:0} to{transform:scale(1) translateY(0);opacity:1} }
-.celebration-symbol { width:64px;height:64px;margin:0 auto 16px;border-radius:50%;display:grid;place-items:center;font-size:34px;font-weight:800; }
-.result-celebration.win .celebration-symbol { color:#A6FF3B;background:rgba(166,255,59,.12); }
-.result-celebration.loss .celebration-symbol { color:#FF6B75;background:rgba(255,107,117,.12); }
-.celebration-title { font-size:12px;font-weight:800;letter-spacing:2px;color:var(--text2); }
-.celebration-amount { font-size:clamp(32px,9vw,44px);font-weight:800;letter-spacing:-1.5px;margin:10px 0 2px; }
-.result-celebration.win .celebration-amount { color:#A6FF3B; }
-.result-celebration.loss .celebration-amount { color:#FF6B75; }
- .celebration-caption { font-size:12px;color:var(--text2);margin-bottom:12px; }
-.celebration-encouragement { font-size:11px;color:var(--text2);opacity:.82;line-height:1.5; }
-.result-celebration.loss.show .celebration-card { animation:lossDrop .55s cubic-bezier(.2,.8,.2,1) both; }
-.result-celebration.loss.show { animation:lossFlash .35s ease-out, lossShake .34s .05s ease-in-out; }
-@keyframes lossShake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 40%{transform:translateX(4px)} 60%{transform:translateX(-3px)} 80%{transform:translateX(2px)} }
-.celebration-card button { width:100%;padding:13px;border:0;border-radius:10px;background:var(--wina);color:#101010;font-weight:800;font-size:13px; }
-@media (prefers-reduced-motion: reduce) { .panel.active .panel-inner,.chart-wrap,.celebration-card,.scoreboard-value.number-pop,.result-celebration.loss.show,.result-celebration.win.show { animation:none!important; } .celebration-particle { animation:none!important; display:none; } }
+/* ── Full-screen motion-design result sequence ── */
+.result-celebration{position:fixed;inset:0;z-index:300;overflow:hidden;display:block;background:#050705;color:#fff;opacity:0;visibility:hidden;pointer-events:none;isolation:isolate;transition:opacity .12s linear,visibility .12s}
+.result-celebration.show{opacity:1;visibility:visible;pointer-events:auto;cursor:pointer}
+.result-celebration::before{content:"";position:absolute;inset:0;z-index:-2;background:linear-gradient(132deg,#071008 0%,#111a0a 48%,#030403 100%)}
+.result-celebration.loss::before{background:linear-gradient(160deg,#17070b 0%,#310b13 48%,#070607 100%)}
+.motion-grain{position:absolute;inset:-50%;z-index:5;pointer-events:none;opacity:.09;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.42'/%3E%3C/svg%3E");animation:grainJitter .18s steps(2) infinite}
+.motion-wipe{position:absolute;inset:-20% -60%;z-index:-1;background:linear-gradient(105deg,transparent 28%,rgba(166,255,59,.04) 35%,rgba(166,255,59,.9) 48%,#f4ffd7 50%,rgba(166,255,59,.75) 53%,transparent 66%);transform:translateX(-130%) skewX(-12deg)}
+.result-celebration.show.win .motion-wipe{animation:winWipe .72s cubic-bezier(.7,0,.2,1) both}
+.result-celebration.show.loss .motion-wipe{background:linear-gradient(180deg,transparent 15%,rgba(115,10,28,.96) 48%,rgba(255,47,77,.55) 50%,#080608 74%);transform:translateY(-120%);animation:lossCurtain .62s cubic-bezier(.7,0,.2,1) both}
+.motion-stripes{position:absolute;inset:0;overflow:hidden;z-index:-1;pointer-events:none}
+.motion-stripes i{position:absolute;top:-30%;height:160%;width:2px;left:calc(var(--i,1)*13%);background:rgba(190,255,105,.38);transform:rotate(22deg) scaleY(0);transform-origin:center}
+.motion-stripes i:nth-child(1){left:8%}.motion-stripes i:nth-child(2){left:22%}.motion-stripes i:nth-child(3){left:37%}.motion-stripes i:nth-child(4){left:52%}.motion-stripes i:nth-child(5){left:68%}.motion-stripes i:nth-child(6){left:82%}.motion-stripes i:nth-child(7){left:96%}
+.result-celebration.show.win .motion-stripes i{animation:stripeHit .55s .18s cubic-bezier(.2,.8,.2,1) both}
+.result-celebration.loss .motion-stripes i{background:rgba(255,60,83,.26)}
+.result-celebration.show.loss .motion-stripes i{animation:stripeFall .65s .08s cubic-bezier(.7,0,.3,1) both}
+.motion-speedlines{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:1}
+.motion-line{position:absolute;left:-35%;width:38%;height:2px;background:linear-gradient(90deg,transparent,rgba(222,255,179,.95),transparent);transform:rotate(-23deg) translateX(-150vw);animation:speedLine .65s var(--delay,0s) cubic-bezier(.2,.7,.2,1) both}
+.result-celebration.loss .motion-line{background:linear-gradient(90deg,transparent,rgba(255,70,90,.55),transparent);height:1px;animation-name:lossGlitchLine}
+.motion-content{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8vh 7vw;z-index:3;overflow:hidden}
+.motion-kicker{font:800 12px/1 var(--font-b);letter-spacing:.28em;color:#c8d0c2;margin-bottom:clamp(18px,4vh,34px);overflow:hidden;animation:kickerIn .48s .12s cubic-bezier(.16,1,.3,1) both}
+.result-celebration.win .motion-kicker{color:#d9ff9f}.result-celebration.loss .motion-kicker{color:#ff8794}
+.motion-word{font:800 clamp(62px,19vw,112px)/.82 var(--font-d);letter-spacing:-.045em;text-transform:uppercase;white-space:nowrap;max-width:100%;animation:wordSlap .66s .12s cubic-bezier(.16,1,.3,1) both;transform-origin:center}
+.result-celebration.win .motion-word{color:#f5ffe8;text-shadow:0 0 38px rgba(166,255,59,.22)}
+.result-celebration.loss .motion-word{color:#ff6b75;text-shadow:2px 0 #9c142b,-2px 0 rgba(255,255,255,.13);animation:wordGlitch .58s .1s steps(1,end) both}
+.motion-amount{font:800 clamp(48px,15vw,88px)/.95 var(--font-d);letter-spacing:-.035em;white-space:nowrap;margin-top:clamp(20px,5vh,38px);font-variant-numeric:tabular-nums;animation:amountRoll .82s .25s cubic-bezier(.16,1,.3,1) both}
+.result-celebration.win .motion-amount{color:#b8ff59;text-shadow:0 0 30px rgba(166,255,59,.2);background:linear-gradient(100deg,#8eea22 0%,#f8ffcf 45%,#a6ff3b 58%,#8eea22 100%);background-size:240% auto;background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:amountRoll .82s .25s cubic-bezier(.16,1,.3,1) both,amountShine .85s .72s ease-in-out both}
+.result-celebration.loss .motion-amount{color:#ff7480;animation:amountCollapse .72s .25s cubic-bezier(.55,0,.8,.3) both}
+.motion-caption{font:700 10px/1.3 var(--font-b);letter-spacing:.24em;color:rgba(255,255,255,.64);margin-top:12px;animation:captionIn .42s .55s ease-out both}
+.motion-tagline{font:600 14px/1.35 var(--font-b);color:#fff;margin-top:clamp(22px,5vh,40px);max-width:90%;animation:taglineCut .55s .62s cubic-bezier(.16,1,.3,1) both}
+.motion-dismiss{position:absolute;bottom:max(24px,env(safe-area-inset-bottom));font:700 9px/1 var(--font-b);letter-spacing:.2em;color:rgba(255,255,255,.38);animation:captionIn .35s 1.1s both}
+.result-celebration.loss .motion-tagline{color:#d8c2c5}
+.result-celebration.show.win{animation:screenFlash .32s ease-out both}
+.result-celebration.show.loss{animation:lossSettle .5s .1s ease-out both}
+@keyframes winWipe{0%{transform:translateX(-130%) skewX(-12deg)}65%{transform:translateX(15%) skewX(-12deg)}100%{transform:translateX(130%) skewX(-12deg)}}
+@keyframes lossCurtain{0%{transform:translateY(-120%)}68%{transform:translateY(0)}100%{transform:translateY(8%)}}
+@keyframes stripeHit{0%{transform:rotate(22deg) scaleY(0)}45%{transform:rotate(22deg) scaleY(1)}100%{transform:rotate(22deg) scaleY(.35);opacity:.35}}
+@keyframes stripeFall{0%{transform:rotate(22deg) scaleY(0)}45%{transform:rotate(22deg) scaleY(1)}100%{transform:rotate(22deg) scaleY(.08);opacity:0}}
+@keyframes speedLine{0%{transform:rotate(-23deg) translateX(-150vw);opacity:0}25%{opacity:1}100%{transform:rotate(-23deg) translateX(300vw);opacity:0}}
+@keyframes lossGlitchLine{0%,100%{transform:translateX(-150vw);opacity:0}30%{opacity:.8}55%{transform:translateX(250vw);opacity:0}}
+@keyframes wordSlap{0%{transform:translateY(65%) scaleX(1.22);clip-path:inset(100% 0 0);opacity:0}58%{transform:translateY(-5%) scaleX(.96);clip-path:inset(0);opacity:1}78%{transform:translateY(2%) scaleX(1.02)}100%{transform:translateY(0) scaleX(1);clip-path:inset(0);opacity:1}}
+@keyframes wordGlitch{0%{transform:translateY(-60%) scaleY(1.3);clip-path:inset(0 0 100%);opacity:0}30%{transform:translate(3px,0);clip-path:inset(0);opacity:1}38%{transform:translate(-4px,2px);clip-path:inset(12% 0 30%)}48%{transform:translate(2px,-1px);clip-path:inset(0)}100%{transform:none;clip-path:inset(0);opacity:1}}
+@keyframes amountRoll{0%{transform:translateY(70%) scaleY(1.5);filter:blur(8px);opacity:0}62%{transform:translateY(-5%) scaleY(.92);filter:blur(0);opacity:1}100%{transform:none;filter:blur(0);opacity:1}}
+@keyframes amountCollapse{0%{transform:translateY(-45%) scaleY(1.3);opacity:0;filter:blur(6px)}35%{transform:translateY(0) scaleY(1);opacity:1;filter:blur(0)}58%{transform:translateY(7%) scaleY(.84);opacity:1}100%{transform:translateY(0) scaleY(.96);opacity:1}}
+@keyframes amountShine{0%{background-position:100% center}100%{background-position:-140% center}}
+@keyframes captionIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes kickerIn{from{clip-path:inset(0 100% 0 0);transform:translateX(-24px)}to{clip-path:inset(0);transform:none}}
+@keyframes taglineCut{0%{clip-path:inset(0 0 100%);transform:translateY(14px)}100%{clip-path:inset(0);transform:none}}
+@keyframes screenFlash{0%{filter:brightness(1.7)}100%{filter:brightness(1)}}
+@keyframes lossSettle{0%{transform:translateY(-5px);filter:brightness(1.18)}100%{transform:none;filter:brightness(1)}}
+@keyframes grainJitter{0%{transform:translate(0,0)}50%{transform:translate(-1%,1%)}100%{transform:translate(1%,-1%)}}
+@media(prefers-reduced-motion:reduce){.motion-grain{animation:none;opacity:.025}.result-celebration.show,.result-celebration.show *{animation:none!important;transition:none!important}.motion-wipe,.motion-stripes{display:none}}
+@media(max-width:360px){.motion-word{font-size:clamp(52px,17vw,72px)}.motion-amount{font-size:clamp(42px,13vw,58px)}.motion-content{padding-left:4vw;padding-right:4vw}}
 
 /* ── Toast ── */
 #toast {
@@ -414,22 +426,22 @@ canvas { display:block; width:100%; cursor:pointer; }
 .ctt-row.ctt-bilan strong.pos { color:var(--win); }
 .ctt-row.ctt-bilan strong.neg { color:var(--loss); }
 
- .bet-list { display:flex; flex-direction:column; gap:6px; overflow:hidden; max-height:0; opacity:0; transition:max-height .38s cubic-bezier(.22,1,.36,1),opacity .24s ease; will-change:max-height,opacity; }
+ .bet-list { display:flex; flex-direction:column; gap:9px; overflow:hidden; max-height:0; opacity:0; transition:max-height .38s cubic-bezier(.22,1,.36,1),opacity .24s ease; will-change:max-height,opacity; }
 .bet-list.show { opacity:1; }
-.bet-row { display:flex; align-items:center; padding:11px 12px; border-radius:8px; border-left:3px solid; gap:10px; }
+.bet-row { display:flex; align-items:center; padding:14px 12px; border-radius:8px; border-left:3px solid; gap:10px; min-height:76px; }
 .bet-row.win  { background:var(--win-bg);  border-color:var(--win-border); }
 .bet-row.loss { background:var(--loss-bg); border-color:var(--loss-border); }
 
-.bet-badge { font-size:9px; font-weight:700; letter-spacing:.6px; padding:3px 7px; border-radius:5px; flex-shrink:0; }
+.bet-badge { font-size:10px; font-weight:800; letter-spacing:.6px; padding:3px 7px; border-radius:5px; flex-shrink:0; }
 .win  .bet-badge { color:var(--win);  background:rgba(166,255,59,.18); }
 .loss .bet-badge { color:var(--loss); background:rgba(255,107,117,.18); }
 
 .bet-info { flex:1; min-width:0; }
-.bet-date { font-size:11px; color:var(--text2); margin-bottom:2px; }
-.bet-amounts { font-size:12px; color:var(--text2); font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.bet-amounts strong { color:var(--text); font-weight:600; }
+.bet-date { font-size:12px; color:var(--text2); font-weight:600; margin-bottom:4px; }
+.bet-amounts { font-size:13px; color:var(--text2); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.bet-amounts strong { color:var(--text); font-weight:800; font-size:14px; }
 
-.bet-bilan { font-family:var(--font-d); font-size:17px; font-weight:700; flex-shrink:0; }
+.bet-bilan { font-family:var(--font-d); font-size:22px; font-weight:800; flex-shrink:0; }
 .win  .bet-bilan { color:var(--win); }
 .loss .bet-bilan { color:var(--loss); }
 
@@ -727,14 +739,18 @@ body {
 </div>
 
 <div id="toast"></div>
-<div id="result-celebration" class="result-celebration" role="dialog" aria-modal="true" aria-live="polite" onclick="closeResultCelebration()">
-  <div class="celebration-particles" id="celebration-particles" aria-hidden="true"></div>
-  <div class="celebration-card">
-    <div class="celebration-symbol" id="celebration-symbol">✓</div>
-    <div class="celebration-title" id="celebration-title">PARI GAGNÉ</div>
-    <div class="celebration-amount" id="celebration-amount">+0 €</div>
-    <div class="celebration-caption" id="celebration-caption">Bénéfice net</div>
-    <div class="celebration-encouragement" id="celebration-encouragement">On continue, un pari à la fois.</div>
+<div id="result-celebration" class="result-celebration" role="dialog" aria-modal="true" aria-live="polite" aria-label="Résultat du pari" onclick="closeResultCelebration()">
+  <div class="motion-grain" aria-hidden="true"></div>
+  <div class="motion-wipe" aria-hidden="true"></div>
+  <div class="motion-stripes" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  <div class="motion-speedlines" id="celebration-particles" aria-hidden="true"></div>
+  <div class="motion-content">
+    <div class="motion-kicker" id="celebration-title">PARI VALIDÉ</div>
+    <div class="motion-word" id="celebration-symbol">VICTOIRE</div>
+    <div class="motion-amount" id="celebration-amount">+0 €</div>
+    <div class="motion-caption" id="celebration-caption">BÉNÉFICE NET</div>
+    <div class="motion-tagline" id="celebration-encouragement">Le bookmaker pleure en silence.</div>
+    <div class="motion-dismiss">TOUCHE POUR CONTINUER</div>
   </div>
 </div>
 
@@ -1535,30 +1551,59 @@ function addBet() {
   showResultCelebration(isWin, isWin ? net : mise);
 }
 
+const WIN_PUNCHLINES = [
+  "Le bookmaker pleure en silence.", "Le ticket était plus chaud que le café.",
+  "La cote a cligné des yeux.", "Aujourd’hui, les maths sont dans ton camp.",
+  "Le scénario était écrit en vert.", "Le portefeuille vient de respirer.",
+  "Un point pour la patience.", "Le flair avait mis son maillot.",
+  "Même le VAR valide celle-là.", "Le pronostic avait du répondant.",
+  "Le compte prend un peu de soleil.", "La discipline fait le spectacle.",
+  "Le suspense, c’était pour les autres.", "Le ticket passe en légende."
+];
+const LOSS_PUNCHLINES = [
+  "Même Mbappé rate des penaltys.", "Le ballon n’a pas voulu rentrer.",
+  "Le scénario a pris un autre virage.", "Le ticket a choisi le cinéma.",
+  "Pas ce soir, champion.", "Le suspense était gratuit, lui.",
+  "On range le costume de devin.", "Le sport adore les rebondissements.",
+  "La prochaine analyse repart à zéro.", "Même les stats ont parfois le trac.",
+  "Le ticket a tenté une sortie artistique.", "Le favori avait besoin d’une sieste.",
+  "Un mauvais résultat, pas une identité.", "On respire, on garde la tête froide."
+];
+let lastWinPunchline = '';
+let lastLossPunchline = '';
+function pickPunchline(isWin) {
+  const pool = isWin ? WIN_PUNCHLINES : LOSS_PUNCHLINES;
+  const previous = isWin ? lastWinPunchline : lastLossPunchline;
+  let choices = pool.filter(line => line !== previous);
+  if (!choices.length) choices = pool;
+  const selected = choices[Math.floor(Math.random() * choices.length)];
+  if (isWin) lastWinPunchline = selected; else lastLossPunchline = selected;
+  return selected;
+}
 function showResultCelebration(isWin, amount) {
   const modal = document.getElementById('result-celebration');
   modal.className = 'result-celebration show ' + (isWin ? 'win' : 'loss');
-  document.getElementById('celebration-symbol').textContent = isWin ? '✓' : '×';
-  document.getElementById('celebration-title').textContent = isWin ? 'BIEN JOUÉ !' : 'ÇA N’EST PAS PASSÉ';
-  document.getElementById('celebration-amount').textContent = (isWin ? '+' : '−') + fmtEurPlain(amount);
+  modal.setAttribute('aria-label', isWin ? 'Victoire au pari' : 'Défaite au pari');
+  document.getElementById('celebration-symbol').textContent = isWin ? 'VICTOIRE' : 'AÏE';
+  document.getElementById('celebration-title').textContent = isWin ? 'PARI VALIDÉ / +1 AU COMPTEUR' : 'LE SPORT A TRANCHÉ';
+  document.getElementById('celebration-amount').textContent = (isWin ? '+' : '−') + fmtEurPlain(amount) + ' €';
   document.getElementById('celebration-caption').textContent = isWin ? 'BÉNÉFICE NET' : 'MISE PERDUE';
-  document.getElementById('celebration-encouragement').textContent = isWin ? 'Savoure le moment. Reste discipliné.' : 'Un résultat ne définit pas ta stratégie.';
-  const particles = document.getElementById('celebration-particles');
-  particles.innerHTML = '';
-  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    for (let i=0;i<(isWin ? 64 : 30);i++) {
-      const p=document.createElement('span');
-      p.className='celebration-particle';
-      p.style.left=(Math.random()*100)+'%';
-      if (!isWin) p.style.background = '#FF6B75';
-      p.style.setProperty('--delay',(Math.random()*.75)+'s');
-      p.style.setProperty('--dur',(1.7+Math.random()*1.5)+'s');
-      p.style.setProperty('--drift',((Math.random()-.5)*180)+'px');
-      p.style.transform='rotate('+(Math.random()*360)+'deg)';
-      particles.appendChild(p);
+  document.getElementById('celebration-encouragement').textContent = pickPunchline(isWin);
+  const lines = document.getElementById('celebration-particles');
+  lines.innerHTML = '';
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!reduced) {
+    for (let i = 0; i < (isWin ? 13 : 7); i++) {
+      const line = document.createElement('i');
+      line.className = 'motion-line';
+      line.style.top = (Math.random() * 100) + '%';
+      line.style.setProperty('--delay', (Math.random() * .32) + 's');
+      line.style.width = (20 + Math.random() * 42) + '%';
+      lines.appendChild(line);
     }
-    if (isWin && navigator.vibrate) { try { navigator.vibrate([18,30,24]); } catch(e) {} }
-    else if (!isWin && navigator.vibrate) { try { navigator.vibrate(10); } catch(e) {} }
+    if (navigator.vibrate) {
+      try { navigator.vibrate(isWin ? [20, 35, 30, 45, 18] : [12, 35, 8]); } catch(e) {}
+    }
   }
   clearTimeout(resultCelebrationTimer);
   resultCelebrationTimer = setTimeout(closeResultCelebration, 3600);
@@ -1600,8 +1645,8 @@ function drawChart(canvas, data) {
   }
 
   const dpr = window.devicePixelRatio || 1;
-  const W   = wrap.clientWidth - 16;
-  const H   = 170;
+  const W   = Math.max(240, wrap.clientWidth - 4);
+  const H   = 228;
   canvas.width  = W * dpr;
   canvas.height = H * dpr;
   canvas.style.width  = W + 'px';
@@ -1682,13 +1727,8 @@ function drawChart(canvas, data) {
     const x = cx - barW / 2;
     const r = Math.min(4, barW / 2, h);
     if (progress > 0) {
-      const gradient = ctx.createLinearGradient(0, top, 0, top + Math.max(h, 1));
-      gradient.addColorStop(0, isPos ? '#D7FF9A' : '#FFADB4');
-      gradient.addColorStop(1, color);
       ctx.save();
-      ctx.shadowColor = color;
-      ctx.shadowBlur = 9;
-      ctx.fillStyle = gradient;
+      ctx.fillStyle = color;
       ctx.beginPath();
       if (isPos) {
         ctx.moveTo(x, top + r);
@@ -1703,15 +1743,6 @@ function drawChart(canvas, data) {
       }
       ctx.fill();
       ctx.restore();
-    }
-    // Valeurs uniquement à la fin de la montée, pour un rendu net.
-    if (progress > 0) {
-      ctx.fillStyle = isPos ? '#A6FF3B' : '#FF6B75';
-      ctx.font = 'bold 9px Inter, sans-serif'; ctx.textAlign = 'center';
-      const animatedValue = m.bilan * progress;
-      const valueLabel = (animatedValue > 0 ? '+' : animatedValue < 0 ? '−' : '') + Math.round(Math.abs(animatedValue));
-      const labelY = isPos ? Math.max(10, top - 4) : Math.min(H - 28, top + h + 11);
-      ctx.fillText(valueLabel, cx, labelY);
     }
     ctx.fillStyle = '#787878'; ctx.font = '9px Inter, sans-serif'; ctx.textAlign = 'center';
     ctx.fillText(m.label, cx, H - 8);
@@ -1794,11 +1825,9 @@ function drawChart(canvas, data) {
     const bar = findBar(e.clientX);
     if (bar && activeBarKey !== bar.m.key) {
       activeBarKey = bar.m.key;
-      canvas.style.filter = 'drop-shadow(0 0 5px rgba(166,255,59,.18))';
       if (navigator.vibrate) { try { navigator.vibrate(8); } catch(err) {} }
     }
   };
-  canvas.onpointerleave = () => { canvas.style.filter = ''; };
   canvas.ontouchstart = null;
   canvas.setAttribute('aria-label','Graphique interactif : touchez une barre pour afficher les statistiques du mois');
 }
