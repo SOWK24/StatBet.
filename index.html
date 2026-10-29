@@ -969,12 +969,29 @@ async function connectAndSync() {
     if (error) throw error;
 
     if (data && Array.isArray(data.data) && data.data.length > 0) {
-      // Des données existent déjà en ligne pour ce code → on les utilise comme source de vérité
+      // Les données cloud restent la base ; ajout de deux paris de reconstitution une seule fois.
       bets = data.data;
+      const recoveryBets = [
+        { id: 'recovery-2026-08-14', mise: 10, gain: 20.5, date: '2026-08-14T16:00:00Z', year: 2026 },
+        { id: 'recovery-2026-09-17', mise: 10, gain: 20.5, date: '2026-09-17T16:00:00Z', year: 2026 }
+      ];
+      let addedRecoveryBets = false;
+      for (const recoveryBet of recoveryBets) {
+        if (!bets.some(b => b.id === recoveryBet.id)) {
+          bets.push(recoveryBet);
+          addedRecoveryBets = true;
+        }
+      }
       saveLocalOnly(bets);
+      if (addedRecoveryBets) {
+        const { error: saveError } = await client
+          .from('statbet_sync')
+          .upsert({ sync_code: code, data: bets, updated_at: new Date().toISOString() }, { onConflict: 'sync_code' });
+        if (saveError) throw saveError;
+      }
       renderDashboard();
       if (document.getElementById('panel-history').classList.contains('active')) renderHistory();
-      updateSyncStatusLine('ok', 'Données existantes récupérées depuis le cloud ✓');
+      updateSyncStatusLine('ok', addedRecoveryBets ? 'Historique complété : août et septembre ajoutés ✓' : 'Données existantes récupérées depuis le cloud ✓');
     } else {
       // Rien en ligne encore → on envoie les données locales actuelles
       await pushToCloud(true);
