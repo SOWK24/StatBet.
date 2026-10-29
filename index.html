@@ -1484,6 +1484,8 @@ function renderHistory() {
     if (!bets.some(b => b && b.id === recoveryBet.id)) bets.push(recoveryBet);
   }
   saveLocalOnly(bets);
+  // Mettre aussi à jour les totaux globaux et le record après la réinjection des paris restaurés.
+  renderDashboard();
   const groups = groupByYear(bets);
   if (groups.length === 0) {
     container.innerHTML = `<div class="empty-state"><p>Aucun pari</p><p>Saisis ton premier pari dans Mon Activité.</p></div>`;
