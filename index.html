@@ -903,9 +903,28 @@ async function pullFromCloud(silent) {
     if (error) throw error;
     if (data && Array.isArray(data.data)) {
       bets = data.data;
+      // Reconstitution idempotente des deux paris manquants d'août et septembre 2026.
+      const recoveryBets = [
+        { id: 'recovery-2026-08-14', mise: 10, gain: 20.5, date: '2026-08-14T16:00:00Z', year: 2026 },
+        { id: 'recovery-2026-09-17', mise: 10, gain: 20.5, date: '2026-09-17T16:00:00Z', year: 2026 }
+      ];
+      let addedRecoveryBets = false;
+      for (const recoveryBet of recoveryBets) {
+        if (!bets.some(b => b.id === recoveryBet.id)) {
+          bets.push(recoveryBet);
+          addedRecoveryBets = true;
+        }
+      }
       saveLocalOnly(bets);
+      if (addedRecoveryBets) {
+        const { error: saveError } = await client
+          .from('statbet_sync')
+          .upsert({ sync_code: cfg.code, data: bets, updated_at: new Date().toISOString() }, { onConflict: 'sync_code' });
+        if (saveError) throw saveError;
+      }
       renderDashboard();
       if (document.getElementById('panel-history').classList.contains('active')) renderHistory();
+      if (!silent && addedRecoveryBets) updateSyncStatusLine('ok', 'Historique complété : août et septembre ajoutés ✓');
     }
     setSyncIndicator('ok');
     if (!silent) updateSyncStatusLine('ok', 'Données récupérées depuis le cloud ✓');
