@@ -775,6 +775,18 @@ button:not(:disabled):active,.pill:active,.year-header:active{ transform:scale(.
 
 
 .brand-logo-stage-vector{background:transparent!important;background-color:transparent!important;box-shadow:none!important;border-radius:0!important;overflow:visible}.brand-logo-stage-vector iframe{background:transparent!important;pointer-events:none}.brand-result-content{position:relative;z-index:5}.brand-result-status,.brand-result-word,.brand-result-amount,.brand-result-caption,.brand-result-tagline,.brand-result-dismiss{position:relative;z-index:5}
+/* Correctif d'empilement du logo animé : le cadre ne doit jamais masquer les textes */
+.result-celebration .brand-result-content{position:absolute!important;inset:0!important;z-index:20!important;isolation:isolate}
+.result-celebration .brand-logo-stage-vector{position:relative!important;z-index:1!important;flex:0 0 auto;background:transparent!important;background-color:transparent!important;box-shadow:none!important;border:0!important;border-radius:0!important;overflow:visible!important}
+.result-celebration .brand-logo-stage-vector iframe{position:absolute!important;inset:0!important;display:block!important;width:100%!important;height:100%!important;border:0!important;background:transparent!important;color-scheme:normal;z-index:0!important;pointer-events:none!important}
+.result-celebration .brand-result-status,.result-celebration .brand-result-word,.result-celebration .brand-result-amount,.result-celebration .brand-result-caption,.result-celebration .brand-result-tagline,.result-celebration .brand-result-dismiss{position:relative!important;z-index:30!important;opacity:1}
+.result-celebration .brand-result-status{animation:brandTextIn .45s .28s ease-out both!important}
+.result-celebration .brand-result-word{animation:brandWordIn .52s .48s cubic-bezier(.16,1,.3,1) both!important}
+.result-celebration .brand-result-amount{animation:brandTextIn .5s .65s cubic-bezier(.16,1,.3,1) both!important}
+.result-celebration .brand-result-caption{animation:brandTextIn .4s .76s ease-out both!important}
+.result-celebration .brand-result-tagline{animation:brandTextIn .4s .85s ease-out both!important}
+.result-celebration .brand-result-dismiss{animation:brandTextIn .35s 1s ease-out both!important}
+
 .brand-logo-stage-vector .brand-logo-halo{z-index:0}
 </style>
 <style>
