@@ -812,13 +812,23 @@ function chartData(data) {
 /* ─── Stockage ─────────────────────────────────────────────────────── */
 function loadBets() {
   try {
+    let loaded;
     if (!localStorage.getItem(SEEDED_KEY)) {
-      const seed = generateSeedBets();
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(seed));
+      loaded = generateSeedBets();
       localStorage.setItem(SEEDED_KEY, '1');
-      return seed;
+    } else {
+      loaded = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
     }
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    if (!Array.isArray(loaded)) loaded = [];
+    const recoveryBets = [
+      { id: 'recovery-2026-08-14', mise: 10, gain: 20.5, date: '2026-08-14T16:00:00Z', year: 2026 },
+      { id: 'recovery-2026-09-17', mise: 10, gain: 20.5, date: '2026-09-17T16:00:00Z', year: 2026 }
+    ];
+    for (const recoveryBet of recoveryBets) {
+      if (!loaded.some(b => b.id === recoveryBet.id)) loaded.push(recoveryBet);
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(loaded));
+    return loaded;
   } catch(e) { return []; }
 }
 function saveBets(bets) {
