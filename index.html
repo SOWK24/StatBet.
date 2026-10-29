@@ -2010,8 +2010,42 @@ function showResultCelebration(isWin, amount) {
   modal.dataset.lastHeadline = headline;
   document.getElementById('celebration-symbol').textContent = isWin ? 'VICTOIRE' : 'DÉFAITE';
   document.getElementById('celebration-title').textContent = headline;
-  document.getElementById('celebration-amount').textContent = (isWin ? '+' : '−') + fmtEurPlain(amount);
+  const amountEl = document.getElementById('celebration-amount');
+  const amountPrefix = isWin ? '+' : '−';
+  const amountTarget = Math.max(0, Number(amount) || 0);
+  amountEl.textContent = amountPrefix + fmtEurPlain(0);
   document.getElementById('celebration-caption').textContent = isWin ? 'BÉNÉFICE NET' : 'MISE PERDUE';
+  // Chiffre qui monte pendant 3 secondes, avec de courtes impulsions haptiques si le navigateur le permet.
+  if (window.resultCountFrame) cancelAnimationFrame(window.resultCountFrame);
+  if (window.resultVibrationTimer) clearInterval(window.resultVibrationTimer);
+  if (window.resultVibrationStop) clearTimeout(window.resultVibrationStop);
+  const countStart = performance.now();
+  const countDuration = 3000;
+  const animateAmount = (now) => {
+    if (!modal.classList.contains('show')) return;
+    const progress = Math.min(1, (now - countStart) / countDuration);
+    const eased = 1 - Math.pow(1 - progress, 2.2);
+    amountEl.textContent = amountPrefix + fmtEurPlain(amountTarget * eased);
+    if (progress < 1) window.resultCountFrame = requestAnimationFrame(animateAmount);
+    else amountEl.textContent = amountPrefix + fmtEurPlain(amountTarget);
+  };
+  window.resultCountFrame = requestAnimationFrame(animateAmount);
+  if ('vibrate' in navigator) {
+    try {
+      navigator.vibrate([90, 70]);
+      window.resultVibrationTimer = setInterval(() => {
+        if (!modal.classList.contains('show')) {
+          clearInterval(window.resultVibrationTimer);
+          return;
+        }
+        navigator.vibrate([90, 70]);
+      }, 360);
+      window.resultVibrationStop = setTimeout(() => {
+        clearInterval(window.resultVibrationTimer);
+        navigator.vibrate(0);
+      }, countDuration);
+    } catch (e) {}
+  }
   document.getElementById('celebration-encouragement').textContent = pickPunchline(isWin);
   // Le résultat utilise le SVG directement dans la page : pas d'iframe opaque ni de contexte isolé.
   const resultLogo = document.getElementById('result-logo-animation');
@@ -2087,6 +2121,10 @@ function closeResultCelebration() {
   const modal = document.getElementById('result-celebration');
   const wasOpen = !!modal && modal.classList.contains('show');
   if (modal) modal.classList.remove('show');
+  if (window.resultCountFrame) cancelAnimationFrame(window.resultCountFrame);
+  if (window.resultVibrationTimer) clearInterval(window.resultVibrationTimer);
+  if (window.resultVibrationStop) clearTimeout(window.resultVibrationStop);
+  if ('vibrate' in navigator) { try { navigator.vibrate(0); } catch(e) {} }
   clearTimeout(resultCelebrationTimer);
   if (wasOpen && resultCelebrationPreviousFocus && document.contains(resultCelebrationPreviousFocus)) {
     try { resultCelebrationPreviousFocus.focus({ preventScroll: true }); } catch(e) { resultCelebrationPreviousFocus.focus(); }
