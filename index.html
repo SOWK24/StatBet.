@@ -763,6 +763,16 @@ button:not(:disabled):active,.pill:active,.year-header:active{ transform:scale(.
 @keyframes paulyHaloPulse{0%,100%{opacity:.25;transform:scale(.9)}50%{opacity:.85;transform:scale(1.12)}}
 @media(prefers-reduced-motion:reduce){.brand-logo-stage::before,.brand-logo-stage::after,.result-celebration.show .brand-result-logo,.result-celebration.show .brand-logo-halo{animation:none!important}}
 
+
+/* La séquence de résultat doit rester animée même si iOS réduit les animations globales. */
+@media(prefers-reduced-motion:reduce){
+  .result-celebration.show .brand-logo-stage::before{animation:paulyOrbit .95s linear infinite!important;animation-duration:.95s!important;animation-iteration-count:infinite!important}
+  .result-celebration.show .brand-logo-stage::after{animation:paulyPulse 1.35s ease-out infinite!important;animation-duration:1.35s!important;animation-iteration-count:infinite!important}
+  .result-celebration.show .brand-result-logo{animation:brandLogoAssemble .9s .18s cubic-bezier(.16,1,.3,1) both,paulyLogoFloat 1.8s 1.1s ease-in-out infinite!important;animation-duration:.9s,1.8s!important;animation-iteration-count:1,infinite!important}
+  .result-celebration.show.loss .brand-result-logo{animation:brandLogoBreak .85s .16s cubic-bezier(.16,1,.3,1) both,paulyLogoFloat 1.8s 1.1s ease-in-out infinite!important;animation-duration:.85s,1.8s!important;animation-iteration-count:1,infinite!important}
+  .result-celebration.show .brand-logo-halo{animation:paulyHaloPulse 1.6s ease-in-out infinite!important;animation-duration:1.6s!important;animation-iteration-count:infinite!important}
+}
+
 </style>
 <style>
 /* Pauly'Bet — nouvelle séquence de résultat pilotée par le logo */
