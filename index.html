@@ -90,8 +90,8 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:v
 @keyframes numberPop { 0%{transform:scale(1)} 45%{transform:scale(1.07)} 100%{transform:scale(1)} }
 .chart-wrap { animation: chartEnter .5s ease-out both; }
 @keyframes chartEnter { from {opacity:0;transform:translateY(10px)} to {opacity:1;transform:translateY(0)} }
-.bet-list { display:none; flex-direction:column; gap:6px; }
-.bet-list.show { display:flex; animation:panelEnter .25s ease-out both; }
+ .bet-list { display:none; flex-direction:column; gap:6px; }
+.bet-list.show { animation:panelEnter .25s ease-out both; }
 .history-toggle { width:100%; margin:0 0 12px; border:1px solid var(--border); background:var(--surface); color:var(--text); border-radius:8px; padding:12px; font:600 12px Inter,sans-serif; }
 .history-toggle:active { transform:scale(.99); }
 
@@ -171,7 +171,21 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:v
 
 /* ── Result celebration ── */
 .result-celebration { position:fixed; inset:0; z-index:300; display:flex; align-items:center; justify-content:center; padding:24px; background:rgba(0,0,0,.82); backdrop-filter:blur(9px); opacity:0; visibility:hidden; transition:opacity .22s,visibility .22s; }
-.result-celebration.show { opacity:1; visibility:visible; }
+ .result-celebration.show { opacity:1; visibility:visible; }
+.result-celebration::before,.result-celebration::after { content:''; position:absolute; width:72vw;height:72vw;max-width:520px;max-height:520px;border-radius:50%;filter:blur(65px);opacity:0;pointer-events:none; }
+.result-celebration.win::before { background:rgba(166,255,59,.25); animation:winAura 1.8s ease-out both; }
+.result-celebration.loss::before { background:rgba(255,65,95,.2); animation:lossAura 1.8s ease-out both; }
+@keyframes winAura { 0%{transform:scale(.25);opacity:0} 35%{opacity:.8} 100%{transform:scale(1.5);opacity:.18} }
+@keyframes lossAura { 0%{transform:scale(.2);opacity:0} 35%{opacity:.65} 100%{transform:scale(1.35);opacity:.12} }
+.celebration-particles { position:absolute;inset:0;overflow:hidden;pointer-events:none; }
+.celebration-particle { position:absolute;top:-12%;width:7px;height:14px;border-radius:3px;background:#A6FF3B;animation:particleFall var(--dur,2.2s) var(--delay,0s) cubic-bezier(.2,.7,.3,1) both; }
+.result-celebration.loss .celebration-particle { background:#FF6B75; }
+@keyframes particleFall { 0%{transform:translate3d(0,-10vh,0) rotate(0);opacity:0} 12%{opacity:1} 100%{transform:translate3d(var(--drift,30px),115vh,0) rotate(780deg);opacity:0} }
+.celebration-card { position:relative;z-index:2; backdrop-filter:blur(18px); box-shadow:0 24px 90px rgba(0,0,0,.45); }
+.celebration-symbol { animation:symbolImpact .55s cubic-bezier(.2,1.5,.4,1) both; }
+@keyframes symbolImpact { 0%{transform:scale(0) rotate(-25deg)} 70%{transform:scale(1.18) rotate(5deg)} 100%{transform:scale(1) rotate(0)} }
+.celebration-amount { animation:amountReveal .65s .12s cubic-bezier(.2,.9,.3,1) both; }
+@keyframes amountReveal { from{opacity:0;transform:translateY(22px) scale(.8);filter:blur(8px)} to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)} }
 .celebration-card { width:min(100%,340px); text-align:center; padding:30px 22px 22px; border:1px solid var(--border); border-radius:22px; background:var(--surface); animation:celebrationPop .38s cubic-bezier(.2,.8,.2,1) both; }
 @keyframes celebrationPop { from{transform:scale(.82) translateY(16px);opacity:0} to{transform:scale(1) translateY(0);opacity:1} }
 .celebration-symbol { width:64px;height:64px;margin:0 auto 16px;border-radius:50%;display:grid;place-items:center;font-size:34px;font-weight:800; }
@@ -361,14 +375,16 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:v
 .chart-title { font-size:10px; font-weight:600; letter-spacing:1px; text-transform:uppercase; color:var(--text2); margin-bottom:10px; padding:0 4px; }
 canvas { display:block; width:100%; cursor:pointer; }
 
-.chart-tooltip {
-  position:absolute; transform:translateX(-50%);
-  background:#0A0A0A; border:1px solid var(--border); border-radius:8px;
-  padding:9px 11px; min-width:130px; pointer-events:none;
-  opacity:0; transition:opacity .12s; z-index:20;
-  box-shadow:0 6px 20px rgba(0,0,0,.5);
+ .chart-tooltip {
+  position:relative; width:100%; box-sizing:border-box; margin-top:10px;
+  background:linear-gradient(135deg,rgba(166,255,59,.09),rgba(255,255,255,.025));
+  border:1px solid var(--border); border-radius:12px; padding:12px 14px;
+  pointer-events:none; display:none; opacity:0; transform:translateY(6px);
+  transition:opacity .2s,transform .2s; z-index:2;
+  box-shadow:0 8px 24px rgba(0,0,0,.18);
 }
-.chart-tooltip.show { opacity:1; }
+.chart-tooltip.show { display:block; opacity:1; transform:translateY(0); }
+.chart-tooltip::after { content:'Touchez une autre barre pour comparer'; display:block; margin-top:8px; color:var(--text2); font-size:10px; }
 .ctt-month { font-family:var(--font-d); font-size:13px; font-weight:700; letter-spacing:.5px; margin-bottom:6px; text-transform:capitalize; }
 .ctt-row { display:flex; justify-content:space-between; gap:14px; font-size:11px; color:var(--text2); margin-bottom:2px; }
 .ctt-row strong { color:var(--text); font-weight:600; }
@@ -689,6 +705,7 @@ body {
 
 <div id="toast"></div>
 <div id="result-celebration" class="result-celebration" role="dialog" aria-modal="true" aria-live="polite" onclick="closeResultCelebration()">
+  <div class="celebration-particles" id="celebration-particles" aria-hidden="true"></div>
   <div class="celebration-card" onclick="event.stopPropagation()">
     <div class="celebration-symbol" id="celebration-symbol">✓</div>
     <div class="celebration-title" id="celebration-title">PARI GAGNÉ</div>
@@ -1498,9 +1515,23 @@ function showResultCelebration(isWin, amount) {
   const modal = document.getElementById('result-celebration');
   modal.className = 'result-celebration show ' + (isWin ? 'win' : 'loss');
   document.getElementById('celebration-symbol').textContent = isWin ? '✓' : '×';
-  document.getElementById('celebration-title').textContent = isWin ? 'PARI GAGNÉ' : 'PARI PERDU';
+  document.getElementById('celebration-title').textContent = isWin ? 'BIEN JOUÉ !' : 'ÇA N’EST PAS PASSÉ';
   document.getElementById('celebration-amount').textContent = (isWin ? '+' : '−') + fmtEurPlain(amount);
-  document.getElementById('celebration-caption').textContent = isWin ? 'Bénéfice net' : 'Mise perdue';
+  document.getElementById('celebration-caption').textContent = isWin ? 'BÉNÉFICE NET' : 'MISE PERDUE';
+  const particles = document.getElementById('celebration-particles');
+  particles.innerHTML = '';
+  if (isWin && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    for (let i=0;i<46;i++) {
+      const p=document.createElement('span');
+      p.className='celebration-particle';
+      p.style.left=(Math.random()*100)+'%';
+      p.style.setProperty('--delay',(Math.random()*.75)+'s');
+      p.style.setProperty('--dur',(1.7+Math.random()*1.5)+'s');
+      p.style.setProperty('--drift',((Math.random()-.5)*180)+'px');
+      p.style.transform='rotate('+(Math.random()*360)+'deg)';
+      particles.appendChild(p);
+    }
+  }
 }
 function closeResultCelebration() {
   const modal = document.getElementById('result-celebration');
@@ -1663,12 +1694,8 @@ function drawChart(canvas, data) {
       <div class="ctt-row ctt-bilan"><span>Bilan</span><strong class="${m.bilan>=0?'pos':'neg'}">${bilanTxt}</strong></div>
     `;
     tip.classList.add('show');
-    const rect = wrap.getBoundingClientRect();
-    let left = bar.cx - rect.left;
-    const tipW = 150;
-    left = Math.max(tipW/2 + 4, Math.min(rect.width - tipW/2 - 4, left));
-    tip.style.left = left + 'px';
-    tip.style.top = '4px';
+    tip.style.left = '';
+    tip.style.top = '';
   }
   function hideTip() { tip.classList.remove('show'); }
 
@@ -1685,16 +1712,10 @@ function drawChart(canvas, data) {
       else { showTip(bar, e.clientX); tip.dataset.active = bar.m.key; }
     } else hideTip();
   };
-  canvas.onmousemove = (e) => {
-    const bar = findBar(e.clientX);
-    if (bar) { showTip(bar, e.clientX); tip.dataset.active = bar.m.key; }
-  };
-  canvas.onmouseleave = () => { hideTip(); tip.dataset.active=''; };
-  canvas.ontouchstart = (e) => {
-    const touch = e.touches[0];
-    const bar = findBar(touch.clientX);
-    if (bar) { showTip(bar, touch.clientX); tip.dataset.active = bar.m.key; }
-  };
+  canvas.onmousemove = null;
+  canvas.onmouseleave = null;
+  canvas.ontouchstart = null;
+  canvas.setAttribute('aria-label','Graphique interactif : touchez une barre pour afficher les statistiques du mois');
 }
 
 /* ─── History ───────────────────────────────────────────────────────── */
@@ -1746,7 +1767,7 @@ function renderHistory() {
           </div>
         </div>
         <div class="chart-wrap">
-          <div class="chart-title">Bilan par mois — touche une barre pour le détail</div>
+          <div class="chart-title">Évolution mensuelle · touchez une barre pour les détails</div>
           <canvas data-year="${year}"></canvas>
         </div>
         <button class="history-toggle" type="button" onclick="toggleBetList(this)">Afficher tout l’historique (${yBets.length})</button>
@@ -1791,7 +1812,10 @@ function renderHistory() {
 
 function toggleBetList(btn) {
   const list = btn.nextElementSibling;
-  const open = list.classList.toggle('show');
+  const open = list.style.display !== 'flex';
+  list.style.display = open ? 'flex' : 'none';
+  list.classList.toggle('show', open);
+  btn.setAttribute('aria-expanded', String(open));
   btn.textContent = open ? 'Masquer l’historique' : `Afficher tout l’historique (${list.children.length})`;
 }
 
