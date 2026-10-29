@@ -505,6 +505,10 @@ body {
   *,*::before,*::after { animation-duration:.01ms !important; animation-iteration-count:1 !important; scroll-behavior:auto !important; transition-duration:.01ms !important; }
 }
 
+/* Motion polish */
+.panel.active .panel-inner{animation:pageEnter .48s cubic-bezier(.2,.75,.25,1) both}
+.chart-wrap{animation:chartIn .6s ease both}
+@keyframes chartIn{from{opacity:.25;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body>
