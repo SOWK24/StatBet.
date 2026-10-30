@@ -1703,7 +1703,7 @@ async function pullFromCloud(silent) {
             .from('statbet_sync')
             .upsert({ sync_code: cfg.code, data: bets, updated_at: new Date().toISOString() }, { onConflict: 'sync_code' });
           if (saveError) throw saveError;
-          if (!silent) updateSyncStatusLine('ok', 'Historique complété : août et septembre ajoutés ✓');
+          if (!silent) updateSyncStatusLine('ok', julyCorrection.changed ? 'Montants de juillet corrigés et synchronisés ✓' : 'Historique complété et synchronisé ✓');
         } catch (saveError) {
           console.error('StatBet recovery cloud save failed', saveError);
           if (!silent) updateSyncStatusLine('err', 'Paris ajoutés localement, sauvegarde cloud impossible : ' + (saveError.message || saveError));
@@ -1802,7 +1802,7 @@ async function connectAndSync() {
       }
       renderDashboard();
       if (document.getElementById('panel-history').classList.contains('active')) renderHistory();
-      updateSyncStatusLine('ok', addedRecoveryBets ? 'Historique complété : août et septembre ajoutés ✓' : 'Données existantes récupérées depuis le cloud ✓');
+      updateSyncStatusLine('ok', julyCorrection.changed ? 'Montants de juillet corrigés et synchronisés ✓' : (addedRecoveryBets ? 'Historique complété et synchronisé ✓' : 'Données existantes récupérées depuis le cloud ✓'));
     } else {
       // Rien en ligne encore → on envoie les données locales actuelles
       await pushToCloud(true);
