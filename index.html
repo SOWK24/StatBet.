@@ -2969,7 +2969,7 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
   keyboard.setAttribute('aria-label', 'Clavier numérique Pauly’Bet');
   keyboard.innerHTML = `
     <div class="pk-head">
-      <span class="pk-title">PAULY’BET <i>·</i> CLAVIER</span>
+      <span class="pk-spacer" aria-hidden="true"></span>
       <button type="button" class="pk-done" data-pk="done">Terminé <span>✓</span></button>
     </div>
     <div class="pk-grid">
@@ -3005,15 +3005,31 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
     keyboard.querySelectorAll('button').forEach((button, index) => {
       button.style.setProperty('--pk-delay', index + 'ms');
     });
-    // Replace le champ actif dans la zone visible, au-dessus du clavier fixe.
-    window.setTimeout(() => {
-      if (activeInput === input) input.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    }, 90);
+    // Ajoute une vraie zone de défilement au contenu (le clavier est fixe et superposé).
+    const panelInner = input.closest('.panel-inner');
+    if (panelInner) {
+      let spacer = panelInner.querySelector(':scope > .pk-scroll-spacer');
+      if (!spacer) {
+        spacer = document.createElement('div');
+        spacer.className = 'pk-scroll-spacer';
+        spacer.setAttribute('aria-hidden', 'true');
+        panelInner.appendChild(spacer);
+      }
+      spacer.style.height = (keyboard.offsetHeight + 28) + 'px';
+      window.setTimeout(() => {
+        if (activeInput !== input) return;
+        const keyboardTop = keyboard.getBoundingClientRect().top;
+        const inputBottom = input.getBoundingClientRect().bottom;
+        const overlap = inputBottom - (keyboardTop - 22);
+        if (overlap > 0) panelInner.scrollTo({ top: panelInner.scrollTop + overlap, behavior: 'smooth' });
+      }, 380);
+    }
   }
 
   function hide() {
     keyboard.classList.remove('pk-visible');
     document.body.classList.remove('pk-open');
+    document.querySelectorAll('.pk-scroll-spacer').forEach(node => node.remove());
     activeInput = null;
   }
 
@@ -3067,6 +3083,7 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
     button.classList.remove('pk-pressed');
     void button.offsetWidth;
     button.classList.add('pk-pressed');
+    window.setTimeout(() => button.classList.remove('pk-pressed'), 150);
     buzz(action === 'done' ? 'done' : 'tap');
     if (action === 'done') {
       const input = activeInput;
@@ -3150,9 +3167,8 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
 #pauly-keyboard.pk-visible { transform:translate3d(0,0,0); opacity:1; visibility:visible; }
 .pk-grid button { position:relative; overflow:hidden; }
 
-.pk-head { display:flex; align-items:center; justify-content:space-between; margin:0 auto 11px; max-width:520px; }
-.pk-title { color:#aab5a4; font:700 10px 'Inter',sans-serif; letter-spacing:1.8px; }
-.pk-title i { color:var(--wina); font-style:normal; padding:0 3px; }
+.pk-head { display:flex; align-items:center; justify-content:flex-end; margin:0 auto 11px; max-width:520px; }
+.pk-spacer { flex:1; }
 .pk-done { border:0; background:rgba(166,255,59,.12); color:var(--wina); border-radius:20px; padding:8px 13px; font:700 12px 'Inter',sans-serif; }
 .pk-done span,.pk-enter span { margin-left:5px; }
 .pk-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; max-width:520px; margin:auto; }
@@ -3168,6 +3184,13 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
   transform:scale(.94) translateY(2px); background:rgba(166,255,59,.16);
   border-color:rgba(166,255,59,.48); box-shadow:0 0 18px rgba(166,255,59,.12);
 }
+.pk-grid button:focus { outline:none; }
+.pk-grid button:focus:not(:focus-visible) {
+  background:linear-gradient(145deg,#20291e,#151c14);
+  border-color:rgba(255,255,255,.065);
+  box-shadow:0 3px 0 rgba(0,0,0,.28);
+  transform:none;
+}
 .pk-grid .pk-action { color:#c5b6ff; font-size:16px; font-weight:700; }
 .pk-grid .pk-delete { color:#ff9aa1; font-size:23px; }
 .pk-grid .pk-decimal { color:var(--wina); }
@@ -3178,14 +3201,8 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
 }
 @keyframes pkKeyIn { from { opacity:0; transform:translateY(9px) scale(.97); } to { opacity:1; transform:translateY(0) scale(1); } }
 body.pk-open { padding-bottom:0; }
-/* Réserve la hauteur du clavier dans la page afin de pouvoir remonter le formulaire au-dessus. */
-body.pk-open #panel-dashboard .panel-inner {
-  padding-bottom: calc(330px + env(safe-area-inset-bottom)) !important;
-  scroll-padding-bottom: 330px;
-}
-body.pk-open #panel-dashboard {
-  scroll-padding-bottom: 330px;
-}
+/* L'espace de défilement est ajouté dynamiquement dans le vrai conteneur .panel-inner. */
+.pk-scroll-spacer { display:block; width:100%; flex:0 0 auto; pointer-events:none; }
 input[data-pauly-numeric] { caret-color:var(--wina); }
 @media (max-height:700px) {
   #pauly-keyboard { padding-top:8px; }
