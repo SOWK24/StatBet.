@@ -1166,7 +1166,7 @@ body::-webkit-scrollbar,
       <div class="form-card">
         <div class="form-row">
           <label class="form-label" for="input-mise">Mise (€)</label>
-          <input class="form-input" id="input-mise" type="number" min="0" step="0.01" placeholder="15.00" inputmode="decimal">
+          <input class="form-input" id="input-mise" type="text" inputmode="none" readonly data-pauly-numeric="true" autocomplete="off" min="0" step="0.01" placeholder="15.00" inputmode="decimal">
         </div>
 
         <div class="form-row">
@@ -1185,7 +1185,7 @@ body::-webkit-scrollbar,
 
         <div id="gain-row" class="form-row" style="display:none">
           <label class="form-label" for="input-gain">Gain total reçu (€)</label>
-          <input class="form-input" id="input-gain" type="number" min="0" step="0.01" placeholder="38.50" inputmode="decimal">
+          <input class="form-input" id="input-gain" type="text" inputmode="none" readonly data-pauly-numeric="true" autocomplete="off" min="0" step="0.01" placeholder="38.50" inputmode="decimal">
         </div>
 
         <div class="preview-bar" id="preview-bar">
@@ -1220,7 +1220,7 @@ body::-webkit-scrollbar,
     <h3>Modifier le pari</h3>
     <div class="form-row">
       <label class="form-label" for="edit-mise">Mise (€)</label>
-      <input class="form-input" id="edit-mise" type="number" min="0" step="0.01" inputmode="decimal">
+      <input class="form-input" id="edit-mise" type="text" inputmode="none" readonly data-pauly-numeric="true" autocomplete="off" min="0" step="0.01" inputmode="decimal">
     </div>
     <div class="form-row">
       <label class="form-label">Résultat</label>
@@ -1237,7 +1237,7 @@ body::-webkit-scrollbar,
     </div>
     <div id="edit-gain-row" class="form-row" style="display:none">
       <label class="form-label" for="edit-gain">Gain total reçu (€)</label>
-      <input class="form-input" id="edit-gain" type="number" min="0" step="0.01" inputmode="decimal">
+      <input class="form-input" id="edit-gain" type="text" inputmode="none" readonly data-pauly-numeric="true" autocomplete="off" min="0" step="0.01" inputmode="decimal">
     </div>
     <div class="form-row">
       <label class="form-label" for="edit-date">Date</label>
@@ -2115,11 +2115,11 @@ function openRecordEdit() {
       <div class="record-edit-grid">
         <div class="record-edit-row">
           <label>Mise (€)</label>
-          <input type="number" step="0.01" id="record-edit-mise" placeholder="0.00" value="${data.mise ?? ''}" inputmode="decimal">
+          <input type="text" inputmode="none" readonly data-pauly-numeric="true" autocomplete="off" step="0.01" id="record-edit-mise" placeholder="0.00" value="${data.mise ?? ''}" inputmode="decimal">
         </div>
         <div class="record-edit-row">
           <label>Gain total (€)</label>
-          <input type="number" step="0.01" id="record-edit-gain" placeholder="0.00" value="${data.gain ?? ''}" inputmode="decimal">
+          <input type="text" inputmode="none" readonly data-pauly-numeric="true" autocomplete="off" step="0.01" id="record-edit-gain" placeholder="0.00" value="${data.gain ?? ''}" inputmode="decimal">
         </div>
         <div class="record-edit-row record-edit-grid-full">
           <label>Date</label>
@@ -3151,7 +3151,7 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
   }
 
   function prepare(root = document) {
-    root.querySelectorAll('input[type="number"]').forEach(input => {
+    root.querySelectorAll('input[type="text" inputmode="none" readonly data-pauly-numeric="true" autocomplete="off"]').forEach(input => {
       input.type = 'text';
       input.setAttribute('inputmode', 'none');
       input.setAttribute('readonly', 'readonly');
