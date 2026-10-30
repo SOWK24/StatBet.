@@ -5,6 +5,9 @@
 <link rel="apple-touch-icon" sizes="180x180" href="./icon.png?v=paulybet-2">
 <link rel="icon" type="image/png" href="./icon.png?v=paulybet-2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Pauly’Bet</title>
 <meta name="apple-mobile-web-app-title" content="Pauly’Bet">
 <meta name="application-name" content="Pauly’Bet">
@@ -17,9 +20,9 @@
   let lastBuzz = 0;
   document.addEventListener('pointerdown', event => {
     const source = event.target instanceof Element ? event.target : null;
-    // Ne jamais appliquer l'animation à un champ de saisie ni à son conteneur :
-    // cela gêne la sélection du texte et le copier-coller sur mobile.
-    if (source?.closest('input:not([type="button"]):not([type="submit"]):not([type="reset"]), textarea, [contenteditable="true"]')) return;
+    // Ne jamais animer les champs, les zones de texte ni les touches du clavier
+    // personnalisé : leur retour visuel est géré séparément.
+    if (source?.closest('#pauly-keyboard, input:not([type="button"]):not([type="submit"]):not([type="reset"]), textarea, [contenteditable="true"]')) return;
     const target = source ? source.closest(selector) : null;
     if (!target || target.disabled || target.getAttribute('aria-disabled') === 'true') return;
     target.classList.remove('tap-feedback');
@@ -3092,6 +3095,10 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
     button.classList.remove('pk-pressed');
     button.blur();
   }
+  keyboard.addEventListener('touchstart', event => {
+    const button = event.target.closest('button[data-pk]');
+    if (button) button.classList.add('pk-pressed');
+  }, { passive: true });
   keyboard.addEventListener('pointerdown', event => {
     const button = event.target.closest('button[data-pk]');
     if (button) button.classList.add('pk-pressed');
@@ -3177,60 +3184,63 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
 /* Clavier numérique propriétaire Pauly’Bet */
 #pauly-keyboard {
   box-sizing:border-box; position:fixed; z-index:100000; left:0; right:0; bottom:0;
-  padding:7px 13px calc(8px + env(safe-area-inset-bottom));
+  padding:5px 12px calc(6px + env(safe-area-inset-bottom));
   background:linear-gradient(180deg,rgba(20,27,19,.98),rgba(8,12,8,.99));
-  border-top:1px solid rgba(166,255,59,.24);
-  box-shadow:0 -14px 40px rgba(0,0,0,.44),0 -2px 14px rgba(166,255,59,.05);
+  border-top:1px solid rgba(166,255,59,.2);
+  box-shadow:0 -12px 34px rgba(0,0,0,.42);
   backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px);
   transform:translate3d(0,110%,0); opacity:0; visibility:hidden;
-  transition:transform .32s cubic-bezier(.2,.85,.25,1),opacity .22s ease,visibility .32s;
+  transition:transform .28s cubic-bezier(.2,.85,.25,1),opacity .2s ease,visibility .28s;
   will-change:transform;
 }
 #pauly-keyboard.pk-visible { transform:translate3d(0,0,0); opacity:1; visibility:visible; }
-.pk-grid button { position:relative; overflow:hidden; }
-
-.pk-head { display:flex; align-items:center; justify-content:flex-end; margin:0 auto 6px; max-width:480px; min-height:25px; }
-.pk-done { border:0; background:rgba(166,255,59,.12); color:var(--wina); border-radius:18px; padding:6px 11px; font:700 11px 'Inter',sans-serif; }
-.pk-done span,.pk-enter span { margin-left:4px; }
-.pk-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; max-width:480px; margin:auto; }
-.pk-grid button {
-  box-sizing:border-box; position:relative; min-height:40px; padding:5px 8px;
-  border:1px solid rgba(255,255,255,.065); border-radius:10px;
+#pauly-keyboard .pk-head { display:flex; align-items:center; justify-content:flex-end; margin:0 auto 4px; max-width:430px; min-height:20px; }
+#pauly-keyboard .pk-done { border:0; background:rgba(255,255,255,.07); color:#dce5d7; border-radius:16px; padding:4px 9px; font:600 10px 'Inter',sans-serif; }
+#pauly-keyboard .pk-done span,#pauly-keyboard .pk-enter span { margin-left:3px; }
+#pauly-keyboard .pk-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:4px; max-width:430px; margin:auto; }
+#pauly-keyboard .pk-grid button {
+  box-sizing:border-box; position:relative; overflow:hidden; min-height:32px; padding:3px 7px;
+  border:1px solid rgba(255,255,255,.075); border-radius:8px;
   background:linear-gradient(145deg,#20291e,#151c14); color:#f7f8f4;
-  font:600 20px 'Inter',sans-serif; box-shadow:0 2px 0 rgba(0,0,0,.26);
+  font:600 17px 'Inter',sans-serif; box-shadow:0 2px 0 rgba(0,0,0,.24);
   -webkit-tap-highlight-color:transparent; touch-action:manipulation;
-  transition:transform .11s cubic-bezier(.2,.8,.2,1),background .11s,border-color .11s,box-shadow .11s;
-  animation:pkKeyIn .24s both; animation-delay:var(--pk-delay,0ms);
+  transition:transform .1s ease,background .1s ease,border-color .1s ease,box-shadow .1s ease;
+  animation:pkKeyIn .2s both; animation-delay:var(--pk-delay,0ms);
 }
-.pk-grid button.pk-pressed {
-  transform:scale(.96) translateY(1px); background:rgba(166,255,59,.18);
-  border-color:rgba(166,255,59,.52); box-shadow:0 0 13px rgba(166,255,59,.11);
-}
-.pk-grid button:focus { outline:none; }
-.pk-grid button:focus:not(:focus-visible) {
-  background:linear-gradient(145deg,#20291e,#151c14);
-  border-color:rgba(255,255,255,.065);
-  box-shadow:0 2px 0 rgba(0,0,0,.26);
+/* Toutes les touches restent neutres au repos, y compris Valider.
+   Le vert n'existe que pendant le contact réel du doigt. */
+#pauly-keyboard .pk-grid button:active,
+#pauly-keyboard .pk-grid button:focus,
+#pauly-keyboard .pk-grid button:focus-visible {
+  background:linear-gradient(145deg,#20291e,#151c14) !important;
+  border-color:rgba(255,255,255,.075) !important;
+  box-shadow:0 2px 0 rgba(0,0,0,.24) !important;
+  filter:none !important; outline:none !important;
   transform:none;
 }
-.pk-grid .pk-action { color:#c5b6ff; font-size:14px; font-weight:700; }
-.pk-grid .pk-delete { color:#ff9aa1; font-size:21px; }
-.pk-grid .pk-decimal { color:var(--wina); }
-.pk-grid .pk-enter { grid-column:span 2; }
-.pk-grid .pk-enter {
-  background:linear-gradient(135deg,#b4ff58,#83d926); color:#14200d; border-color:transparent;
-  font-size:14px; font-weight:800; box-shadow:0 3px 12px rgba(166,255,59,.15);
+#pauly-keyboard .pk-grid button.pk-pressed,
+#pauly-keyboard .pk-grid button.pk-pressed:active,
+#pauly-keyboard .pk-grid button.pk-pressed:focus {
+  transform:scale(.96) translateY(1px) !important;
+  background:rgba(166,255,59,.2) !important;
+  border-color:rgba(166,255,59,.58) !important;
+  box-shadow:0 0 12px rgba(166,255,59,.13) !important;
 }
+#pauly-keyboard .pk-grid .pk-action { color:#c5b6ff; font-size:13px; font-weight:700; }
+#pauly-keyboard .pk-grid .pk-delete { color:#ff9aa1; font-size:19px; }
+#pauly-keyboard .pk-grid .pk-decimal { color:var(--wina); }
+#pauly-keyboard .pk-grid .pk-enter { grid-column:span 2; font-size:13px; font-weight:700; color:#dce5d7; }
+#pauly-keyboard .pk-grid .pk-enter.pk-pressed { color:#14200d; }
 @keyframes pkKeyIn { from { opacity:0; transform:translateY(9px) scale(.97); } to { opacity:1; transform:translateY(0) scale(1); } }
 body.pk-open { padding-bottom:0; }
 /* L'espace de défilement est ajouté dynamiquement dans le vrai conteneur .panel-inner. */
 .pk-scroll-spacer { display:block; width:100%; flex:0 0 auto; pointer-events:none; }
 input[data-pauly-numeric] { caret-color:var(--wina); }
 @media (max-height:700px) {
-  #pauly-keyboard { padding-top:5px; padding-bottom:calc(6px + env(safe-area-inset-bottom)); }
-  .pk-head { margin-bottom:4px; min-height:22px; }
-  .pk-grid { gap:4px; }
-  .pk-grid button { min-height:36px; }
+  #pauly-keyboard { padding-top:4px; padding-bottom:calc(5px + env(safe-area-inset-bottom)); }
+  #pauly-keyboard .pk-head { margin-bottom:3px; min-height:18px; }
+  #pauly-keyboard .pk-grid { gap:3px; }
+  #pauly-keyboard .pk-grid button { min-height:29px; }
 }
 @media (prefers-reduced-motion:reduce) {
   #pauly-keyboard,.pk-grid button { transition:none; animation:none; }
