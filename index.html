@@ -2977,9 +2977,22 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
       <button type="button" class="pk-zero" data-pk="00">00</button>
       <button type="button" class="pk-enter" data-pk="done" aria-label="Valider la saisie">Valider <span>✓</span></button>
     </div>`;
+  // iOS Safari : un vrai switch natif invisible sous chaque touche déclenche
+  // le Taptic Engine au contact du doigt (le clic doit rester un vrai geste).
+  keyboard.querySelectorAll('button[data-pk]').forEach(button => {
+    const hapticSwitch = document.createElement('input');
+    hapticSwitch.type = 'checkbox';
+    hapticSwitch.setAttribute('switch', '');
+    hapticSwitch.className = 'pk-haptic-switch';
+    hapticSwitch.setAttribute('aria-hidden', 'true');
+    hapticSwitch.tabIndex = -1;
+    button.appendChild(hapticSwitch);
+  });
   document.body.appendChild(keyboard);
 
   function buzz(kind = 'tap') {
+    // Android et navigateurs compatibles : vibration via l'API standard.
+    // Sur iPhone, le switch natif ci-dessus produit le retour Taptic au toucher.
     try {
       if (typeof navigator.vibrate === 'function') navigator.vibrate(kind === 'done' ? [10, 25, 16] : 8);
     } catch (_) {}
@@ -3128,6 +3141,12 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
   will-change:transform;
 }
 #pauly-keyboard.pk-visible { transform:translate3d(0,0,0); opacity:1; visibility:visible; }
+.pk-grid button { position:relative; overflow:hidden; }
+.pk-haptic-switch {
+  position:absolute !important; inset:0 !important; width:100% !important; height:100% !important;
+  margin:0 !important; opacity:0 !important; z-index:4 !important; cursor:pointer;
+  appearance:auto !important; -webkit-appearance:auto !important; touch-action:manipulation;
+}
 .pk-head { display:flex; align-items:center; justify-content:space-between; margin:0 auto 11px; max-width:520px; }
 .pk-title { color:#aab5a4; font:700 10px 'Inter',sans-serif; letter-spacing:1.8px; }
 .pk-title i { color:var(--wina); font-style:normal; padding:0 3px; }
