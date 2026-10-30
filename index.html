@@ -3103,13 +3103,16 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
     input.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
+  let scrollRestore = null;
+  let lastPointerOpenedInput = null;
+  let lastPointerOpenedAt = 0;
+
   function show(input) {
     if (!input || input.disabled) return;
     activeInput = input;
     clearTimeout(hideTimer);
 
     keyboard.classList.add('pk-visible');
-    // Mesure la hauteur intrinsèque du clavier avant toute animation iOS.
     const initialKeyboardHeight = Math.ceil(keyboard.offsetHeight || keyboard.scrollHeight || 190);
     document.documentElement.style.setProperty('--pk-height', initialKeyboardHeight + 'px');
     document.body.classList.add('pk-open');
@@ -3118,24 +3121,29 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
       button.style.setProperty('--pk-delay', index + 'ms');
     });
 
-    // Le vrai conteneur scrollable des pages est .panel.active.
-    // On le force temporairement en bloc scrollable : iOS Safari ne fait pas
-    // toujours défiler un conteneur flex imbriqué lorsque sa hauteur est animée.
-    // Dans la fenêtre de modification, #edit-sheet reste le conteneur dédié.
-    const pagePanel = input.closest('.panel.active');
-    const scrollArea = input.closest('#edit-sheet') ||
-      pagePanel ||
-      input.closest('.panel-inner') ||
+    // Le panneau reste dans sa mise en page flex. Seul son contenu devient
+    // scrollable : c'est la zone qui contient réellement les champs et toute
+    // l'interface, et non le panneau parent qui sert au défilement horizontal.
+    const editSheet = input.closest('#edit-sheet');
+    const pageInner = input.closest('.panel.active .panel-inner');
+    const scrollArea = editSheet || pageInner ||
+      input.closest('.panel.active') ||
       input.closest('.record-edit-wrap')?.parentElement;
     if (!scrollArea) return;
 
-    if (pagePanel && scrollArea === pagePanel) {
-      pagePanel.style.setProperty('display', 'block', 'important');
-      pagePanel.style.setProperty('height', '100%', 'important');
-      pagePanel.style.setProperty('min-height', '0', 'important');
-      pagePanel.style.setProperty('overflow-x', 'hidden', 'important');
-      pagePanel.style.setProperty('overflow-y', 'auto', 'important');
-      pagePanel.style.setProperty('-webkit-overflow-scrolling', 'touch', 'important');
+    if (pageInner && scrollArea === pageInner) {
+      scrollRestore = {
+        area: pageInner,
+        styles: ['display','height','min-height','flex','overflow-x','overflow-y','-webkit-overflow-scrolling']
+          .map(property => [property, pageInner.style.getPropertyValue(property), pageInner.style.getPropertyPriority(property)])
+      };
+      pageInner.style.setProperty('display', 'block', 'important');
+      pageInner.style.setProperty('height', '100%', 'important');
+      pageInner.style.setProperty('min-height', '0', 'important');
+      pageInner.style.setProperty('flex', '1 1 auto', 'important');
+      pageInner.style.setProperty('overflow-x', 'hidden', 'important');
+      pageInner.style.setProperty('overflow-y', 'auto', 'important');
+      pageInner.style.setProperty('-webkit-overflow-scrolling', 'touch', 'important');
     }
 
     let spacer = scrollArea.querySelector(':scope > .pk-scroll-spacer');
@@ -3146,84 +3154,66 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
       scrollArea.appendChild(spacer);
     }
 
-    const reposition = (smooth) => {
+    const reposition = () => {
       if (activeInput !== input || !input.isConnected) return;
 
       const keyboardRect = keyboard.getBoundingClientRect();
-      const keyboardHeight = Math.ceil(keyboard.offsetHeight || keyboardRect.height || keyboard.scrollHeight || 190);
+      const keyboardHeight = Math.ceil(keyboardRect.height || keyboard.offsetHeight || 190);
       document.documentElement.style.setProperty('--pk-height', keyboardHeight + 'px');
-      spacer.style.cssText = 'display:block;flex:0 0 auto;width:100%;height:' + (keyboardHeight + 260) + 'px;min-height:' + (keyboardHeight + 260) + 'px;pointer-events:none;';
+      // Réserve assez d'espace pour pouvoir placer même le dernier champ
+      // juste au-dessus du clavier, sans couper le reste du formulaire.
+      spacer.style.cssText = 'display:block;flex:0 0 auto;width:100%;height:' +
+        (keyboardHeight + Math.max(220, scrollArea.clientHeight * .65)) +
+        'px;min-height:' + (keyboardHeight + Math.max(220, scrollArea.clientHeight * .65)) +
+        'px;pointer-events:none;';
 
-      // Le clavier est fixe : on aligne le champ dans la zone réellement visible.
-      // Utiliser scrollTop directement évite les incohérences de scrollIntoView sur iOS.
       const areaRect = scrollArea.getBoundingClientRect();
       const fieldRect = input.getBoundingClientRect();
-      const visibleTop = areaRect.top + 12;
-      const visibleBottom = Math.min(areaRect.bottom, keyboardRect.top) - 20;
+      const visibleTop = areaRect.top + 14;
+      const visibleBottom = Math.min(areaRect.bottom, keyboardRect.top) - 18;
       let delta = 0;
+      if (fieldRect.bottom > visibleBottom) delta = fieldRect.bottom - visibleBottom;
+      else if (fieldRect.top < visibleTop) delta = fieldRect.top - visibleTop;
 
-      if (fieldRect.bottom > visibleBottom) {
-        delta = fieldRect.bottom - visibleBottom;
-      } else if (fieldRect.top < visibleTop) {
-        delta = fieldRect.top - visibleTop;
-      }
+      const maxScroll = Math.max(0, scrollArea.scrollHeight - scrollArea.clientHeight);
+      const destination = Math.max(0, Math.min(maxScroll, scrollArea.scrollTop + delta));
+      if (Math.abs(destination - scrollArea.scrollTop) < 2) return;
 
-      if (Math.abs(delta) > 2) {
-        const maxScroll = Math.max(0, scrollArea.scrollHeight - scrollArea.clientHeight);
-        const destination = Math.max(0, Math.min(maxScroll, scrollArea.scrollTop + delta));
-        if (smooth) {
-          // Animation pilotée en JavaScript : plus régulière que scroll-behavior
-          // natif dans les conteneurs overflow de Safari iOS.
-          if (scrollArea._pkScrollFrame) cancelAnimationFrame(scrollArea._pkScrollFrame);
-          const start = scrollArea.scrollTop;
-          const distance = destination - start;
-          const duration = 560;
-          const startedAt = performance.now();
-          const ease = t => t < 0.5
-            ? 4 * t * t * t
-            : 1 - Math.pow(-2 * t + 2, 3) / 2;
-          const animateScroll = now => {
-            const progress = Math.min(1, (now - startedAt) / duration);
-            scrollArea.scrollTop = start + distance * ease(progress);
-            if (progress < 1) {
-              scrollArea._pkScrollFrame = requestAnimationFrame(animateScroll);
-            } else {
-              scrollArea._pkScrollFrame = null;
-            }
-          };
-          scrollArea._pkScrollFrame = requestAnimationFrame(animateScroll);
-        } else {
-          if (scrollArea._pkScrollFrame) cancelAnimationFrame(scrollArea._pkScrollFrame);
+      if (scrollArea._pkScrollFrame) cancelAnimationFrame(scrollArea._pkScrollFrame);
+      const from = scrollArea.scrollTop;
+      const distance = destination - from;
+      const started = performance.now();
+      const duration = 520;
+      const ease = t => 1 - Math.pow(1 - t, 3);
+      const animate = now => {
+        if (activeInput !== input || !input.isConnected) {
           scrollArea._pkScrollFrame = null;
-          scrollArea.scrollTop = destination;
+          return;
         }
-      }
+        const progress = Math.min(1, (now - started) / duration);
+        scrollArea.scrollTop = from + distance * ease(progress);
+        if (progress < 1) scrollArea._pkScrollFrame = requestAnimationFrame(animate);
+        else scrollArea._pkScrollFrame = null;
+      };
+      scrollArea._pkScrollFrame = requestAnimationFrame(animate);
     };
 
-    // Attendre que le clavier et la réduction de hauteur de l'application
-    // soient terminés : mesurer pendant leurs transitions donne une mauvaise
-    // destination et peut laisser le champ derrière le clavier.
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
+    // Une seule mesure, après la fin des deux transitions (clavier + app),
+    // puis une correction courte avec les dimensions réellement affichées.
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      setTimeout(() => {
+        if (activeInput !== input || !input.isConnected) return;
+        reposition();
         setTimeout(() => {
           if (activeInput !== input || !input.isConnected) return;
-          reposition(true);
-
-          // Vérification après le mouvement : si Safari a limité le scroll,
-          // recalculer une fois avec les dimensions finales réellement visibles.
-          setTimeout(() => {
-            if (activeInput !== input || !input.isConnected) return;
-            const area = scrollArea.getBoundingClientRect();
-            const field = input.getBoundingClientRect();
-            const keyboardTop = keyboard.getBoundingClientRect().top;
-            const limit = Math.min(area.bottom, keyboardTop) - 18;
-            if (field.bottom > limit + 3 || field.top < area.top + 10) {
-              reposition(true);
-            }
-          }, 620);
-        }, 540);
-      });
-    });
+          const visibleBottom = Math.min(
+            scrollArea.getBoundingClientRect().bottom,
+            keyboard.getBoundingClientRect().top
+          ) - 18;
+          if (input.getBoundingClientRect().bottom > visibleBottom + 4) reposition();
+        }, 560);
+      }, 560);
+    }));
   }
 
   function hide() {
@@ -3232,10 +3222,14 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
     document.getElementById('edit-overlay')?.classList.remove('pk-open');
     document.documentElement.style.removeProperty('--pk-height');
     document.querySelectorAll('.pk-scroll-spacer').forEach(spacer => spacer.remove());
-    document.querySelectorAll('.panel.active').forEach(panel => {
-      ['display','height','min-height','overflow-x','overflow-y','-webkit-overflow-scrolling']
-        .forEach(property => panel.style.removeProperty(property));
-    });
+    if (scrollRestore?.area?.isConnected) {
+      const area = scrollRestore.area;
+      scrollRestore.styles.forEach(([property, value, priority]) => {
+        if (value) area.style.setProperty(property, value, priority);
+        else area.style.removeProperty(property);
+      });
+    }
+    scrollRestore = null;
     activeInput = null;
   }
 
@@ -3285,6 +3279,8 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
       if (duration <= 300) {
         event.preventDefault();
         show(input);
+        lastPointerOpenedInput = input;
+        lastPointerOpenedAt = performance.now();
       }
       return;
     }
@@ -3299,6 +3295,9 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
     if (!input || input.disabled) return;
     event.preventDefault();
     event.stopPropagation();
+    // pointerup ouvre déjà le clavier sur iOS ; le click qui suit est le
+    // même tap et ne doit surtout pas relancer la mesure/défilement.
+    if (lastPointerOpenedInput === input && performance.now() - lastPointerOpenedAt < 700) return;
     show(input);
   }, true);
 
