@@ -430,8 +430,13 @@ body.pk-open #app { height:calc(100% - var(--pk-height, 0px)); }
 .year-sub { font-size:12px; color:var(--text2); margin-top:3px; font-weight:500; }
 .year-chevron { color:var(--wina); font-size:11px; margin-left:12px; transition:transform .25s; }
 .year-header.open .year-chevron { transform:rotate(180deg); }
-.year-body { display:none; padding:0 12px 14px; }
+.year-body { display:none; padding:0 12px 14px; overflow:hidden; transform-origin:top; }
 .year-body.open { display:block; }
+.year-body.year-animating { will-change:height,opacity,transform; }
+.bet-list { transform-origin:top; }
+@media (prefers-reduced-motion:reduce) {
+  .year-body,.bet-list { transition:none!important; }
+}
 
 .year-pills { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-bottom:14px; }
 .pill { background:var(--surface2); border-radius:7px; padding:9px 8px 8px; text-align:center; }
@@ -2734,11 +2739,58 @@ function replayChart(btn) {
   canvas.dataset.drawn = '1';
 }
 
+function animateYearBody(body, opening) {
+  if (!body) return;
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  body.getAnimations().forEach(animation => animation.cancel());
+  body.classList.add('year-animating');
+  if (opening) {
+    body.style.display = 'block';
+    body.classList.add('open');
+    body.style.height = 'auto';
+    const targetHeight = body.scrollHeight;
+    body.style.height = '0px';
+    body.style.opacity = '0';
+    body.style.transform = 'translateY(-10px)';
+    if (reduceMotion) {
+      body.style.height = 'auto'; body.style.opacity = '1'; body.style.transform = '';
+      body.classList.remove('year-animating');
+      return;
+    }
+    const animation = body.animate([
+      { height: '0px', opacity: 0, transform: 'translateY(-10px)' },
+      { height: targetHeight + 'px', opacity: 1, transform: 'translateY(0)' }
+    ], { duration: 440, easing: 'cubic-bezier(.22,1,.36,1)' });
+    animation.onfinish = () => {
+      body.style.height = 'auto'; body.style.opacity = ''; body.style.transform = '';
+      body.classList.remove('year-animating');
+    };
+  } else {
+    const startHeight = body.getBoundingClientRect().height;
+    if (reduceMotion) {
+      body.classList.remove('open'); body.style.display = 'none';
+      body.style.height = ''; body.style.opacity = ''; body.style.transform = '';
+      body.classList.remove('year-animating');
+      return;
+    }
+    const animation = body.animate([
+      { height: startHeight + 'px', opacity: 1, transform: 'translateY(0)' },
+      { height: '0px', opacity: 0, transform: 'translateY(-10px)' }
+    ], { duration: 360, easing: 'cubic-bezier(.4,0,.2,1)' });
+    animation.onfinish = () => {
+      body.classList.remove('open');
+      body.style.display = 'none'; body.style.height = ''; body.style.opacity = ''; body.style.transform = '';
+      body.classList.remove('year-animating');
+    };
+  }
+}
+
 function toggleYear(btn) {
-  btn.classList.toggle('open');
   const body = btn.nextElementSibling;
-  body.classList.toggle('open');
-  if (body.classList.contains('open')) {
+  const opening = !body.classList.contains('open');
+  btn.classList.toggle('open', opening);
+  animateYearBody(body, opening);
+  if (opening) {
     const canvas = body.querySelector('canvas');
     if (canvas) {
       const year = Number(canvas.dataset.year);
