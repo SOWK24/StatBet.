@@ -1007,16 +1007,26 @@ input[type="submit"]:active, input[type="reset"]:active, summary:active,
 #result-celebration #result-demo-dismiss-layer{display:block!important;z-index:4!important}#result-celebration>button{display:block!important;z-index:5!important}
 </style>
 <style>
-/* iOS Safari : préserver un vrai conteneur de scroll tactile indépendant. */
-.panel-inner,
-.panel.active .panel-inner {
-  animation: none !important;
-  transform: none !important;
-  opacity: 1 !important;
+/* iOS Safari : le panneau actif porte directement le scroll natif.
+   Cela évite qu'une suppression/reconstruction du contenu interne invalide
+   la couche de défilement imbriquée. */
+.panel.active {
+  display: flex;
+  flex-direction: column;
   overflow-x: hidden !important;
   overflow-y: auto !important;
   -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior-y: contain;
   touch-action: pan-y;
+}
+.panel-inner {
+  flex: 0 0 auto !important;
+  min-height: 100%;
+  width: 100%;
+  overflow: visible !important;
+  animation: none !important;
+  transform: none !important;
+  opacity: 1 !important;
 }
 </style>
 </head>
@@ -2153,22 +2163,6 @@ function showResultCelebration(isWin, amount) {
 }let resultCelebrationTimer = null;
 let pendingResultRefresh = false;
 
-/* iOS Safari peut conserver une couche de scroll native invalidée après
-   la fermeture d'une iframe plein écran. On reconstruit les deux zones
-   défilantes sans toucher à leur contenu ni à leur position. */
-function refreshNativePanelScroll() {
-  document.querySelectorAll('.panel-inner').forEach(scroller => {
-    const savedTop = scroller.scrollTop;
-    scroller.style.webkitOverflowScrolling = 'auto';
-    scroller.style.overflowY = 'hidden';
-    void scroller.offsetHeight;
-    scroller.style.overflowY = 'auto';
-    scroller.style.webkitOverflowScrolling = 'touch';
-    scroller.style.touchAction = 'pan-y';
-    scroller.scrollTop = savedTop;
-  });
-}
-
 function closeResultCelebration() {
   const modal = document.getElementById('result-celebration');
   const wasOpen = !!modal && modal.classList.contains('show');
@@ -2195,14 +2189,6 @@ function closeResultCelebration() {
     renderDashboard();
     if (document.getElementById('panel-history')?.classList.contains('active')) renderHistory();
   }
-  // Laisser Safari retirer l'iframe avant de réinitialiser ses scroll layers.
-  requestAnimationFrame(() => {
-    refreshNativePanelScroll();
-    requestAnimationFrame(() => {
-      refreshNativePanelScroll();
-      document.querySelector('.panel.active .panel-inner')?.style.setProperty('-webkit-overflow-scrolling', 'touch');
-    });
-  });
 }
 
 /* ─── Toast ─────────────────────────────────────────────────────────── */
@@ -2631,34 +2617,24 @@ function getDeletedBetIds() {
   catch (_) { return new Set(); }
 }
 
-// Safari peut faire défiler le document, le panneau ou un autre ancêtre selon
-// le contexte PWA. On mémorise tous les conteneurs réellement défilés au toucher
-// de la corbeille, avant que le navigateur ne déplace le focus.
-let pendingBetDeleteScrollSnapshot = null;
-function captureBetDeleteScroll() {
-  const elements = [];
-  const candidates = [document.scrollingElement, document.documentElement, document.body, ...document.querySelectorAll('*')];
-  const seen = new Set();
-  for (const el of candidates) {
-    if (!el || seen.has(el)) continue;
-    seen.add(el);
-    if (el.scrollTop > 0 || el.scrollLeft > 0) {
-      elements.push({ el, top: el.scrollTop, left: el.scrollLeft });
-    }
-  }
-  return { elements, x: window.scrollX || 0, y: window.scrollY || 0 };
-}
+// Le panneau d'historique est désormais l'unique conteneur de scroll.
+// On mémorise sa position avant le clic sur la corbeille pour la restaurer
+// après la suppression, sans toucher aux scrollTop des autres éléments.
+let pendingBetDeleteScrollTop = null;
 document.addEventListener('pointerdown', event => {
   const target = event.target instanceof Element ? event.target : null;
-  if (target?.closest('.bet-delete')) pendingBetDeleteScrollSnapshot = captureBetDeleteScroll();
+  if (target?.closest('.bet-delete')) {
+    const historyPanel = document.getElementById('panel-history');
+    pendingBetDeleteScrollTop = historyPanel ? historyPanel.scrollTop : 0;
+  }
 }, true);
 
 function deleteBet(id) {
   const bet = bets.find(b => b.id === id);
   if (!bet) return;
 
-  const scrollSnapshot = pendingBetDeleteScrollSnapshot || captureBetDeleteScroll();
-  pendingBetDeleteScrollSnapshot = null;
+  const savedHistoryScrollTop = pendingBetDeleteScrollTop;
+  pendingBetDeleteScrollTop = null;
   const activeElement = document.activeElement;
   if (activeElement && activeElement.classList.contains('bet-delete')) activeElement.blur();
 
@@ -2703,19 +2679,11 @@ function deleteBet(id) {
     historyContainer.innerHTML = '<div class="empty-state"><p>Aucun pari</p><p>Saisis ton premier pari dans Mon Activité.</p></div>';
   }
 
-  // Restauration de chaque conteneur qui défilait, sans forcer window.scrollTo(0, 0).
+  // Restaurer uniquement la position du panneau après mise à jour de l'historique.
   const restoreScroll = () => {
-    // Le panneau d'historique est le seul conteneur de défilement attendu.
-    // Restaurer sa position explicitement évite qu'un changement de focus iOS
-    // ou le retrait du bouton actif ne replace la vue au début du document.
-    const historyScroller = document.querySelector('#panel-history > .panel-inner');
-    const panelSnapshot = scrollSnapshot.elements.find(item => item.el === historyScroller);
-    if (panelSnapshot && historyScroller) historyScroller.scrollTop = panelSnapshot.top;
-    for (const item of scrollSnapshot.elements) {
-      if (item.el && item.el.isConnected && item.el !== historyScroller) {
-        item.el.scrollTop = item.top;
-        item.el.scrollLeft = item.left;
-      }
+    const historyPanel = document.getElementById('panel-history');
+    if (historyPanel && Number.isFinite(savedHistoryScrollTop)) {
+      historyPanel.scrollTop = savedHistoryScrollTop;
     }
   };
   restoreScroll();
