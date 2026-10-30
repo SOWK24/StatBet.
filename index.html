@@ -3006,35 +3006,48 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
     keyboard.querySelectorAll('button').forEach((button, index) => {
       button.style.setProperty('--pk-delay', index + 'ms');
     });
-    // Le clavier est fixe : on réserve sa hauteur dans le conteneur qui défile,
-    // puis on remonte le champ actif dans la zone réellement visible au-dessus.
-    const scrollArea = input.closest('.panel-inner, .modal-sheet, #edit-sheet');
+    // Trouve le vrai conteneur scrollable (sur iPhone, ce n'est pas toujours
+    // le parent immédiat du champ). On lui ajoute une réserve sous le formulaire.
+    const isScrollable = el => {
+      if (!el) return false;
+      const style = getComputedStyle(el);
+      return /(auto|scroll)/.test(style.overflowY) && el.scrollHeight > el.clientHeight + 2;
+    };
+    let scrollArea = input.parentElement;
+    while (scrollArea && scrollArea !== document.body && !isScrollable(scrollArea)) {
+      scrollArea = scrollArea.parentElement;
+    }
+    if (!scrollArea || scrollArea === document.body) {
+      scrollArea = input.closest('.panel-inner') || input.closest('.modal-sheet') || input.closest('#edit-sheet');
+    }
     if (scrollArea) {
       let spacer = scrollArea.querySelector(':scope > .pk-scroll-spacer');
       if (!spacer) {
         spacer = document.createElement('div');
         spacer.className = 'pk-scroll-spacer';
         spacer.setAttribute('aria-hidden', 'true');
+        spacer.style.cssText = 'display:block;width:100%;pointer-events:none;';
         scrollArea.appendChild(spacer);
       }
-      const reserveSpace = () => {
+      const revealInput = () => {
         if (activeInput !== input) return;
-        const keyboardHeight = keyboard.getBoundingClientRect().height;
-        spacer.style.height = (keyboardHeight + 36) + 'px';
+        const keyboardRect = keyboard.getBoundingClientRect();
         const areaRect = scrollArea.getBoundingClientRect();
+        spacer.style.height = Math.max(220, window.innerHeight - keyboardRect.top + 48) + 'px';
         const inputRect = input.getBoundingClientRect();
-        const keyboardTop = keyboard.getBoundingClientRect().top;
-        const visibleTop = areaRect.top + 18;
-        const visibleBottom = Math.min(areaRect.bottom, keyboardTop) - 18;
-        const visibleHeight = Math.max(80, visibleBottom - visibleTop);
-        const targetTop = visibleTop + Math.min(92, Math.max(24, visibleHeight * 0.22));
-        const delta = inputRect.top - targetTop;
-        const maxScroll = Math.max(0, scrollArea.scrollHeight - scrollArea.clientHeight);
-        const nextScroll = Math.max(0, Math.min(maxScroll, scrollArea.scrollTop + delta));
-        scrollArea.scrollTo({ top: nextScroll, behavior: 'smooth' });
+        const visibleBottom = Math.min(areaRect.bottom, keyboardRect.top) - 20;
+        const visibleTop = areaRect.top + 16;
+        let delta = 0;
+        if (inputRect.bottom > visibleBottom) delta = inputRect.bottom - visibleBottom + 24;
+        else if (inputRect.top < visibleTop) delta = inputRect.top - visibleTop;
+        if (Math.abs(delta) > 2) {
+          scrollArea.scrollTop += delta;
+        }
       };
-      requestAnimationFrame(() => requestAnimationFrame(reserveSpace));
-      window.setTimeout(reserveSpace, 420);
+      // Recalcule après l'apparition et la transition du clavier iOS.
+      [0, 120, 280, 500, 750].forEach(delay => {
+        window.setTimeout(() => requestAnimationFrame(revealInput), delay);
+      });
     }
   }
 
