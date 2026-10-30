@@ -3121,12 +3121,12 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
       button.style.setProperty('--pk-delay', index + 'ms');
     });
 
-    // Sur iOS, le véritable conteneur de défilement est le panneau actif
-    // (voir la règle CSS .panel.active). Faire défiler .panel-inner ne déplace
-    // qu'une couche interne et laisse le reste de l'interface sous le clavier.
+    // Le panneau (.panel) masque le débordement ; le vrai conteneur
+    // scrollable défini par le CSS est son enfant .panel-inner.
+    // Le modal d'édition conserve son propre scroll indépendant.
     const editSheet = input.closest('#edit-sheet');
-    const activePanel = input.closest('.panel.active');
-    const scrollArea = editSheet || activePanel ||
+    const panelContent = input.closest('.panel.active')?.querySelector('.panel-inner');
+    const scrollArea = editSheet || panelContent ||
       input.closest('.record-edit-wrap')?.parentElement;
     if (!scrollArea) return;
 
