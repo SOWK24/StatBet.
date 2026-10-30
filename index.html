@@ -1141,7 +1141,7 @@ input[type="submit"]:active, input[type="reset"]:active, summary:active,
 
 <div id="toast"></div>
 <div id="result-celebration" class="result-celebration" role="dialog" aria-modal="true" aria-live="polite" aria-label="Résultat du pari">
-  <iframe id="result-demo-frame" title="Animation du résultat Pauly’Bet" src="./demo-animation.html?embed=1" style="position:absolute;inset:0;width:100%;height:100%;border:0;background:#070908;z-index:10;pointer-events:none"></iframe>
+  <iframe id="result-demo-frame" title="Animation du résultat Pauly’Bet" src="about:blank" style="position:absolute;inset:0;width:100%;height:100%;border:0;background:#070908;z-index:10;pointer-events:none;visibility:hidden"></iframe>
   <div id="result-demo-dismiss-layer" onclick="closeResultCelebration()" aria-label="Fermer le résultat" style="position:absolute;inset:0;z-index:20;cursor:pointer"></div>
   <button type="button" aria-label="Fermer le résultat" onclick="closeResultCelebration()" style="position:absolute;z-index:30;top:max(12px,env(safe-area-inset-top));right:14px;width:38px;height:38px;border:1px solid rgba(255,255,255,.2);border-radius:50%;background:rgba(10,14,10,.7);color:#fff;font-size:22px">×</button>
 </div>
@@ -2108,32 +2108,29 @@ function showResultCelebration(isWin, amount) {
   const modal = document.getElementById('result-celebration');
   const demoFrame = document.getElementById('result-demo-frame');
 
-  // Masquer immédiatement l'ancienne iframe : elle ne doit jamais apparaître
-  // avec le résultat du pari précédent pendant le chargement du nouveau.
-  if (demoFrame) {
-    demoFrame.style.visibility = 'hidden';
-    demoFrame.onload = () => {
-      demoFrame.style.visibility = 'visible';
-    };
-  }
-
   resultCelebrationPreviousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   modal.setAttribute('tabindex', '-1');
   modal.setAttribute('aria-label', isWin ? 'Victoire au pari' : 'Défaite au pari');
 
-  // Préparer l'URL et le montant exacts avant d'afficher la célébration.
-  const amountTarget = Math.max(0, Number(amount) || 0);
+  // L'iframe démarre sur about:blank : aucun ancien résultat ne peut être
+  // affiché pendant le chargement du nouveau.
   if (demoFrame) {
+    demoFrame.onload = () => {
+      demoFrame.style.visibility = 'visible';
+    };
+    demoFrame.style.visibility = 'hidden';
+
+    const amountTarget = Math.max(0, Number(amount) || 0);
     const demoUrl = new URL('./demo-animation.html', window.location.href);
     demoUrl.searchParams.set('embed', '1');
     demoUrl.searchParams.set('kind', isWin ? 'gain' : 'loss');
     demoUrl.searchParams.set('amount', String(amountTarget));
-    demoUrl.searchParams.set('v', '5');
+    demoUrl.searchParams.set('v', '6');
+    // Empêche le navigateur de réutiliser une ancienne page d'animation.
+    demoUrl.searchParams.set('instance', String(Date.now()) + '-' + Math.random().toString(36).slice(2));
     demoFrame.src = demoUrl.toString();
   }
 
-  // L'écran reste opaque pendant le chargement ; l'iframe ne s'affiche
-  // qu'une fois la nouvelle animation et son montant réellement chargés.
   modal.className = 'result-celebration show ' + (isWin ? 'win' : 'loss');
 }
 let resultCelebrationTimer = null;
