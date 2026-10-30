@@ -3039,8 +3039,13 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
         if (activeInput !== input) return;
         const keyboardRect = keyboard.getBoundingClientRect();
         const areaRect = scrollArea.getBoundingClientRect();
-        // Grande zone vide réellement scrollable sous le dernier élément du formulaire.
-        spacer.style.height = Math.max(300, window.innerHeight - keyboardRect.top + 220) + 'px';
+        // Réserve une vraie hauteur de défilement sous le formulaire.
+        const extraSpace = Math.max(320, keyboardRect.height + 220);
+        spacer.style.height = extraSpace + 'px';
+        spacer.style.minHeight = extraSpace + 'px';
+        document.body.style.setProperty('--pk-keyboard-space', extraSpace + 'px');
+        scrollArea.style.setProperty('padding-bottom', 'calc(100px + var(--pk-keyboard-space))', 'important');
+        scrollArea.style.setProperty('scroll-padding-bottom', 'var(--pk-keyboard-space)', 'important');
         const inputRect = input.getBoundingClientRect();
         const visibleBottom = Math.min(areaRect.bottom, keyboardRect.top) - 20;
         const visibleTop = areaRect.top + 16;
@@ -3061,7 +3066,15 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
   function hide() {
     keyboard.classList.remove('pk-visible');
     document.body.classList.remove('pk-open');
-    document.querySelectorAll('.pk-scroll-spacer').forEach(node => node.remove());
+    document.body.style.removeProperty('--pk-keyboard-space');
+    document.querySelectorAll('.pk-scroll-spacer').forEach(node => {
+      const parent = node.parentElement;
+      node.remove();
+      if (parent?.classList.contains('panel-inner')) {
+        parent.style.removeProperty('padding-bottom');
+        parent.style.removeProperty('scroll-padding-bottom');
+      }
+    });
     activeInput = null;
   }
 
@@ -3088,19 +3101,30 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
     }));
   }).observe(document.body, { childList: true, subtree: true });
 
-  // Ouverture au clic/tap terminé : un seul appui suffit, sans déclenchement
-  // anticipé au touchstart/pointerdown pendant un appui prolongé.
-  document.addEventListener('click', event => {
+  // Ouverture à la fin d'un tap (pointerup), jamais au début d'un appui prolongé.
+  // Un unique contact bref sur un champ suffit à afficher le clavier.
+  document.addEventListener('pointerup', event => {
     const target = event.target instanceof Element ? event.target : null;
     const input = target?.closest('input[data-pauly-numeric]');
     if (input) {
+      event.preventDefault();
       show(input);
       return;
     }
     if (!target?.closest('#pauly-keyboard') && keyboard.classList.contains('pk-visible')) hide();
-  });
+  }, true);
 
-  // Le focus clavier/accessibilité reste pris en charge sans doubler les événements tactiles.
+  // Repli tactile pour les navigateurs sans Pointer Events.
+  if (!('PointerEvent' in window)) {
+    document.addEventListener('touchend', event => {
+      const target = event.target instanceof Element ? event.target : null;
+      const input = target?.closest('input[data-pauly-numeric]');
+      if (input) show(input);
+      else if (!target?.closest('#pauly-keyboard') && keyboard.classList.contains('pk-visible')) hide();
+    }, { capture: true, passive: true });
+  }
+
+  // Activation clavier/accessibilité via Entrée ou Espace.
   document.addEventListener('keydown', event => {
     const input = event.target.closest?.('input[data-pauly-numeric]');
     if (input && (event.key === 'Enter' || event.key === ' ')) show(input);
