@@ -1273,6 +1273,34 @@ const STORAGE_KEY = 'statbet_bets_v3';
 const SEEDED_KEY  = 'statbet_seeded_v4'; // bumped to reset seed with correct data
 const r2 = n => Math.round(n * 100) / 100;
 
+/* Correction unique des montants de juillet 2026 : les montants ont été enregistrés x2.
+   Le marqueur est conservé dans chaque pari pour éviter toute division répétée,
+   y compris après une nouvelle récupération depuis Supabase ou sur un autre appareil. */
+const JULY_2026_HALF_FIX_FLAG = '_paulybetJuly2026HalfFixV1';
+function normalizeJuly2026Amounts(items) {
+  let changed = false;
+  const normalized = (Array.isArray(items) ? items : []).map(bet => {
+    if (!bet || bet[JULY_2026_HALF_FIX_FLAG]) return bet;
+    const date = new Date(bet.date);
+    if (!Number.isFinite(date.getTime())) return bet;
+    const parts = new Intl.DateTimeFormat('en', {
+      timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit'
+    }).formatToParts(date);
+    const year = parts.find(part => part.type === 'year')?.value;
+    const month = parts.find(part => part.type === 'month')?.value;
+    if (year !== '2026' || month !== '07') return bet;
+    changed = true;
+    return {
+      ...bet,
+      mise: r2((Number(bet.mise) || 0) / 2),
+      gain: r2((Number(bet.gain) || 0) / 2),
+      [JULY_2026_HALF_FIX_FLAG]: true
+    };
+  });
+  return { bets: normalized, changed };
+}
+
+
 function fmtEur(n, forceSign = false) {
   const abs = Math.abs(n).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const sign = n < 0 ? '−' : (forceSign && n > 0 ? '+' : '');
@@ -1563,10 +1591,11 @@ function loadBets() {
       loaded = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
     }
     if (!Array.isArray(loaded)) loaded = [];
-    const recoveryBets = [...JULY_RECOVERY_BETS,
+    loaded = normalizeJuly2026Amounts(loaded).bets;
+    const recoveryBets = normalizeJuly2026Amounts([...JULY_RECOVERY_BETS,
       { id: 'recovery-2026-08-14', mise: 10, gain: 20.5, date: '2026-08-14T16:00:00Z', year: 2026 },
       { id: 'recovery-2026-09-17', mise: 10, gain: 20.5, date: '2026-09-17T16:00:00Z', year: 2026 }
-    ];
+    ]).bets;
     loaded = mergeRecoveryBets(loaded, recoveryBets);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(loaded));
     return loaded;
@@ -1654,11 +1683,13 @@ async function pullFromCloud(silent) {
     if (error) throw error;
     if (data && Array.isArray(data.data)) {
       bets = data.data;
-      // Reconstitution idempotente des deux paris manquants d'août et septembre 2026.
-      const recoveryBets = [...JULY_RECOVERY_BETS,
-      { id: 'recovery-2026-08-14', mise: 10, gain: 20.5, date: '2026-08-14T16:00:00Z', year: 2026 },
-      { id: 'recovery-2026-09-17', mise: 10, gain: 20.5, date: '2026-09-17T16:00:00Z', year: 2026 }
-    ];
+      const julyCorrection = normalizeJuly2026Amounts(bets);
+      bets = julyCorrection.bets;
+      // Reconstitution idempotente des paris restaurés d'août et septembre 2026.
+      const recoveryBets = normalizeJuly2026Amounts([...JULY_RECOVERY_BETS,
+        { id: 'recovery-2026-08-14', mise: 10, gain: 20.5, date: '2026-08-14T16:00:00Z', year: 2026 },
+        { id: 'recovery-2026-09-17', mise: 10, gain: 20.5, date: '2026-09-17T16:00:00Z', year: 2026 }
+      ]).bets;
       let addedRecoveryBets = false;
       const beforeRecoveryCount = bets.length;
       bets = mergeRecoveryBets(bets, recoveryBets);
@@ -1666,7 +1697,7 @@ async function pullFromCloud(silent) {
       saveLocalOnly(bets);
       renderDashboard();
       if (document.getElementById('panel-history').classList.contains('active')) renderHistory();
-      if (addedRecoveryBets) {
+      if (addedRecoveryBets || julyCorrection.changed) {
         try {
           const { error: saveError } = await client
             .from('statbet_sync')
@@ -1752,16 +1783,18 @@ async function connectAndSync() {
     if (data && Array.isArray(data.data) && data.data.length > 0) {
       // Les données cloud restent la base ; ajout de deux paris de reconstitution une seule fois.
       bets = data.data;
-      const recoveryBets = [...JULY_RECOVERY_BETS,
-      { id: 'recovery-2026-08-14', mise: 10, gain: 20.5, date: '2026-08-14T16:00:00Z', year: 2026 },
-      { id: 'recovery-2026-09-17', mise: 10, gain: 20.5, date: '2026-09-17T16:00:00Z', year: 2026 }
-    ];
+      const julyCorrection = normalizeJuly2026Amounts(bets);
+      bets = julyCorrection.bets;
+      const recoveryBets = normalizeJuly2026Amounts([...JULY_RECOVERY_BETS,
+        { id: 'recovery-2026-08-14', mise: 10, gain: 20.5, date: '2026-08-14T16:00:00Z', year: 2026 },
+        { id: 'recovery-2026-09-17', mise: 10, gain: 20.5, date: '2026-09-17T16:00:00Z', year: 2026 }
+      ]).bets;
       let addedRecoveryBets = false;
       const beforeRecoveryCount = bets.length;
       bets = mergeRecoveryBets(bets, recoveryBets);
       addedRecoveryBets = bets.length !== beforeRecoveryCount;
       saveLocalOnly(bets);
-      if (addedRecoveryBets) {
+      if (addedRecoveryBets || julyCorrection.changed) {
         const { error: saveError } = await client
           .from('statbet_sync')
           .upsert({ sync_code: code, data: bets, updated_at: new Date().toISOString() }, { onConflict: 'sync_code' });
@@ -2544,10 +2577,10 @@ function renderHistory() {
   const container = document.getElementById('history-container');
   // Garde-fou : réinjecter les deux paris restaurés au moment même où l'historique s'affiche,
   // même si une récupération cloud a remplacé le tableau en mémoire après le chargement.
-  const recoveryBets = [...JULY_RECOVERY_BETS,
+  const recoveryBets = normalizeJuly2026Amounts([...JULY_RECOVERY_BETS,
       { id: 'recovery-2026-08-14', mise: 10, gain: 20.5, date: '2026-08-14T16:00:00Z', year: 2026 },
       { id: 'recovery-2026-09-17', mise: 10, gain: 20.5, date: '2026-09-17T16:00:00Z', year: 2026 }
-    ];
+    ]).bets;
   if (!Array.isArray(bets)) bets = [];
   const deletedIds = getDeletedBetIds();
   const activeRecoveryBets = recoveryBets.filter(b => !deletedIds.has(b.id));
