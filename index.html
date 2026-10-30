@@ -2954,6 +2954,10 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
   }, { passive: true });
 })();
 
+/* Le clavier Pauly’Bet est initialisé dans un script isolé après le script principal. */
+
+</script>
+<script>
 /* ─── Clavier numérique personnalisé Pauly’Bet ─────────────────────── */
 (function initPaulyBetKeyboard() {
   let activeInput = null;
@@ -3032,16 +3036,19 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
     }));
   }).observe(document.body, { childList: true, subtree: true });
 
-  // pointerdown ouvre le clavier dès le contact, sans attendre le click synthétique iOS.
-  document.addEventListener('pointerdown', event => {
-    const input = event.target.closest?.('input[data-pauly-numeric]');
+  // Déclenchement tactile natif + pointerdown pour couvrir Safari iOS et les autres navigateurs.
+  function handleKeyboardPress(event) {
+    const target = event.target instanceof Element ? event.target : null;
+    const input = target?.closest('input[data-pauly-numeric]');
     if (input) {
-      event.preventDefault();
+      if (event.type === 'pointerdown') event.preventDefault();
       show(input);
       return;
     }
-    if (!event.target.closest?.('#pauly-keyboard') && keyboard.classList.contains('pk-visible')) hide();
-  }, true);
+    if (!target?.closest('#pauly-keyboard') && keyboard.classList.contains('pk-visible')) hide();
+  }
+  document.addEventListener('touchstart', handleKeyboardPress, { capture: true, passive: true });
+  document.addEventListener('pointerdown', handleKeyboardPress, true);
 
   // Filet de sécurité pour les focus clavier/accessibilité et les champs injectés ensuite.
   document.addEventListener('focusin', event => {
@@ -3083,8 +3090,8 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
     if (event.key === 'Escape' && keyboard.classList.contains('pk-visible')) hide();
   });
 })();
-
 </script>
+
 <style>
 /* Supabase : neutraliser toutes les animations tactiles dans le modal.
    Le sélecteur global [onclick]:active touche aussi l'overlay lui-même,
