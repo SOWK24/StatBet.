@@ -3121,38 +3121,28 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
       button.style.setProperty('--pk-delay', index + 'ms');
     });
 
-    // Le panneau reste dans sa mise en page flex. Seul son contenu devient
-    // scrollable : c'est la zone qui contient réellement les champs et toute
-    // l'interface, et non le panneau parent qui sert au défilement horizontal.
+    // Sur iOS, le véritable conteneur de défilement est le panneau actif
+    // (voir la règle CSS .panel.active). Faire défiler .panel-inner ne déplace
+    // qu'une couche interne et laisse le reste de l'interface sous le clavier.
     const editSheet = input.closest('#edit-sheet');
-    const pageInner = input.closest('.panel.active .panel-inner');
-    const scrollArea = editSheet || pageInner ||
-      input.closest('.panel.active') ||
+    const activePanel = input.closest('.panel.active');
+    const scrollArea = editSheet || activePanel ||
       input.closest('.record-edit-wrap')?.parentElement;
     if (!scrollArea) return;
 
-    if (pageInner && scrollArea === pageInner) {
-      scrollRestore = {
-        area: pageInner,
-        styles: ['display','height','min-height','flex','overflow-x','overflow-y','-webkit-overflow-scrolling']
-          .map(property => [property, pageInner.style.getPropertyValue(property), pageInner.style.getPropertyPriority(property)])
-      };
-      pageInner.style.setProperty('display', 'block', 'important');
-      pageInner.style.setProperty('height', '100%', 'important');
-      pageInner.style.setProperty('min-height', '0', 'important');
-      pageInner.style.setProperty('flex', '1 1 auto', 'important');
-      pageInner.style.setProperty('overflow-x', 'hidden', 'important');
-      pageInner.style.setProperty('overflow-y', 'auto', 'important');
-      pageInner.style.setProperty('-webkit-overflow-scrolling', 'touch', 'important');
+    // Une seule zone de scroll par ouverture : supprimer l'éventuel ancien
+    // espace de réserve et annuler toute animation précédente.
+    if (scrollArea._pkScrollFrame) {
+      cancelAnimationFrame(scrollArea._pkScrollFrame);
+      scrollArea._pkScrollFrame = null;
     }
+    scrollArea.querySelectorAll(':scope > .pk-scroll-spacer').forEach(node => node.remove());
 
-    let spacer = scrollArea.querySelector(':scope > .pk-scroll-spacer');
-    if (!spacer) {
-      spacer = document.createElement('div');
-      spacer.className = 'pk-scroll-spacer';
-      spacer.setAttribute('aria-hidden', 'true');
-      scrollArea.appendChild(spacer);
-    }
+    const spacer = document.createElement('div');
+    spacer.className = 'pk-scroll-spacer';
+    spacer.setAttribute('aria-hidden', 'true');
+    spacer.style.cssText = 'display:block;flex:0 0 auto;width:100%;height:1000px;min-height:1000px;pointer-events:none;';
+    scrollArea.appendChild(spacer);
 
     const reposition = () => {
       if (activeInput !== input || !input.isConnected || !scrollArea.isConnected) return;
@@ -3161,19 +3151,17 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
       const keyboardHeight = Math.ceil(keyboardRect.height || keyboard.offsetHeight || 190);
       document.documentElement.style.setProperty('--pk-height', keyboardHeight + 'px');
 
-      // Grande réserve de défilement : le dernier champ doit pouvoir remonter
-      // entièrement au-dessus du clavier, même sur les petits écrans iPhone.
-      const reserve = Math.ceil(keyboardHeight + Math.max(520, scrollArea.clientHeight * 1.6));
-      spacer.style.cssText = 'display:block;flex:0 0 auto;width:100%;height:' +
-        reserve + 'px;min-height:' + reserve + 'px;pointer-events:none;';
-
-      // Force Safari à recalculer la hauteur scrollable après le changement
-      // de taille de l'application et l'ajout de l'espace de fin.
+      // Laisse une grande marge après le contenu pour pouvoir déplacer
+      // l'ensemble du panneau et placer le champ sélectionné au-dessus du clavier.
+      const reserve = Math.max(1000, Math.ceil(scrollArea.clientHeight * 2));
+      spacer.style.height = reserve + 'px';
+      spacer.style.minHeight = reserve + 'px';
       void scrollArea.offsetHeight;
+
       const areaRect = scrollArea.getBoundingClientRect();
       const fieldRect = input.getBoundingClientRect();
-      const visibleTop = areaRect.top + 22;
-      const visibleBottom = Math.min(areaRect.bottom, keyboardRect.top) - 34;
+      const visibleTop = areaRect.top + 18;
+      const visibleBottom = Math.min(areaRect.bottom, keyboardRect.top) - 28;
       let delta = 0;
       if (fieldRect.bottom > visibleBottom) delta = fieldRect.bottom - visibleBottom;
       else if (fieldRect.top < visibleTop) delta = fieldRect.top - visibleTop;
@@ -3187,8 +3175,7 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
       const from = scrollArea.scrollTop;
       const distance = destination - from;
       const started = performance.now();
-      // Glissement plus long et plus doux, tout en gardant l'animation du clavier intacte.
-      const duration = 780;
+      const duration = 850;
       const ease = t => 1 - Math.pow(1 - t, 3);
       const animate = now => {
         if (activeInput !== input || !input.isConnected) {
@@ -3203,27 +3190,26 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
       scrollArea._pkScrollFrame = requestAnimationFrame(animate);
     };
 
-    // Safari iOS termine parfois le redimensionnement après la transition CSS.
-    // On attend la mise en page réelle puis on vérifie plusieurs fois : cela
-    // fiabilise aussi les ouvertures suivantes, pas uniquement la première.
+    // Mesures répétées pendant et après les transitions : la hauteur du panneau
+    // change avec l'ouverture du clavier sur iOS, puis se stabilise.
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      [620, 850, 1080, 1320].forEach(delay => {
+      [180, 420, 650, 900, 1180].forEach(delay => {
         setTimeout(() => {
-          if (activeInput !== input || !input.isConnected) return;
-          reposition();
+          if (activeInput === input && input.isConnected) reposition();
         }, delay);
       });
     }));
   }
 
   function hide() {
-    // Annule toute animation en cours avant de restaurer le panneau.
+    // Annule le défilement en cours avant de retirer les espaces temporaires.
     document.querySelectorAll('.pk-scroll-spacer').forEach(spacer => {
       const area = spacer.parentElement;
       if (area?._pkScrollFrame) {
         cancelAnimationFrame(area._pkScrollFrame);
         area._pkScrollFrame = null;
       }
+      spacer.remove();
     });
     keyboard.classList.remove('pk-visible');
     document.body.classList.remove('pk-open');
