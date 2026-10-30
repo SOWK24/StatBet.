@@ -2106,22 +2106,35 @@ window.addEventListener('message', function(event) {
 let resultCelebrationPreviousFocus = null;
 function showResultCelebration(isWin, amount) {
   const modal = document.getElementById('result-celebration');
+  const demoFrame = document.getElementById('result-demo-frame');
+
+  // Masquer immédiatement l'ancienne iframe : elle ne doit jamais apparaître
+  // avec le résultat du pari précédent pendant le chargement du nouveau.
+  if (demoFrame) {
+    demoFrame.style.visibility = 'hidden';
+    demoFrame.onload = () => {
+      demoFrame.style.visibility = 'visible';
+    };
+  }
+
   resultCelebrationPreviousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   modal.setAttribute('tabindex', '-1');
-  modal.className = 'result-celebration show ' + (isWin ? 'win' : 'loss');
   modal.setAttribute('aria-label', isWin ? 'Victoire au pari' : 'Défaite au pari');
 
-  // Une seule animation : la démo validée, avec le vrai résultat du pari.
+  // Préparer l'URL et le montant exacts avant d'afficher la célébration.
   const amountTarget = Math.max(0, Number(amount) || 0);
-  const demoFrame = document.getElementById('result-demo-frame');
   if (demoFrame) {
     const demoUrl = new URL('./demo-animation.html', window.location.href);
     demoUrl.searchParams.set('embed', '1');
     demoUrl.searchParams.set('kind', isWin ? 'gain' : 'loss');
     demoUrl.searchParams.set('amount', String(amountTarget));
-    demoUrl.searchParams.set('v', '4');
+    demoUrl.searchParams.set('v', '5');
     demoFrame.src = demoUrl.toString();
   }
+
+  // L'écran reste opaque pendant le chargement ; l'iframe ne s'affiche
+  // qu'une fois la nouvelle animation et son montant réellement chargés.
+  modal.className = 'result-celebration show ' + (isWin ? 'win' : 'loss');
 }
 let resultCelebrationTimer = null;
 let pendingResultRefresh = false;
