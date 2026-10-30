@@ -3006,10 +3006,17 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
     keyboard.querySelectorAll('button').forEach((button, index) => {
       button.style.setProperty('--pk-delay', index + 'ms');
     });
-    // Aucun espace artificiel n'est ajouté sous le formulaire.
-    // Le champ reste simplement visible au-dessus du clavier personnalisé.
+    // Ajoute une réserve de défilement invisible sous le formulaire,
+    // pour pouvoir remonter les derniers champs au-dessus du clavier.
     const scrollArea = input.closest('.panel-inner');
     if (scrollArea) {
+      const previousSpacer = scrollArea.querySelector('.pk-scroll-spacer');
+      if (previousSpacer) previousSpacer.remove();
+      const spacer = document.createElement('div');
+      spacer.className = 'pk-scroll-spacer';
+      spacer.setAttribute('aria-hidden', 'true');
+      spacer.style.height = (keyboard.getBoundingClientRect().height + 24) + 'px';
+      scrollArea.appendChild(spacer);
       [0, 120, 280].forEach(delay => {
         window.setTimeout(() => {
           if (activeInput !== input) return;
@@ -3030,6 +3037,7 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
   function hide() {
     keyboard.classList.remove('pk-visible');
     document.body.classList.remove('pk-open');
+    document.querySelectorAll('.pk-scroll-spacer').forEach(spacer => spacer.remove());
     activeInput = null;
   }
 
