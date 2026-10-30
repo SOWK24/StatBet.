@@ -1030,6 +1030,64 @@ input[type="submit"]:active, input[type="reset"]:active, summary:active,
   opacity: 1 !important;
 }
 </style>
+
+<style id="paulybet-header-cleanup-final">
+/* Suppression définitive de tout slogan éventuellement injecté autour du logo. */
+.logo-row::before,
+.logo-row::after,
+.logo-row .app-logo::before,
+.logo-row .app-logo::after {
+  content: none !important;
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+/* Aucun élément secondaire ne doit flotter ou traverser le contenu sous le logo. */
+.logo-row {
+  position: relative !important;
+  isolation: isolate !important;
+  overflow: hidden !important;
+  min-height: 40px !important;
+}
+.logo-row .app-logo {
+  position: static !important;
+  transform: none !important;
+}
+.logo-row .app-logo span { display: inline !important; }
+
+/* Masquage renforcé des barres sur les vrais conteneurs de défilement iOS/WebKit. */
+html, body, #app, .panel, .panel.active, .panel-inner,
+.modal-sheet, #edit-sheet, #del-sheet,
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+#app::-webkit-scrollbar,
+.panel::-webkit-scrollbar,
+.panel-inner::-webkit-scrollbar,
+.modal-sheet::-webkit-scrollbar,
+#edit-sheet::-webkit-scrollbar,
+#del-sheet::-webkit-scrollbar {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+#app::-webkit-scrollbar,
+.panel::-webkit-scrollbar,
+.panel-inner::-webkit-scrollbar,
+.modal-sheet::-webkit-scrollbar,
+#edit-sheet::-webkit-scrollbar,
+#del-sheet::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  -webkit-appearance: none !important;
+}
+</style>
+
 </head>
 <body>
 <div id="app">
