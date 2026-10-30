@@ -2600,11 +2600,21 @@ function getDeletedBetIds() {
 function deleteBet(id) {
   if (!id || !bets.some(b => b.id === id)) return;
 
-  // La reconstruction complète de l'historique peut déclencher le scroll anchoring
-  // du navigateur. Mémoriser la position exacte avant la suppression.
   const historyPanel = document.getElementById('panel-history');
+
+  // Le bouton corbeille va être détruit avec sa ligne. Déplacer d'abord le focus
+  // vers le panneau permanent pour empêcher Safari/Chrome de recadrer la page
+  // au moment où l'élément qui avait le focus disparaît.
+  if (historyPanel) {
+    historyPanel.setAttribute('tabindex', '-1');
+    try { historyPanel.focus({ preventScroll: true }); } catch (_) { historyPanel.focus(); }
+  }
+
   const historyScrollTop = historyPanel ? historyPanel.scrollTop : 0;
   const pageScrollTop = window.scrollY || document.documentElement.scrollTop || 0;
+  const visualScrollTop = historyPanel
+    ? historyPanel.getBoundingClientRect().top + historyScrollTop
+    : pageScrollTop;
 
   const deletedIds = getDeletedBetIds();
   deletedIds.add(id);
@@ -2614,12 +2624,18 @@ function deleteBet(id) {
   renderDashboard();
   renderHistory();
 
-  // Restaurer après le recalcul de la mise en page, sans ramener l'utilisateur
-  // au milieu de l'écran lorsqu'il supprime plusieurs paris à la suite.
+  // Restaurer le conteneur réellement scrollé après les deux passes de layout.
   const restoreHistoryScroll = () => {
-    if (historyPanel) historyPanel.scrollTop = historyScrollTop;
+    if (historyPanel) {
+      historyPanel.scrollTop = historyScrollTop;
+      // Si le navigateur a déplacé le document plutôt que le panneau, garder
+      // le haut du panneau à la même coordonnée visuelle.
+      const delta = historyPanel.getBoundingClientRect().top + historyPanel.scrollTop - visualScrollTop;
+      if (Math.abs(delta) > 1) window.scrollBy(0, delta);
+    }
     window.scrollTo(0, pageScrollTop);
   };
+  restoreHistoryScroll();
   requestAnimationFrame(() => {
     restoreHistoryScroll();
     requestAnimationFrame(restoreHistoryScroll);
