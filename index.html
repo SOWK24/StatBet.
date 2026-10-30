@@ -101,6 +101,7 @@ body { position:fixed; inset:0; }
 #tabbar { flex:0 0 auto; }
 #pages-viewport { position:relative; flex:1 1 0; min-height:0; min-width:0; width:100%; overflow:hidden; isolation:isolate; }
 #pages-viewport.is-page-dragging { user-select:none; }
+#pages-viewport.is-page-dragging .panel-inner { animation:none!important; }
 #pages-viewport .panel { display:flex; position:absolute; inset:0; width:100%; height:100%; min-height:0; overflow:hidden; will-change:transform; }
 #pages-viewport .panel-inner { width:100%; height:100%; }
 
@@ -1861,9 +1862,10 @@ function applyPageOffset(animate = false) {
   // Sur Safari iOS, cela force le navigateur à mémoriser la position
   // exacte du doigt avant de lancer le glissement de fin de geste.
   panels.forEach(panel => {
-    panel.style.transition = animate
-      ? 'transform 320ms cubic-bezier(0.22, 0.61, 0.36, 1)'
+    const transition = animate
+      ? 'transform 380ms cubic-bezier(0.16, 1, 0.3, 1)'
       : 'none';
+    if (panel.style.transition !== transition) panel.style.transition = transition;
   });
   if (animate) void viewport.offsetWidth;
 
@@ -1901,6 +1903,10 @@ function initSwipePageNavigation() {
   let startX = 0;
   let startY = 0;
   let startOffset = 0;
+  let latestX = 0;
+  let latestTime = 0;
+  let velocityX = 0;
+  let moveFrame = 0;
 
   viewport.style.touchAction = 'pan-y';
   applyPageOffset(false);
@@ -1915,6 +1921,11 @@ function initSwipePageNavigation() {
     horizontal = false;
     startX = touch.clientX;
     startY = touch.clientY;
+    latestX = touch.clientX;
+    latestTime = performance.now();
+    velocityX = 0;
+    if (moveFrame) cancelAnimationFrame(moveFrame);
+    moveFrame = 0;
     startOffset = pageOffset;
     // Interrompt toute transition en cours à sa position visuelle exacte.
     const matrix = new DOMMatrixReadOnly(getComputedStyle(document.getElementById('panel-dashboard')).transform);
@@ -1940,9 +1951,20 @@ function initSwipePageNavigation() {
       viewport.classList.add('is-page-dragging');
     }
     event.preventDefault();
-    // Suit le doigt presque à l'échelle 1:1 pour garder le contrôle précis de la page pendant tout le geste.
-    pageOffset = Math.max(-width(), Math.min(0, startOffset + dx * 1.2));
-    applyPageOffset(false);
+    const now = performance.now();
+    const elapsed = Math.max(1, now - latestTime);
+    // Mesure la vitesse réelle du doigt pour anticiper légèrement la fin du balayage.
+    velocityX = (touch.clientX - latestX) / elapsed;
+    latestX = touch.clientX;
+    latestTime = now;
+    // Suivi direct du doigt, avec une seule mise à jour visuelle par image.
+    pageOffset = Math.max(-width(), Math.min(0, startOffset + dx));
+    if (!moveFrame) {
+      moveFrame = requestAnimationFrame(() => {
+        moveFrame = 0;
+        applyPageOffset(false);
+      });
+    }
   }, { passive: false });
 
   function stopGesture() {
@@ -1950,10 +1972,15 @@ function initSwipePageNavigation() {
     tracking = false;
     viewport.classList.remove('is-page-dragging');
     if (horizontal) {
-      // À la libération, complète rapidement le glissement avec une animation continue.
-      // Le contenu n'est jamais reconstruit pendant le geste.
+      if (moveFrame) {
+        cancelAnimationFrame(moveFrame);
+        moveFrame = 0;
+        applyPageOffset(false);
+      }
+      // Une légère inertie tient compte de la vitesse du doigt, comme une navigation native.
+      const projectedOffset = pageOffset + velocityX * 150;
+      const moved = projectedOffset - startOffset;
       const threshold = width() * 0.015;
-      const moved = pageOffset - startOffset;
       if (moved <= -threshold) pageOffset = -width();
       else if (moved >= threshold) pageOffset = 0;
       else pageOffset = startOffset;
