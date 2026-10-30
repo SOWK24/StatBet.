@@ -2599,6 +2599,13 @@ function getDeletedBetIds() {
 }
 function deleteBet(id) {
   if (!id || !bets.some(b => b.id === id)) return;
+
+  // La reconstruction complète de l'historique peut déclencher le scroll anchoring
+  // du navigateur. Mémoriser la position exacte avant la suppression.
+  const historyPanel = document.getElementById('panel-history');
+  const historyScrollTop = historyPanel ? historyPanel.scrollTop : 0;
+  const pageScrollTop = window.scrollY || document.documentElement.scrollTop || 0;
+
   const deletedIds = getDeletedBetIds();
   deletedIds.add(id);
   try { localStorage.setItem(DELETED_BETS_KEY, JSON.stringify([...deletedIds])); } catch (_) {}
@@ -2606,6 +2613,18 @@ function deleteBet(id) {
   saveBets(bets);
   renderDashboard();
   renderHistory();
+
+  // Restaurer après le recalcul de la mise en page, sans ramener l'utilisateur
+  // au milieu de l'écran lorsqu'il supprime plusieurs paris à la suite.
+  const restoreHistoryScroll = () => {
+    if (historyPanel) historyPanel.scrollTop = historyScrollTop;
+    window.scrollTo(0, pageScrollTop);
+  };
+  requestAnimationFrame(() => {
+    restoreHistoryScroll();
+    requestAnimationFrame(restoreHistoryScroll);
+  });
+
   showToast('Pari supprimé', 'loss');
 }
 
