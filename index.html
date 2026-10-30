@@ -1930,7 +1930,7 @@ function initSwipePageNavigation() {
     }
     event.preventDefault();
     // Amplifie le déplacement horizontal : le doigt parcourt moins de distance pour le même mouvement de page.
-    pageOffset = Math.max(-width(), Math.min(0, startOffset + dx * 12));
+    pageOffset = Math.max(-width(), Math.min(0, startOffset + dx * 30));
     applyPageOffset(false);
   }, { passive: false });
 
@@ -1939,9 +1939,8 @@ function initSwipePageNavigation() {
     tracking = false;
     viewport.classList.remove('is-page-dragging');
     if (horizontal) {
-      // Seuil très court et symétrique dans les deux sens :
-      // 8 % de la largeur de l'écran, mesurés depuis le début du geste.
-      const threshold = width() * 0.08;
+      // Déclenchement très agressif : seulement 2 % de la largeur de l'écran.
+      const threshold = width() * 0.02;
       const moved = pageOffset - startOffset;
       if (moved <= -threshold) pageOffset = -width();
       else if (moved >= threshold) pageOffset = 0;
