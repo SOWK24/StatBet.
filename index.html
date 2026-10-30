@@ -1895,7 +1895,7 @@ function initSwipePageNavigation() {
   applyPageOffset(false);
 
   viewport.addEventListener('touchstart', event => {
-    if (event.touches.length !== 1 || event.target.closest('button,input,select,textarea,a,canvas,[contenteditable="true"],.chart-tooltip,.modal-sheet')) {
+    if (event.touches.length !== 1 || event.target.closest('button,input,select,textarea,a,[contenteditable="true"],.chart-tooltip,.modal-sheet')) {
       tracking = false;
       return;
     }
