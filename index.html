@@ -481,6 +481,7 @@ canvas { display:block; width:100%; cursor:pointer; touch-action:pan-y; }
   flex-shrink:0; width:32px; height:32px; display:flex; align-items:center; justify-content:center;
   border-radius:7px; border:none; background:transparent; color:var(--text3);
   cursor:pointer; transition:background .15s,color .15s; -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation; user-select:none; -webkit-user-select:none;
 }
 .bet-delete:hover, .bet-delete:active { background:rgba(255,107,117,.15); color:var(--loss); }
 
@@ -2540,7 +2541,7 @@ function renderHistory() {
                   <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
                 </svg>
               </button>
-              <button class="bet-delete" onmousedown="event.preventDefault()" onfocus="this.blur()" onclick="deleteBet('${b.id}')" title="Supprimer ce pari">
+              <button type="button" class="bet-delete" tabindex="-1" onpointerdown="event.preventDefault()" onclick="deleteBet('${b.id}')" title="Supprimer ce pari" aria-label="Supprimer ce pari">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="3 6 5 6 21 6"/>
                   <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
@@ -2677,13 +2678,18 @@ function deleteBet(id) {
 
   // Restauration de chaque conteneur qui défilait, sans forcer window.scrollTo(0, 0).
   const restoreScroll = () => {
+    // Le panneau d'historique est le seul conteneur de défilement attendu.
+    // Restaurer sa position explicitement évite qu'un changement de focus iOS
+    // ou le retrait du bouton actif ne replace la vue au début du document.
+    const historyPanel = document.getElementById('panel-history');
+    const panelSnapshot = scrollSnapshot.elements.find(item => item.el === historyPanel);
+    if (panelSnapshot && historyPanel) historyPanel.scrollTop = panelSnapshot.top;
     for (const item of scrollSnapshot.elements) {
-      if (item.el && item.el.isConnected) {
+      if (item.el && item.el.isConnected && item.el !== historyPanel) {
         item.el.scrollTop = item.top;
         item.el.scrollLeft = item.left;
       }
     }
-    if (scrollSnapshot.x || scrollSnapshot.y) window.scrollTo(scrollSnapshot.x, scrollSnapshot.y);
   };
   restoreScroll();
   requestAnimationFrame(() => {
