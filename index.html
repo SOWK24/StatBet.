@@ -2098,9 +2098,16 @@ function pickPunchline(isWin) {
   return selected;
 }
 // Fermeture fiable depuis le clic dans la démo intégrée (iframe).
+let pendingResultInstance = null;
 window.addEventListener('message', function(event) {
   if (event.data && event.data.type === 'paulybet-result-dismiss') {
-    closeResultCelebration();
+    if (event.source === document.getElementById('result-demo-frame')?.contentWindow) closeResultCelebration();
+    return;
+  }
+  if (event.origin !== window.location.origin || event.source !== document.getElementById('result-demo-frame')?.contentWindow) return;
+  if (event.data?.type === 'paulybet-result-ready' && event.data.instance && event.data.instance === pendingResultInstance) {
+    const frame = document.getElementById('result-demo-frame');
+    if (frame) frame.style.visibility = 'visible';
   }
 });
 let resultCelebrationPreviousFocus = null;
@@ -2112,28 +2119,22 @@ function showResultCelebration(isWin, amount) {
   modal.setAttribute('tabindex', '-1');
   modal.setAttribute('aria-label', isWin ? 'Victoire au pari' : 'Défaite au pari');
 
-  // L'iframe démarre sur about:blank : aucun ancien résultat ne peut être
-  // affiché pendant le chargement du nouveau.
   if (demoFrame) {
-    demoFrame.onload = () => {
-      demoFrame.style.visibility = 'visible';
-    };
+    // On masque l'iframe jusqu'au signal envoyé après le rendu réel du bon résultat.
     demoFrame.style.visibility = 'hidden';
+    const instance = String(Date.now()) + '-' + Math.random().toString(36).slice(2);
+    pendingResultInstance = instance;
 
-    const amountTarget = Math.max(0, Number(amount) || 0);
     const demoUrl = new URL('./demo-animation.html', window.location.href);
     demoUrl.searchParams.set('embed', '1');
     demoUrl.searchParams.set('kind', isWin ? 'gain' : 'loss');
-    demoUrl.searchParams.set('amount', String(amountTarget));
-    demoUrl.searchParams.set('v', '6');
-    // Empêche le navigateur de réutiliser une ancienne page d'animation.
-    demoUrl.searchParams.set('instance', String(Date.now()) + '-' + Math.random().toString(36).slice(2));
+    demoUrl.searchParams.set('amount', String(Math.max(0, Number(amount) || 0)));
+    demoUrl.searchParams.set('instance', instance);
     demoFrame.src = demoUrl.toString();
   }
 
   modal.className = 'result-celebration show ' + (isWin ? 'win' : 'loss');
-}
-let resultCelebrationTimer = null;
+}let resultCelebrationTimer = null;
 let pendingResultRefresh = false;
 function closeResultCelebration() {
   const modal = document.getElementById('result-celebration');
