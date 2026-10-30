@@ -3080,7 +3080,29 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
       <button type="button" class="pk-done" data-pk="done">Terminé <span>✓</span></button>
     </div>
     <div class="pk-grid">
-      <button type="button" data-pk="1">1</b  function show(input) {
+      <button type="button" data-pk="1">1</button><button type="button" data-pk="2">2</button><button type="button" data-pk="3">3</button>
+      <button type="button" data-pk="4">4</button><button type="button" data-pk="5">5</button><button type="button" data-pk="6">6</button>
+      <button type="button" data-pk="7">7</button><button type="button" data-pk="8">8</button><button type="button" data-pk="9">9</button>
+      <button type="button" class="pk-action" data-pk="clear">AC</button><button type="button" data-pk="0">0</button><button type="button" class="pk-action pk-delete" data-pk="back" aria-label="Effacer le dernier chiffre">⌫</button>
+      <button type="button" class="pk-decimal" data-pk="decimal">,</button>
+      <button type="button" class="pk-enter" data-pk="done" aria-label="Valider la saisie">Valider <span>✓</span></button>
+    </div>`;
+  document.body.appendChild(keyboard);
+
+  function buzz(kind = 'tap') {
+    // L'API Vibration est disponible sur certains navigateurs Android.
+    // iOS Safari ne permet pas à une page web de commander directement le Taptic Engine.
+    try {
+      if (typeof navigator.vibrate === 'function') navigator.vibrate(kind === 'done' ? [10, 25, 16] : 8);
+    } catch (_) {}
+  }
+
+  function refreshInput(input) {
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  function show(input) {
     if (!input || input.disabled) return;
     activeInput = input;
     clearTimeout(hideTimer);
@@ -3100,7 +3122,7 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
       const spacer = document.createElement('div');
       spacer.className = 'pk-scroll-spacer';
       spacer.setAttribute('aria-hidden', 'true');
-      spacer.style.height = (keyboardHeight + 32) + 'px';
+      spacer.style.height = (keyboardHeight + 36) + 'px';
       scrollArea.appendChild(spacer);
       const revealInput = () => {
         if (activeInput !== input || !input.isConnected) return;
@@ -3112,11 +3134,10 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
         let delta = 0;
         if (inputRect.bottom > visibleBottom) delta = inputRect.bottom - visibleBottom + 18;
         else if (inputRect.top < visibleTop) delta = inputRect.top - visibleTop - 8;
-        if (Math.abs(delta) > 2) scrollArea.scrollBy({ top: delta, behavior: 'smooth' });
+        if (Math.abs(delta) > 2) scrollArea.scrollBy({top:delta,behavior:'smooth'});
       };
       revealInput();
-      setTimeout(revealInput, 180);
-      setTimeout(revealInput, 420);
+      [140,320,520].forEach(delay => setTimeout(revealInput,delay));
     });
   }
 
@@ -3124,37 +3145,6 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
     keyboard.classList.remove('pk-visible');
     document.body.classList.remove('pk-open');
     document.getElementById('edit-overlay')?.classList.remove('pk-open');
-    document.documentElement.style.removeProperty('--pk-height');
-    document.querySelectorAll('.pk-scroll-spacer').forEach(spacer => spacer.remove());
-    activeInput = null;
-  }
-);
-      if (previousSpacer) previousSpacer.remove();
-      const spacer = document.createElement('div');
-      spacer.className = 'pk-scroll-spacer';
-      spacer.setAttribute('aria-hidden', 'true');
-      spacer.style.height = (keyboard.getBoundingClientRect().height + 24) + 'px';
-      scrollArea.appendChild(spacer);
-      [0, 120, 280].forEach(delay => {
-        window.setTimeout(() => {
-          if (activeInput !== input) return;
-          const keyboardRect = keyboard.getBoundingClientRect();
-          const areaRect = scrollArea.getBoundingClientRect();
-          const inputRect = input.getBoundingClientRect();
-          const visibleBottom = Math.min(areaRect.bottom, keyboardRect.top) - 16;
-          const visibleTop = areaRect.top + 16;
-          let delta = 0;
-          if (inputRect.bottom > visibleBottom) delta = inputRect.bottom - visibleBottom + 12;
-          else if (inputRect.top < visibleTop) delta = inputRect.top - visibleTop;
-          if (Math.abs(delta) > 2) scrollArea.scrollTop += delta;
-        }, delay);
-      });
-    }
-  }
-
-  function hide() {
-    keyboard.classList.remove('pk-visible');
-    document.body.classList.remove('pk-open');
     document.documentElement.style.removeProperty('--pk-height');
     document.querySelectorAll('.pk-scroll-spacer').forEach(spacer => spacer.remove());
     activeInput = null;
