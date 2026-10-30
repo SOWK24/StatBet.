@@ -2099,15 +2099,22 @@ function pickPunchline(isWin) {
 }
 // Fermeture fiable depuis le clic dans la démo intégrée (iframe).
 let pendingResultInstance = null;
+let pendingResultDisplay = null;
 window.addEventListener('message', function(event) {
   if (event.data && event.data.type === 'paulybet-result-dismiss') {
     if (event.source === document.getElementById('result-demo-frame')?.contentWindow) closeResultCelebration();
     return;
   }
   if (event.origin !== window.location.origin || event.source !== document.getElementById('result-demo-frame')?.contentWindow) return;
-  if (event.data?.type === 'paulybet-result-ready' && event.data.instance && event.data.instance === pendingResultInstance) {
+  if (event.data?.type === 'paulybet-result-ready' && event.data.instance && event.data.instance === pendingResultInstance && pendingResultDisplay?.instance === event.data.instance) {
     const frame = document.getElementById('result-demo-frame');
-    if (frame) frame.style.visibility = 'visible';
+    const modal = document.getElementById('result-celebration');
+    if (!frame || !modal) return;
+    // Le modal reste fermé pendant le chargement : aucun ancien fond ni ancien effet CSS ne peut flasher.
+    frame.style.visibility = 'visible';
+    modal.setAttribute('aria-label', pendingResultDisplay.ariaLabel);
+    modal.className = pendingResultDisplay.className;
+    pendingResultDisplay = null;
   }
 });
 let resultCelebrationPreviousFocus = null;
@@ -2117,13 +2124,19 @@ function showResultCelebration(isWin, amount) {
 
   resultCelebrationPreviousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   modal.setAttribute('tabindex', '-1');
-  modal.setAttribute('aria-label', isWin ? 'Victoire au pari' : 'Défaite au pari');
 
+  // Fermer d'abord toute ancienne présentation : le conteneur et ses effets CSS
+  // ne doivent pas apparaître avant que la nouvelle animation soit prête.
+  modal.classList.remove('show');
   if (demoFrame) {
-    // On masque l'iframe jusqu'au signal envoyé après le rendu réel du bon résultat.
     demoFrame.style.visibility = 'hidden';
     const instance = String(Date.now()) + '-' + Math.random().toString(36).slice(2);
     pendingResultInstance = instance;
+    pendingResultDisplay = {
+      instance,
+      className: 'result-celebration show ' + (isWin ? 'win' : 'loss'),
+      ariaLabel: isWin ? 'Victoire au pari' : 'Défaite au pari'
+    };
 
     const demoUrl = new URL('./demo-animation.html', window.location.href);
     demoUrl.searchParams.set('embed', '1');
@@ -2131,15 +2144,18 @@ function showResultCelebration(isWin, amount) {
     demoUrl.searchParams.set('amount', String(Math.max(0, Number(amount) || 0)));
     demoUrl.searchParams.set('instance', instance);
     demoFrame.src = demoUrl.toString();
+  } else {
+    modal.setAttribute('aria-label', isWin ? 'Victoire au pari' : 'Défaite au pari');
+    modal.className = 'result-celebration show ' + (isWin ? 'win' : 'loss');
   }
-
-  modal.className = 'result-celebration show ' + (isWin ? 'win' : 'loss');
 }let resultCelebrationTimer = null;
 let pendingResultRefresh = false;
 function closeResultCelebration() {
   const modal = document.getElementById('result-celebration');
   const wasOpen = !!modal && modal.classList.contains('show');
   if (modal) modal.classList.remove('show');
+  pendingResultInstance = null;
+  pendingResultDisplay = null;
   if (window.resultCountFrame) cancelAnimationFrame(window.resultCountFrame);
   if (window.resultVibrationTimer) clearInterval(window.resultVibrationTimer);
   if (window.resultVibrationStop) clearTimeout(window.resultVibrationStop);
