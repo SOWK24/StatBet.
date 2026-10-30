@@ -1939,11 +1939,13 @@ function initSwipePageNavigation() {
     tracking = false;
     viewport.classList.remove('is-page-dragging');
     if (horizontal) {
-      // Un balayage court suffit : à partir de 18 % de l'écran,
-      // on termine naturellement sur la page voisine.
-      const threshold = width() * 0.18;
-      const target = pageOffset < -threshold ? -width() : 0;
-      pageOffset = target;
+      // Seuil très court et symétrique dans les deux sens :
+      // 8 % de la largeur de l'écran, mesurés depuis le début du geste.
+      const threshold = width() * 0.08;
+      const moved = pageOffset - startOffset;
+      if (moved <= -threshold) pageOffset = -width();
+      else if (moved >= threshold) pageOffset = 0;
+      else pageOffset = startOffset;
       updateActivePage();
       applyPageOffset(true);
     }
