@@ -3033,7 +3033,7 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
         if (activeInput !== input) return;
         const keyboardRect = keyboard.getBoundingClientRect();
         const areaRect = scrollArea.getBoundingClientRect();
-        spacer.style.height = Math.max(220, window.innerHeight - keyboardRect.top + 48) + 'px';
+        spacer.style.height = Math.max(220, window.innerHeight - keyboardRect.top + 140) + 'px';
         const inputRect = input.getBoundingClientRect();
         const visibleBottom = Math.min(areaRect.bottom, keyboardRect.top) - 20;
         const visibleTop = areaRect.top + 16;
