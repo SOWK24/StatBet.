@@ -99,10 +99,9 @@ html, body { width:100%; height:100%; min-height:0; overflow:hidden; overscroll-
 body { position:fixed; inset:0; }
 #app { position:fixed; inset:0; width:100%; max-width:480px; height:100%; min-height:0; margin:0 auto; display:flex; flex-direction:column; overflow:hidden; overscroll-behavior:none; }
 #tabbar { flex:0 0 auto; }
-#pages-viewport { position:relative; flex:1 1 0; min-height:0; min-width:0; width:100%; overflow:hidden; isolation:isolate; }
-#pages-viewport.is-page-dragging { user-select:none; }
-#pages-viewport.is-page-dragging .panel-inner { animation:none!important; }
-#pages-viewport .panel { display:flex; position:absolute; inset:0; width:100%; height:100%; min-height:0; overflow:hidden; will-change:transform; }
+#pages-viewport { position:relative; display:flex; flex:1 1 0; min-height:0; min-width:0; width:100%; overflow-x:auto; overflow-y:hidden; overscroll-behavior-x:contain; scroll-snap-type:x mandatory; scroll-behavior:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; isolation:isolate; }
+#pages-viewport::-webkit-scrollbar { display:none; }
+#pages-viewport .panel { display:flex; position:relative; inset:auto; flex:0 0 100%; width:100%; height:100%; min-height:0; overflow:hidden; scroll-snap-align:start; scroll-snap-stop:always; }
 #pages-viewport .panel-inner { width:100%; height:100%; }
 
 
@@ -117,8 +116,8 @@ body { position:fixed; inset:0; }
 .tab-btn.active { color:var(--text); border-bottom-color:var(--wina); }
 .tab-btn svg { flex-shrink:0; }
 
-.panel { display:none; flex:1 1 0; height:0; min-height:0; min-width:0; flex-direction:column; overflow:hidden; }
-.panel.active { display:flex; overflow-anchor:none; }
+.panel { display:flex; flex:0 0 100%; height:100%; min-height:0; min-width:0; flex-direction:column; overflow:hidden; scroll-snap-align:start; }
+.panel.active { overflow-anchor:none; }
 .panel-inner { flex:1 1 auto; min-height:0; min-width:0; overflow-x:hidden; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior-y:contain; overflow-anchor:none; padding:20px 16px 100px; }
 .panel.active .panel-inner { animation: panelEnter .32s ease-out both; }
 @keyframes panelEnter { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
@@ -1848,157 +1847,59 @@ function haptique(niveau = 'leger') {
 }
 
 const PAGE_ORDER = ['dashboard', 'history'];
-let pageOffset = 0; // Position persistante : 0 = Mon activité, -largeur = Historique.
+let pageOffset = 0;
+let currentActivePage = 'dashboard';
 
 function applyPageOffset(animate = false) {
   const viewport = document.getElementById('pages-viewport');
   if (!viewport) return;
-  const w = viewport.clientWidth || window.innerWidth;
-  const panels = PAGE_ORDER
-    .map(name => document.getElementById(`panel-${name}`))
-    .filter(Boolean);
-
-  // Sépare l'activation de la transition du changement de position.
-  // Sur Safari iOS, cela force le navigateur à mémoriser la position
-  // exacte du doigt avant de lancer le glissement de fin de geste.
-  panels.forEach(panel => {
-    const transition = animate
-      ? 'transform 380ms cubic-bezier(0.16, 1, 0.3, 1)'
-      : 'none';
-    if (panel.style.transition !== transition) panel.style.transition = transition;
-  });
-  if (animate) void viewport.offsetWidth;
-
-  panels.forEach((panel, index) => {
-    panel.style.transform = `translate3d(${pageOffset + index * w}px,0,0)`;
-  });
+  if (animate) viewport.scrollTo({ left: pageOffset, behavior: 'smooth' });
+  else viewport.scrollLeft = pageOffset;
 }
 
 function updateActivePage() {
-  const historyIsCloser = pageOffset <= -(document.getElementById('pages-viewport')?.clientWidth || window.innerWidth) / 2;
-  const name = historyIsCloser ? 'history' : 'dashboard';
+  const viewport = document.getElementById('pages-viewport');
+  if (!viewport) return;
+  pageOffset = viewport.scrollLeft;
+  const name = pageOffset >= viewport.clientWidth / 2 ? 'history' : 'dashboard';
+  if (name === currentActivePage) return;
+  currentActivePage = name;
   document.querySelectorAll('.tab-btn').forEach(button => button.classList.toggle('active', button.dataset.tab === name));
   document.querySelectorAll('.panel').forEach(panel => panel.classList.toggle('active', panel.id === `panel-${name}`));
+  if (name === 'history') renderHistory();
 }
 
 function switchTab(name) {
   if (!PAGE_ORDER.includes(name)) return;
-  const viewport = document.getElementById('pages-viewport');
-  const w = viewport?.clientWidth || window.innerWidth;
   if (name === 'history') renderHistory();
-  pageOffset = name === 'history' ? -w : 0;
-  updateActivePage();
+  currentActivePage = name;
+  document.querySelectorAll('.tab-btn').forEach(button => button.classList.toggle('active', button.dataset.tab === name));
+  document.querySelectorAll('.panel').forEach(panel => panel.classList.toggle('active', panel.id === `panel-${name}`));
+  const viewport = document.getElementById('pages-viewport');
+  pageOffset = name === 'history' ? (viewport?.clientWidth || window.innerWidth) : 0;
   haptique('leger');
   applyPageOffset(true);
 }
 
-/* Balayage libre : la position est conservée au relâchement, même au milieu des deux pages. */
 function initSwipePageNavigation() {
   const viewport = document.getElementById('pages-viewport');
   if (!viewport || viewport.dataset.swipeReady === 'true') return;
   viewport.dataset.swipeReady = 'true';
-  const width = () => viewport.clientWidth || window.innerWidth;
-  let tracking = false;
-  let horizontal = false;
-  let pointerId = null;
-  let startX = 0;
-  let startY = 0;
-  let startOffset = 0;
-  let latestX = 0;
-  let latestTime = 0;
-  let velocityX = 0;
-
-  viewport.style.touchAction = 'pan-y';
-  applyPageOffset(false);
-
-  viewport.addEventListener('pointerdown', event => {
-    if (event.pointerType === 'mouse' && event.button !== 0) return;
-    if (event.target.closest('button,input,select,textarea,a,[contenteditable="true"],.chart-tooltip,.modal-sheet')) {
-      tracking = false;
-      return;
-    }
-    tracking = true;
-    horizontal = false;
-    pointerId = event.pointerId;
-    startX = latestX = event.clientX;
-    startY = event.clientY;
-    latestTime = performance.now();
-    velocityX = 0;
-    startOffset = pageOffset;
-    // Reprend exactement la position affichée, même si une transition est en cours.
-    const dashboard = document.getElementById('panel-dashboard');
-    const matrix = new DOMMatrixReadOnly(getComputedStyle(dashboard).transform);
-    if (Number.isFinite(matrix.m41)) startOffset = matrix.m41;
-    pageOffset = Math.max(-width(), Math.min(0, startOffset));
-    startOffset = pageOffset;
-    applyPageOffset(false);
-  });
-
-  viewport.addEventListener('pointermove', event => {
-    if (!tracking || event.pointerId !== pointerId) return;
-    const dx = event.clientX - startX;
-    const dy = event.clientY - startY;
-    if (!horizontal) {
-      if (Math.abs(dx) < 2 && Math.abs(dy) < 2) return;
-      // Laisse les gestes verticaux au scroll natif de la page.
-      if (Math.abs(dy) > Math.abs(dx) * 1.25) {
-        tracking = false;
-        pointerId = null;
-        return;
-      }
-      horizontal = true;
-      viewport.classList.add('is-page-dragging');
-      try { viewport.setPointerCapture(event.pointerId); } catch (e) {}
-    }
-    event.preventDefault();
-    const now = performance.now();
-    const elapsed = Math.max(1, now - latestTime);
-    velocityX = (event.clientX - latestX) / elapsed;
-    latestX = event.clientX;
-    latestTime = now;
-    // Mise à jour immédiate : aucun requestAnimationFrame ni multiplicateur,
-    // la position de la page correspond au déplacement réel du doigt.
-    pageOffset = Math.max(-width(), Math.min(0, startOffset + dx));
-    applyPageOffset(false);
-  });
-
-  function stopGesture(event) {
-    if (!tracking || (event && event.pointerId !== pointerId)) return;
-    tracking = false;
-    const activePointer = pointerId;
-    pointerId = null;
-    viewport.classList.remove('is-page-dragging');
-    if (horizontal) {
-      // Petite inertie native : un balayage rapide peut terminer le changement sans grand déplacement.
-      const projectedOffset = pageOffset + velocityX * 120;
-      const moved = projectedOffset - startOffset;
-      const threshold = width() * 0.012;
-      if (moved <= -threshold) pageOffset = -width();
-      else if (moved >= threshold) pageOffset = 0;
-      else pageOffset = startOffset;
-      const targetPage = pageOffset <= -width() / 2 ? 'history' : 'dashboard';
-      document.querySelectorAll('.tab-btn').forEach(button => button.classList.toggle('active', button.dataset.tab === targetPage));
-      document.querySelectorAll('.panel').forEach(panel => panel.classList.toggle('active', panel.id === `panel-${targetPage}`));
-      applyPageOffset(true);
-    }
-    if (activePointer !== null) {
-      try {
-        if (viewport.hasPointerCapture(activePointer)) viewport.releasePointerCapture(activePointer);
-      } catch (e) {}
-    }
-  }
-  viewport.addEventListener('pointerup', stopGesture);
-  viewport.addEventListener('pointercancel', stopGesture);
-  viewport.addEventListener('lostpointercapture', stopGesture);
-
+  viewport.scrollLeft = currentActivePage === 'history' ? viewport.clientWidth : 0;
+  pageOffset = viewport.scrollLeft;
+  let lastActive = currentActivePage;
+  viewport.addEventListener('scroll', () => {
+    pageOffset = viewport.scrollLeft;
+    const next = pageOffset >= viewport.clientWidth / 2 ? 'history' : 'dashboard';
+    if (next === lastActive) return;
+    lastActive = currentActivePage = next;
+    document.querySelectorAll('.tab-btn').forEach(button => button.classList.toggle('active', button.dataset.tab === next));
+    document.querySelectorAll('.panel').forEach(panel => panel.classList.toggle('active', panel.id === `panel-${next}`));
+    if (next === 'history') renderHistory();
+  }, { passive: true });
   window.addEventListener('resize', () => {
-    const oldWidth = viewport.clientWidth || window.innerWidth;
-    const isHistory = document.querySelector('.tab-btn.active')?.dataset.tab === 'history';
-    if (pageOffset === 0) return;
-    if (pageOffset === -oldWidth) pageOffset = -width();
-    else pageOffset = Math.max(-width(), Math.min(0, pageOffset));
-    if (isHistory && pageOffset > -width() / 2) pageOffset = -width() / 2;
-    applyPageOffset(false);
+    pageOffset = currentActivePage === 'history' ? viewport.clientWidth : 0;
+    viewport.scrollLeft = pageOffset;
   });
 }
 /* Compteurs fluides : l'animation ne modifie que l'affichage, jamais les données stockées. */
