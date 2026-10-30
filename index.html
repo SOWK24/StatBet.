@@ -16,7 +16,11 @@
   const selector = 'button, a, [onclick], [role="button"], [role="tab"], .clickable, input[type="button"], input[type="submit"], input[type="reset"], select, summary, [data-clickable="true"]';
   let lastBuzz = 0;
   document.addEventListener('pointerdown', event => {
-    const target = event.target instanceof Element ? event.target.closest(selector) : null;
+    const source = event.target instanceof Element ? event.target : null;
+    // Ne jamais appliquer l'animation à un champ de saisie ni à son conteneur :
+    // cela gêne la sélection du texte et le copier-coller sur mobile.
+    if (source?.closest('input:not([type="button"]):not([type="submit"]):not([type="reset"]), textarea, [contenteditable="true"]')) return;
+    const target = source ? source.closest(selector) : null;
     if (!target || target.disabled || target.getAttribute('aria-disabled') === 'true') return;
     target.classList.remove('tap-feedback');
     void target.offsetWidth;
