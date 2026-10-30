@@ -3165,23 +3165,27 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
       }
     };
 
-    // Premier calcul après le rendu du clavier, puis corrections pendant
-    // son animation et le redimensionnement du panneau.
-    const runAutoPosition = () => {
-      if (activeInput !== input || !input.isConnected) return;
-      reposition(false);
-    };
-
-    // Recalcule après le début et la fin de l'animation du clavier iOS.
+    // Laisser le clavier terminer son apparition, puis effectuer un seul
+    // défilement animé. Des appels smooth successifs annulaient l'animation iOS.
     requestAnimationFrame(() => {
-      reposition(true);
-      [100, 240, 420, 650, 850].forEach(delay => {
+      setTimeout(() => {
+        if (activeInput !== input || !input.isConnected) return;
+        reposition(true);
+
+        // Une seule vérification de sécurité après l'animation, sans relancer
+        // un deuxième défilement si le champ est déjà dans la zone visible.
         setTimeout(() => {
-          if (activeInput === input && input.isConnected) reposition(true);
-        }, delay);
-      });
+          if (activeInput !== input || !input.isConnected) return;
+          const area = scrollArea.getBoundingClientRect();
+          const field = input.getBoundingClientRect();
+          const keyboardTop = keyboard.getBoundingClientRect().top;
+          const limit = Math.min(area.bottom, keyboardTop) - 18;
+          if (field.bottom > limit + 3 || field.top < area.top + 10) {
+            reposition(true);
+          }
+        }, 420);
+      }, 300);
     });
-    keyboard.addEventListener('transitionend', runAutoPosition, { once: true });
   }
 
   function hide() {
@@ -3378,9 +3382,11 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
 /* Clavier numérique propriétaire Pauly’Bet */
 #pauly-keyboard {
   box-sizing:border-box; position:fixed; z-index:100000;
-  left:8px; right:8px; bottom:calc(env(safe-area-inset-bottom) + 8px);
-  border-radius:18px;
-  padding:5px 12px 8px;
+  left:max(12px, calc(env(safe-area-inset-left) + 8px));
+  right:max(12px, calc(env(safe-area-inset-right) + 8px));
+  bottom:max(20px, calc(env(safe-area-inset-bottom) + 12px));
+  border-radius:22px; overflow:hidden;
+  padding:7px 12px 10px;
   background:linear-gradient(180deg,rgba(20,27,19,.98),rgba(8,12,8,.99));
   border:1px solid rgba(166,255,59,.2);
   box-shadow:0 -12px 34px rgba(0,0,0,.42);
