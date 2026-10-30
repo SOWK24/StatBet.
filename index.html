@@ -3106,7 +3106,6 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
     if (!input || input.disabled) return;
     activeInput = input;
     clearTimeout(hideTimer);
-    document.querySelectorAll('.pk-scroll-spacer').forEach(spacer => spacer.remove());
 
     keyboard.classList.add('pk-visible');
     document.body.classList.add('pk-open');
@@ -3115,73 +3114,70 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
       button.style.setProperty('--pk-delay', index + 'ms');
     });
 
-    // Mesurer le clavier après son affichage et réduire l'espace de l'application.
-    requestAnimationFrame(() => {
-      if (activeInput !== input || !input.isConnected) return;
-      const keyboardHeight = Math.ceil(keyboard.getBoundingClientRect().height);
-      document.documentElement.style.setProperty('--pk-height', keyboardHeight + 'px');
+    // Le scroll doit être effectué dans le panneau qui contient le champ,
+    // pas sur #app ni sur le viewport horizontal.
+    const scrollArea = input.closest('#edit-sheet') ||
+      input.closest('.panel-inner') ||
+      input.closest('.record-edit-wrap')?.parentElement;
+    if (!scrollArea) return;
 
+    let spacer = scrollArea.querySelector(':scope > .pk-scroll-spacer');
+    if (!spacer) {
+      spacer = document.createElement('div');
+      spacer.className = 'pk-scroll-spacer';
+      spacer.setAttribute('aria-hidden', 'true');
+      scrollArea.appendChild(spacer);
+    }
+
+    const reposition = (smooth) => {
+      if (activeInput !== input || !input.isConnected) return;
+
+      const keyboardRect = keyboard.getBoundingClientRect();
+      const keyboardHeight = Math.ceil(keyboardRect.height);
+      document.documentElement.style.setProperty('--pk-height', keyboardHeight + 'px');
+      spacer.style.cssText = 'display:block;width:100%;height:' + (keyboardHeight + 140) + 'px;pointer-events:none;';
+
+      const areaRect = scrollArea.getBoundingClientRect();
+      const fieldRect = input.getBoundingClientRect();
+      const visibleBottom = Math.min(areaRect.bottom, keyboardRect.top) - 18;
+      const visibleTop = areaRect.top + 12;
+
+      // Calculer le dépassement réel du champ sous la limite du clavier.
+      let delta = 0;
+      if (fieldRect.bottom > visibleBottom) {
+        delta = fieldRect.bottom - visibleBottom + 18;
+      } else if (fieldRect.top < visibleTop) {
+        delta = fieldRect.top - visibleTop - 12;
+      } else {
+        // Quand le champ est déjà visible, le placer au centre de la zone utile.
+        const desiredTop = visibleTop + Math.max(12, (visibleBottom - visibleTop - fieldRect.height) * 0.55);
+        if (fieldRect.top > desiredTop) delta = fieldRect.top - desiredTop;
+      }
+
+      if (Math.abs(delta) > 2) {
+        const destination = Math.max(0, scrollArea.scrollTop + delta);
+        scrollArea.scrollTo({ top: destination, behavior: smooth ? 'smooth' : 'auto' });
+      }
+
+      // Repli natif Safari : demande explicitement au conteneur de rendre
+      // le champ visible si son calcul de scroll diffère du viewport.
       requestAnimationFrame(() => {
         if (activeInput !== input || !input.isConnected) return;
-
-        // Sur l'écran principal, c'est bien .panel-inner qui possède le scroll.
-        const scrollArea = input.closest('#edit-sheet') ||
-          input.closest('.panel-inner') ||
-          input.closest('.record-edit-wrap')?.parentElement;
-        if (!scrollArea) return;
-
-        let spacer = scrollArea.querySelector(':scope > .pk-scroll-spacer');
-        if (!spacer) {
-          spacer = document.createElement('div');
-          spacer.className = 'pk-scroll-spacer';
-          spacer.setAttribute('aria-hidden', 'true');
-          scrollArea.appendChild(spacer);
+        const current = input.getBoundingClientRect();
+        const limit = Math.min(scrollArea.getBoundingClientRect().bottom,
+          keyboard.getBoundingClientRect().top) - 18;
+        if (current.bottom > limit || current.top < visibleTop) {
+          input.scrollIntoView({ block: 'center', behavior: smooth ? 'smooth' : 'auto' });
         }
-        spacer.style.cssText = 'display:block;width:100%;height:' + (keyboardHeight + 100) + 'px;flex:0 0 auto;pointer-events:none;';
+      });
+    };
 
-        const moveFieldAboveKeyboard = (smooth = false) => {
-          if (activeInput !== input || !input.isConnected ||
-              !keyboard.classList.contains('pk-visible')) return;
-
-          const keyboardTop = keyboard.getBoundingClientRect().top;
-          const areaRect = scrollArea.getBoundingClientRect();
-          const fieldRect = input.getBoundingClientRect();
-          const safeBottom = Math.min(keyboardTop, areaRect.bottom) - 18;
-          const safeTop = areaRect.top + 14;
-
-          // Vise une position confortable au-dessus du clavier, même si le
-          // champ était presque entièrement hors écran au moment du toucher.
-          let targetTop = fieldRect.top;
-          const fieldHeight = fieldRect.height;
-          const visibleHeight = Math.max(80, safeBottom - safeTop);
-          const preferredTop = safeTop + Math.max(12, (visibleHeight - fieldHeight) * 0.58);
-
-          if (fieldRect.bottom > safeBottom) {
-            targetTop -= fieldRect.bottom - safeBottom + 14;
-          } else if (fieldRect.top > preferredTop) {
-            targetTop -= fieldRect.top - preferredTop;
-          } else if (fieldRect.top < safeTop) {
-            targetTop += safeTop - fieldRect.top;
-          }
-
-          const delta = fieldRect.top - targetTop;
-          if (Math.abs(delta) < 3) return;
-
-          // Ne pas pré-borner scrollTop : Safari peut mettre à jour scrollHeight
-          // avec un frame de retard après l'ajout de l'espace de fin.
-          const nextScrollTop = Math.max(0, scrollArea.scrollTop + delta);
-          scrollArea.scrollTo({
-            top: nextScrollTop,
-            behavior: smooth ? 'smooth' : 'auto'
-          });
-        };
-
-        // Première mise en position, puis corrections après les transitions
-        // de hauteur du conteneur et l'animation du clavier.
-        moveFieldAboveKeyboard(true);
-        [100, 220, 380, 560].forEach(delay => {
-          setTimeout(() => moveFieldAboveKeyboard(false), delay);
-        });
+    // Premier calcul après le rendu du clavier, puis corrections pendant
+    // son animation et le redimensionnement du panneau.
+    requestAnimationFrame(() => {
+      reposition(true);
+      [90, 200, 360, 540].forEach(delay => {
+        setTimeout(() => reposition(false), delay);
       });
     });
   }
