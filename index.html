@@ -3470,6 +3470,35 @@ input[data-pauly-numeric] { caret-color:var(--wina); }
   #pauly-keyboard,.pk-grid button { transition:none; animation:none; }
 }
 
+
+/* Correctif iOS : le clavier est enfant direct de <html>, il ne doit donc
+   pas être rogné par le viewport racine. */
+html {
+  overflow: visible !important;
+}
+/* L'app doit conserver ses transitions même si iOS active
+   prefers-reduced-motion : l'utilisateur demande explicitement ce mouvement. */
+#pauly-keyboard {
+  transition:
+    transform .42s cubic-bezier(.22,.75,.25,1),
+    opacity .28s ease,
+    visibility .42s !important;
+}
+body.pk-open #app {
+  transition:
+    height .52s cubic-bezier(.22,.75,.25,1),
+    max-height .52s cubic-bezier(.22,.75,.25,1) !important;
+}
+#edit-overlay.pk-open {
+  transition: bottom .52s cubic-bezier(.22,.75,.25,1) !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  #pauly-keyboard,
+  body.pk-open #app,
+  #edit-overlay.pk-open {
+    transition-duration: .42s, .28s, .42s !important;
+  }
+}
 </style>
 </body>
 </html>
