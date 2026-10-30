@@ -3202,6 +3202,17 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
     if (!target?.closest('#pauly-keyboard') && keyboard.classList.contains('pk-visible')) hide();
   }, true);
 
+  // Déclenchement direct au clic : filet de sécurité pour Safari iOS/PWA
+  // lorsque pointerup n'est pas remonté avec le champ comme cible.
+  document.addEventListener('click', event => {
+    const target = event.target instanceof Element ? event.target : null;
+    const input = target?.closest('input[data-pauly-numeric]');
+    if (!input || input.disabled) return;
+    event.preventDefault();
+    event.stopPropagation();
+    show(input);
+  }, true);
+
   document.addEventListener('pointercancel', () => { numericPress = null; }, true);
 
   // Repli tactile pour les navigateurs sans Pointer Events.
