@@ -1006,6 +1006,16 @@ input[type="submit"]:active, input[type="reset"]:active, summary:active,
 #result-celebration #result-demo-frame{display:block!important;position:absolute!important;inset:0!important;width:100%!important;height:100%!important;border:0!important;z-index:2!important;background:#070908!important}
 #result-celebration #result-demo-dismiss-layer{display:block!important;z-index:4!important}#result-celebration>button{display:block!important;z-index:5!important}
 </style>
+<style>
+/* iOS Safari : ne jamais transformer/animer le conteneur qui porte le scroll natif. */
+.panel-inner,
+.panel.active .panel-inner {
+  animation: none !important;
+  transform: none !important;
+  opacity: 1 !important;
+  -webkit-overflow-scrolling: touch;
+}
+</style>
 </head>
 <body>
 <div id="app">
@@ -1725,40 +1735,23 @@ function haptique(niveau = 'leger') {
   try { navigator.vibrate(motifs[niveau] || motifs.leger); } catch (e) {}
 }
 
-let tabTransitionToken = 0;
 function switchTab(name) {
+  const nextPanel = document.getElementById(`panel-${name}`);
+  if (!nextPanel) return;
   const currentName = document.querySelector('.tab-btn.active')?.dataset.tab;
   if (currentName === name) return;
+
+  // Sur iOS, les animations transform/WAAPI appliquées aux conteneurs
+  // qui hébergent le scroll natif peuvent laisser les deux onglets figés.
+  // On change donc d'onglet sans animer les panneaux eux-mêmes.
   haptique('leger');
-
-  const token = ++tabTransitionToken;
-  const currentPanel = document.getElementById(`panel-${currentName}`);
-  const nextPanel = document.getElementById(`panel-${name}`);
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  const activate = () => {
-    if (token !== tabTransitionToken) return;
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
-    document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === `panel-${name}`));
-    if (name === 'history') renderHistory();
-    if (nextPanel && !reducedMotion && typeof nextPanel.animate === 'function') {
-      nextPanel.animate(
-        [{ opacity: 0, transform: 'translateY(7px) scale(.995)' }, { opacity: 1, transform: 'translateY(0) scale(1)' }],
-        { duration: 240, easing: 'cubic-bezier(.22,1,.36,1)' }
-      );
-    }
-  };
-
-  if (!currentPanel || !nextPanel || reducedMotion || typeof currentPanel.animate !== 'function') {
-    activate();
-    return;
-  }
-
-  const exit = currentPanel.animate(
-    [{ opacity: 1, transform: 'translateY(0) scale(1)' }, { opacity: 0, transform: 'translateY(-3px) scale(.998)' }],
-    { duration: 110, easing: 'cubic-bezier(.4,0,1,1)' }
-  );
-  exit.onfinish = activate;
+  document.querySelectorAll('.tab-btn').forEach(button => {
+    button.classList.toggle('active', button.dataset.tab === name);
+  });
+  document.querySelectorAll('.panel').forEach(panel => {
+    panel.classList.toggle('active', panel.id === `panel-${name}`);
+  });
+  if (name === 'history') renderHistory();
 }
 
 /* Compteurs fluides : l'animation ne modifie que l'affichage, jamais les données stockées. */
