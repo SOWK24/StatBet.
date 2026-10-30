@@ -1851,7 +1851,7 @@ const PAGE_ORDER = ['dashboard', 'history'];
 function setPagePosition(name, offset, animate = true) {
   const panel = document.getElementById(`panel-${name}`);
   if (!panel) return;
-  panel.style.transition = animate ? 'transform 300ms cubic-bezier(.22,.8,.25,1)' : 'none';
+  panel.style.transition = animate ? 'transform 180ms cubic-bezier(.2,.75,.25,1)' : 'none';
   panel.style.transform = `translate3d(${offset}px,0,0)`;
 }
 
@@ -1921,7 +1921,7 @@ function initSwipePageNavigation() {
     viewport.classList.remove('is-page-dragging');
     if (!horizontal) return;
     const dx = lastX - startX;
-    const change = !cancelled && (Math.abs(dx) >= width() * 0.22 || Math.abs(velocity) >= 0.42);
+    const change = !cancelled && Math.abs(dx) >= width() * 0.28;
     const nextIndex = change ? (dx < 0 ? Math.min(startIndex + 1, PAGE_ORDER.length - 1) : Math.max(startIndex - 1, 0)) : startIndex;
     const nextName = PAGE_ORDER[nextIndex];
     if (nextIndex !== startIndex) {
