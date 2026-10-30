@@ -3138,51 +3138,47 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
       const keyboardRect = keyboard.getBoundingClientRect();
       const keyboardHeight = Math.ceil(keyboard.offsetHeight || keyboardRect.height || keyboard.scrollHeight || 190);
       document.documentElement.style.setProperty('--pk-height', keyboardHeight + 'px');
-      spacer.style.cssText = 'display:block;width:100%;height:' + (keyboardHeight + 140) + 'px;pointer-events:none;';
+      spacer.style.cssText = 'display:block;width:100%;height:' + (keyboardHeight + 220) + 'px;pointer-events:none;';
 
+      // Le clavier est fixe : on aligne le champ dans la zone réellement visible.
+      // Utiliser scrollTop directement évite les incohérences de scrollIntoView sur iOS.
       const areaRect = scrollArea.getBoundingClientRect();
       const fieldRect = input.getBoundingClientRect();
-      const visibleBottom = Math.min(areaRect.bottom, keyboardRect.top) - 18;
       const visibleTop = areaRect.top + 12;
-
-      // Calculer le dépassement réel du champ sous la limite du clavier.
+      const visibleBottom = Math.min(areaRect.bottom, keyboardRect.top) - 20;
       let delta = 0;
+
       if (fieldRect.bottom > visibleBottom) {
-        delta = fieldRect.bottom - visibleBottom + 18;
+        delta = fieldRect.bottom - visibleBottom;
       } else if (fieldRect.top < visibleTop) {
-        delta = fieldRect.top - visibleTop - 12;
-      } else {
-        // Quand le champ est déjà visible, le placer au centre de la zone utile.
-        const desiredTop = visibleTop + Math.max(12, (visibleBottom - visibleTop - fieldRect.height) * 0.55);
-        if (fieldRect.top > desiredTop) delta = fieldRect.top - desiredTop;
+        delta = fieldRect.top - visibleTop;
       }
 
       if (Math.abs(delta) > 2) {
-        const destination = Math.max(0, scrollArea.scrollTop + delta);
-        scrollArea.scrollTo({ top: destination, behavior: smooth ? 'smooth' : 'auto' });
-      }
-
-      // Repli natif Safari : demande explicitement au conteneur de rendre
-      // le champ visible si son calcul de scroll diffère du viewport.
-      requestAnimationFrame(() => {
-        if (activeInput !== input || !input.isConnected) return;
-        const current = input.getBoundingClientRect();
-        const limit = Math.min(scrollArea.getBoundingClientRect().bottom,
-          keyboard.getBoundingClientRect().top) - 18;
-        if (current.bottom > limit || current.top < visibleTop) {
-          input.scrollIntoView({ block: 'center', behavior: smooth ? 'smooth' : 'auto' });
+        const maxScroll = Math.max(0, scrollArea.scrollHeight - scrollArea.clientHeight);
+        const destination = Math.max(0, Math.min(maxScroll, scrollArea.scrollTop + delta));
+        scrollArea.scrollTop = destination;
+        if (smooth && typeof scrollArea.scrollTo === 'function') {
+          scrollArea.scrollTo({ top: destination, behavior: 'smooth' });
         }
-      });
+      }
     };
 
     // Premier calcul après le rendu du clavier, puis corrections pendant
     // son animation et le redimensionnement du panneau.
+    const runAutoPosition = () => {
+      if (activeInput !== input || !input.isConnected) return;
+      reposition(false);
+    };
+
+    // Recalcule après le début et la fin de l'animation du clavier iOS.
     requestAnimationFrame(() => {
-      reposition(true);
-      [90, 200, 360, 540].forEach(delay => {
-        setTimeout(() => reposition(false), delay);
+      reposition(false);
+      [80, 180, 300, 450, 650, 850].forEach(delay => {
+        setTimeout(runAutoPosition, delay);
       });
     });
+    keyboard.addEventListener('transitionend', runAutoPosition, { once: true });
   }
 
   function hide() {
