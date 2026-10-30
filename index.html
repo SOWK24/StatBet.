@@ -2598,48 +2598,62 @@ function getDeletedBetIds() {
   catch (_) { return new Set(); }
 }
 function deleteBet(id) {
-  if (!id || !bets.some(b => b.id === id)) return;
+  const bet = bets.find(b => b.id === id);
+  if (!bet) return;
 
-  const historyPanel = document.getElementById('panel-history');
-
-  // Le bouton corbeille va être détruit avec sa ligne. Déplacer d'abord le focus
-  // vers le panneau permanent pour empêcher Safari/Chrome de recadrer la page
-  // au moment où l'élément qui avait le focus disparaît.
-  if (historyPanel) {
-    historyPanel.setAttribute('tabindex', '-1');
-    try { historyPanel.focus({ preventScroll: true }); } catch (_) { historyPanel.focus(); }
-  }
-
-  const historyScrollTop = historyPanel ? historyPanel.scrollTop : 0;
-  const pageScrollTop = window.scrollY || document.documentElement.scrollTop || 0;
-  const visualScrollTop = historyPanel
-    ? historyPanel.getBoundingClientRect().top + historyScrollTop
-    : pageScrollTop;
+  // Suppression ciblée : ne pas reconstruire #history-container.
+  // Remplacer tout l'historique recréait les éléments sous le doigt et faisait
+  // parfois repositionner le scroll par Safari sur mobile.
+  const row = document.getElementById('bet-row-' + CSS.escape(String(id)));
+  const yearBlock = row?.closest('.year-block');
+  const year = Number(bet.year || new Date(bet.date).getFullYear());
 
   const deletedIds = getDeletedBetIds();
   deletedIds.add(id);
   try { localStorage.setItem(DELETED_BETS_KEY, JSON.stringify([...deletedIds])); } catch (_) {}
-  bets = bets.filter(b => b.id !== id);
+
+  bets = bets.filter(item => item.id !== id);
   saveBets(bets);
   renderDashboard();
-  renderHistory();
 
-  // Restaurer le conteneur réellement scrollé après les deux passes de layout.
-  const restoreHistoryScroll = () => {
-    if (historyPanel) {
-      historyPanel.scrollTop = historyScrollTop;
-      // Si le navigateur a déplacé le document plutôt que le panneau, garder
-      // le haut du panneau à la même coordonnée visuelle.
-      const delta = historyPanel.getBoundingClientRect().top + historyPanel.scrollTop - visualScrollTop;
-      if (Math.abs(delta) > 1) window.scrollBy(0, delta);
+  if (row) row.remove();
+
+  if (yearBlock) {
+    const yearBets = bets.filter(item => Number(item.year || new Date(item.date).getFullYear()) === year);
+    if (!yearBets.length) {
+      yearBlock.remove();
+    } else {
+      const stats = calcStats(yearBets);
+      const sub = yearBlock.querySelector('.year-sub');
+      if (sub) sub.textContent = stats.nbParis + ' paris · ' + stats.tauxReussite.toFixed(0) + '% de réussite';
+
+      const values = yearBlock.querySelectorAll('.year-pills .pill-value');
+      if (values[0]) values[0].textContent = fmtEurPlain(stats.totalMises);
+      if (values[1]) values[1].textContent = fmtEurPlain(stats.totalGains);
+      if (values[2]) {
+        values[2].textContent = fmtEur(stats.bilanNet, true);
+        values[2].classList.toggle('pos', stats.bilanNet > 0);
+        values[2].classList.toggle('neg', stats.bilanNet < 0);
+      }
+
+      const list = yearBlock.querySelector('.bet-list');
+      const toggle = yearBlock.querySelector('.history-toggle');
+      if (toggle && list) {
+        toggle.textContent = historyVisibleByYear[year] === true
+          ? 'Masquer l’historique'
+          : 'Afficher tout l’historique (' + yearBets.length + ')';
+        if (historyVisibleByYear[year] === true) list.style.maxHeight = list.scrollHeight + 'px';
+      }
+
+      const canvas = yearBlock.querySelector('canvas[data-year]');
+      if (canvas) drawChart(canvas, yearBets);
     }
-    window.scrollTo(0, pageScrollTop);
-  };
-  restoreHistoryScroll();
-  requestAnimationFrame(() => {
-    restoreHistoryScroll();
-    requestAnimationFrame(restoreHistoryScroll);
-  });
+  }
+
+  const historyContainer = document.getElementById('history-container');
+  if (historyContainer && !historyContainer.querySelector('.year-block')) {
+    historyContainer.innerHTML = '<div class="empty-state"><p>Aucun pari</p><p>Saisis ton premier pari dans Mon Activité.</p></div>';
+  }
 
   showToast('Pari supprimé', 'loss');
 }
