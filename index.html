@@ -2496,8 +2496,9 @@ function drawChart(canvas, data) {
     const h = Math.max(Math.abs(yVal - y0), progress > 0 ? 1.5 : 0);
     const isPos = m.bilan > 0;
     // Zone interactive strictement limitée au rectangle réellement dessiné en vert.
+    const barLeft = cx - barW / 2;
     bar.hitbox = isPos && progress >= 1
-      ? { left: x = cx - barW / 2, right: x + barW, top, bottom: top + h }
+      ? { left: barLeft, right: barLeft + barW, top, bottom: top + h }
       : null;
     const color = isPos ? '#A6FF3B' : '#FF6B75';
     const x = cx - barW / 2;
