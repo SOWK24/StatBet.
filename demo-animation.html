@@ -129,6 +129,13 @@ document.getElementById('stage').addEventListener('click',e=>{if(!e.target.close
 window.addEventListener('message',e=>{if(e.data&&e.data.type==='paulybet-result'){renderDemo(e.data.kind,e.data.amount)}});
 const initialParams=new URLSearchParams(location.search);
 renderDemo(initialParams.get('kind')==='loss'?'loss':'gain', initialParams.has('amount')?Number(initialParams.get('amount')):undefined);
+if(embedded && window.parent !== window){
+  const instance=initialParams.get('instance');
+  // Le parent n'affiche l'iframe qu'une fois le DOM animé effectivement peint.
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    parent.postMessage({type:'paulybet-result-ready',instance},location.origin);
+  }));
+}
 </script>
 </body>
 </html>
