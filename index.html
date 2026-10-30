@@ -2691,5 +2691,17 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
   }, { passive: true });
 })();
 </script>
+<style>
+/* Supabase : le panneau arrête la propagation du modal, mais ne doit jamais
+   recevoir l'effet de pression global [onclick]:active. */
+#sync-overlay .modal-sheet:active {
+  transform: none !important;
+  filter: none !important;
+  animation: none !important;
+}
+#sync-overlay .modal-sheet {
+  -webkit-tap-highlight-color: transparent;
+}
+</style>
 </body>
 </html>
