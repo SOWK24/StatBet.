@@ -3005,6 +3005,10 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
     keyboard.querySelectorAll('button').forEach((button, index) => {
       button.style.setProperty('--pk-delay', index + 'ms');
     });
+    // Replace le champ actif dans la zone visible, au-dessus du clavier fixe.
+    window.setTimeout(() => {
+      if (activeInput === input) input.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }, 90);
   }
 
   function hide() {
@@ -3174,6 +3178,14 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
 }
 @keyframes pkKeyIn { from { opacity:0; transform:translateY(9px) scale(.97); } to { opacity:1; transform:translateY(0) scale(1); } }
 body.pk-open { padding-bottom:0; }
+/* Réserve la hauteur du clavier dans la page afin de pouvoir remonter le formulaire au-dessus. */
+body.pk-open #panel-dashboard .panel-inner {
+  padding-bottom: calc(330px + env(safe-area-inset-bottom)) !important;
+  scroll-padding-bottom: 330px;
+}
+body.pk-open #panel-dashboard {
+  scroll-padding-bottom: 330px;
+}
 input[data-pauly-numeric] { caret-color:var(--wina); }
 @media (max-height:700px) {
   #pauly-keyboard { padding-top:8px; }
