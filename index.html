@@ -3157,9 +3157,28 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
       if (Math.abs(delta) > 2) {
         const maxScroll = Math.max(0, scrollArea.scrollHeight - scrollArea.clientHeight);
         const destination = Math.max(0, Math.min(maxScroll, scrollArea.scrollTop + delta));
-        if (smooth && typeof scrollArea.scrollTo === 'function') {
-          scrollArea.scrollTo({ top: destination, behavior: 'smooth' });
+        if (smooth) {
+          // Animation pilotée en JavaScript : plus régulière que scroll-behavior
+          // natif dans les conteneurs overflow de Safari iOS.
+          if (scrollArea._pkScrollFrame) cancelAnimationFrame(scrollArea._pkScrollFrame);
+          const start = scrollArea.scrollTop;
+          const distance = destination - start;
+          const duration = 430;
+          const startedAt = performance.now();
+          const ease = t => 1 - Math.pow(1 - t, 3);
+          const animateScroll = now => {
+            const progress = Math.min(1, (now - startedAt) / duration);
+            scrollArea.scrollTop = start + distance * ease(progress);
+            if (progress < 1) {
+              scrollArea._pkScrollFrame = requestAnimationFrame(animateScroll);
+            } else {
+              scrollArea._pkScrollFrame = null;
+            }
+          };
+          scrollArea._pkScrollFrame = requestAnimationFrame(animateScroll);
         } else {
+          if (scrollArea._pkScrollFrame) cancelAnimationFrame(scrollArea._pkScrollFrame);
+          scrollArea._pkScrollFrame = null;
           scrollArea.scrollTop = destination;
         }
       }
@@ -3382,10 +3401,9 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
 /* Clavier numérique propriétaire Pauly’Bet */
 #pauly-keyboard {
   box-sizing:border-box; position:fixed; z-index:100000;
-  left:max(12px, calc(env(safe-area-inset-left) + 8px));
-  right:max(12px, calc(env(safe-area-inset-right) + 8px));
-  bottom:max(20px, calc(env(safe-area-inset-bottom) + 12px));
-  border-radius:22px; overflow:hidden;
+  left:14px; right:14px;
+  bottom:max(28px, calc(env(safe-area-inset-bottom) + 20px));
+  border-radius:24px; overflow:hidden;
   padding:7px 12px 10px;
   background:linear-gradient(180deg,rgba(20,27,19,.98),rgba(8,12,8,.99));
   border:1px solid rgba(166,255,59,.2);
