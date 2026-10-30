@@ -2167,10 +2167,16 @@ function closeResultCelebration() {
   if (window.resultVibrationStop) clearTimeout(window.resultVibrationStop);
   if ('vibrate' in navigator) { try { navigator.vibrate(0); } catch(e) {} }
   clearTimeout(resultCelebrationTimer);
-  if (wasOpen && resultCelebrationPreviousFocus && document.contains(resultCelebrationPreviousFocus)) {
-    try { resultCelebrationPreviousFocus.focus({ preventScroll: true }); } catch(e) { resultCelebrationPreviousFocus.focus(); }
-  }
+  // Sur iOS, remettre le focus sur le bouton de validation après avoir fermé
+  // une surcouche plein écran peut bloquer le défilement des panneaux.
+  // On libère aussi l'iframe animée : elle n'a aucune raison de continuer en arrière-plan.
+  if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
   resultCelebrationPreviousFocus = null;
+  const demoFrame = document.getElementById('result-demo-frame');
+  if (demoFrame) {
+    demoFrame.style.visibility = 'hidden';
+    demoFrame.src = 'about:blank';
+  }
   if (pendingResultRefresh) {
     pendingResultRefresh = false;
     renderDashboard();
