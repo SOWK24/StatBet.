@@ -2693,15 +2693,29 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
 })();
 </script>
 <style>
-/* Supabase : le panneau arrête la propagation du modal, mais ne doit jamais
-   recevoir l'effet de pression global [onclick]:active. */
+/* Supabase : neutraliser toutes les animations tactiles dans le modal.
+   Le sélecteur global [onclick]:active touche aussi l'overlay lui-même,
+   pas uniquement .modal-sheet : on neutralise donc les deux niveaux
+   ainsi que les éléments internes lors d'une sélection/copie mobile. */
+#sync-overlay,
+#sync-overlay *,
+#sync-overlay:active,
+#sync-overlay :active,
+#sync-overlay .modal-sheet:active {
+  -webkit-tap-highlight-color: transparent !important;
+}
+#sync-overlay:active,
+#sync-overlay :active,
 #sync-overlay .modal-sheet:active {
   transform: none !important;
   filter: none !important;
   animation: none !important;
 }
-#sync-overlay .modal-sheet {
-  -webkit-tap-highlight-color: transparent;
+#sync-overlay .tap-feedback,
+#sync-overlay .tap-feedback:active {
+  animation: none !important;
+  transform: none !important;
+  filter: none !important;
 }
 </style>
 </body>
