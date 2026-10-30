@@ -2674,9 +2674,10 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
   let lastBuzz = 0;
   document.addEventListener('pointerdown', event => {
     const source = event.target instanceof Element ? event.target : null;
-    // Les champs Supabase doivent rester totalement neutres au toucher :
-    // ne pas remonter jusqu'à .modal-sheet / son onclick, sinon toute la fenêtre
-    // reçoit l'animation scale et gêne le maintien, la sélection et le collage.
+    // La fenêtre Supabase entière est exclue du feedback tactile :
+    // sinon closest('[onclick]') remonte jusqu'à .modal-sheet et anime
+    // tout le panneau pendant une sélection ou un copier-coller mobile.
+    if (source?.closest('#sync-overlay')) return;
     if (source?.closest('input:not([type="button"]):not([type="submit"]):not([type="reset"]), textarea, [contenteditable="true"]')) return;
     const target = source ? source.closest(selector) : null;
     if (!target || target.disabled || target.getAttribute('aria-disabled') === 'true') return;
