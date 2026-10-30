@@ -3087,7 +3087,8 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
       <button type="button" class="pk-decimal" data-pk="decimal">,</button>
       <button type="button" class="pk-enter" data-pk="done" aria-label="Valider la saisie">Valider <span>✓</span></button>
     </div>`;
-  // Placer le clavier directement sous <html> évite le clipping causé par le body fixe/overflow:hidden sur iOS.\n  document.documentElement.appendChild(keyboard);
+  // Placer le clavier directement sous <html> évite le clipping causé par le body fixe/overflow:hidden sur iOS.
+  document.documentElement.appendChild(keyboard);
 
   function buzz(kind = 'tap') {
     // L'API Vibration est disponible sur certains navigateurs Android.
