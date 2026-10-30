@@ -101,6 +101,7 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:v
 html, body { width:100%; height:100%; min-height:0; overflow:hidden; overscroll-behavior:none; }
 body { position:fixed; inset:0; }
 #app { position:fixed; inset:0; width:100%; max-width:480px; height:100%; min-height:0; margin:0 auto; display:flex; flex-direction:column; overflow:hidden; overscroll-behavior:none; }
+body.pk-open #app { height:calc(100% - var(--pk-height, 0px)); }
 #tabbar { flex:0 0 auto; }
 #pages-viewport { position:relative; display:flex; flex:1 1 0; min-height:0; min-width:0; width:100%; overflow-x:auto; overflow-y:hidden; overscroll-behavior-x:contain; scroll-snap-type:x mandatory; scroll-behavior:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; isolation:isolate; }
 #pages-viewport::-webkit-scrollbar { display:none; }
@@ -3002,6 +3003,7 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
     activeInput = input;
     clearTimeout(hideTimer);
     keyboard.classList.add('pk-visible');
+    document.documentElement.style.setProperty('--pk-height', keyboard.getBoundingClientRect().height + 'px');
     document.body.classList.add('pk-open');
     keyboard.querySelectorAll('button').forEach((button, index) => {
       button.style.setProperty('--pk-delay', index + 'ms');
@@ -3037,6 +3039,7 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
   function hide() {
     keyboard.classList.remove('pk-visible');
     document.body.classList.remove('pk-open');
+    document.documentElement.style.removeProperty('--pk-height');
     document.querySelectorAll('.pk-scroll-spacer').forEach(spacer => spacer.remove());
     activeInput = null;
   }
