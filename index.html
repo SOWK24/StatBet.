@@ -110,7 +110,7 @@ body { height:100%; overflow:hidden; }
 .tab-btn svg { flex-shrink:0; }
 
 .panel { display:none; flex:1 1 0; min-height:0; flex-direction:column; overflow-x:hidden; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior-y:contain; }
-.panel.active { display:flex; }
+.panel.active { display:flex; overflow-anchor:none; scroll-behavior:auto; }
 .panel-inner { padding:20px 16px 100px; }
 .panel.active .panel-inner { animation: panelEnter .32s ease-out both; }
 @keyframes panelEnter { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
@@ -2537,7 +2537,7 @@ function renderHistory() {
                   <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
                 </svg>
               </button>
-              <button class="bet-delete" onclick="deleteBet('${b.id}')" title="Supprimer ce pari">
+              <button class="bet-delete" onmousedown="event.preventDefault()" onfocus="this.blur()" onclick="deleteBet('${b.id}')" title="Supprimer ce pari">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="3 6 5 6 21 6"/>
                   <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
@@ -2603,32 +2603,30 @@ function deleteBet(id) {
   const bet = bets.find(b => b.id === id);
   if (!bet) return;
 
-  // Suppression ciblée : ne pas reconstruire #history-container.
-  // Remplacer tout l'historique recréait les éléments sous le doigt et faisait
-  // parfois repositionner le scroll par Safari sur mobile.
+  const panel = document.getElementById('panel-history');
+  const savedPanelScroll = panel ? panel.scrollTop : 0;
+  const savedWindowScroll = window.scrollY || document.documentElement.scrollTop || 0;
+  // Empêcher le focus de rester sur le bouton qui va être retiré du DOM.
+  if (document.activeElement && document.activeElement.classList.contains('bet-delete')) document.activeElement.blur();
+
   const row = document.getElementById('bet-row-' + String(id));
   const yearBlock = row?.closest('.year-block');
   const year = Number(bet.year || new Date(bet.date).getFullYear());
-
   const deletedIds = getDeletedBetIds();
   deletedIds.add(id);
   try { localStorage.setItem(DELETED_BETS_KEY, JSON.stringify([...deletedIds])); } catch (_) {}
-
   bets = bets.filter(item => item.id !== id);
   saveBets(bets);
   renderDashboard();
-
   if (row) row.remove();
 
   if (yearBlock) {
     const yearBets = bets.filter(item => Number(item.year || new Date(item.date).getFullYear()) === year);
-    if (!yearBets.length) {
-      yearBlock.remove();
-    } else {
+    if (!yearBets.length) yearBlock.remove();
+    else {
       const stats = calcStats(yearBets);
       const sub = yearBlock.querySelector('.year-sub');
       if (sub) sub.textContent = stats.nbParis + ' paris · ' + stats.tauxReussite.toFixed(0) + '% de réussite';
-
       const values = yearBlock.querySelectorAll('.year-pills .pill-value');
       if (values[0]) values[0].textContent = fmtEurPlain(stats.totalMises);
       if (values[1]) values[1].textContent = fmtEurPlain(stats.totalGains);
@@ -2637,29 +2635,25 @@ function deleteBet(id) {
         values[2].classList.toggle('pos', stats.bilanNet > 0);
         values[2].classList.toggle('neg', stats.bilanNet < 0);
       }
-
       const list = yearBlock.querySelector('.bet-list');
       const toggle = yearBlock.querySelector('.history-toggle');
-      if (toggle && list) {
-        toggle.textContent = historyVisibleByYear[year] === true
-          ? 'Masquer l’historique'
-          : 'Afficher tout l’historique (' + yearBets.length + ')';
-        if (historyVisibleByYear[year] === true) list.style.maxHeight = list.scrollHeight + 'px';
-      }
-
+      if (toggle && list && historyVisibleByYear[year] !== true) toggle.textContent = 'Afficher tout l’historique (' + yearBets.length + ')';
       const canvas = yearBlock.querySelector('canvas[data-year]');
       if (canvas) drawChart(canvas, yearBets);
     }
   }
-
   const historyContainer = document.getElementById('history-container');
-  if (historyContainer && !historyContainer.querySelector('.year-block')) {
-    historyContainer.innerHTML = '<div class="empty-state"><p>Aucun pari</p><p>Saisis ton premier pari dans Mon Activité.</p></div>';
-  }
+  if (historyContainer && !historyContainer.querySelector('.year-block')) historyContainer.innerHTML = '<div class="empty-state"><p>Aucun pari</p><p>Saisis ton premier pari dans Mon Activité.</p></div>';
 
+  const restoreScroll = () => {
+    if (panel) panel.scrollTop = savedPanelScroll;
+    window.scrollTo(0, savedWindowScroll);
+  };
+  restoreScroll();
+  requestAnimationFrame(restoreScroll);
+  setTimeout(restoreScroll, 80);
   showToast('Pari supprimé', 'loss');
 }
-
 /* ─── Édition ───────────────────────────────────────────────────────── */
 let pendingEditId = null;
 let editSelectedResult = null;
