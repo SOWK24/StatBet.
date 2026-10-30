@@ -3155,25 +3155,29 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
     }
 
     const reposition = () => {
-      if (activeInput !== input || !input.isConnected) return;
+      if (activeInput !== input || !input.isConnected || !scrollArea.isConnected) return;
 
       const keyboardRect = keyboard.getBoundingClientRect();
       const keyboardHeight = Math.ceil(keyboardRect.height || keyboard.offsetHeight || 190);
       document.documentElement.style.setProperty('--pk-height', keyboardHeight + 'px');
-      // Réserve assez d'espace pour pouvoir placer même le dernier champ
-      // juste au-dessus du clavier, sans couper le reste du formulaire.
-      spacer.style.cssText = 'display:block;flex:0 0 auto;width:100%;height:' +
-        (keyboardHeight + Math.max(220, scrollArea.clientHeight * .65)) +
-        'px;min-height:' + (keyboardHeight + Math.max(220, scrollArea.clientHeight * .65)) +
-        'px;pointer-events:none;';
 
+      // Grande réserve de défilement : le dernier champ doit pouvoir remonter
+      // entièrement au-dessus du clavier, même sur les petits écrans iPhone.
+      const reserve = Math.ceil(keyboardHeight + Math.max(520, scrollArea.clientHeight * 1.6));
+      spacer.style.cssText = 'display:block;flex:0 0 auto;width:100%;height:' +
+        reserve + 'px;min-height:' + reserve + 'px;pointer-events:none;';
+
+      // Force Safari à recalculer la hauteur scrollable après le changement
+      // de taille de l'application et l'ajout de l'espace de fin.
+      void scrollArea.offsetHeight;
       const areaRect = scrollArea.getBoundingClientRect();
       const fieldRect = input.getBoundingClientRect();
-      const visibleTop = areaRect.top + 14;
-      const visibleBottom = Math.min(areaRect.bottom, keyboardRect.top) - 18;
+      const visibleTop = areaRect.top + 22;
+      const visibleBottom = Math.min(areaRect.bottom, keyboardRect.top) - 34;
       let delta = 0;
       if (fieldRect.bottom > visibleBottom) delta = fieldRect.bottom - visibleBottom;
       else if (fieldRect.top < visibleTop) delta = fieldRect.top - visibleTop;
+      if (Math.abs(delta) < 3) return;
 
       const maxScroll = Math.max(0, scrollArea.scrollHeight - scrollArea.clientHeight);
       const destination = Math.max(0, Math.min(maxScroll, scrollArea.scrollTop + delta));
@@ -3183,7 +3187,8 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
       const from = scrollArea.scrollTop;
       const distance = destination - from;
       const started = performance.now();
-      const duration = 520;
+      // Glissement plus long et plus doux, tout en gardant l'animation du clavier intacte.
+      const duration = 780;
       const ease = t => 1 - Math.pow(1 - t, 3);
       const animate = now => {
         if (activeInput !== input || !input.isConnected) {
@@ -3198,25 +3203,28 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
       scrollArea._pkScrollFrame = requestAnimationFrame(animate);
     };
 
-    // Une seule mesure, après la fin des deux transitions (clavier + app),
-    // puis une correction courte avec les dimensions réellement affichées.
+    // Safari iOS termine parfois le redimensionnement après la transition CSS.
+    // On attend la mise en page réelle puis on vérifie plusieurs fois : cela
+    // fiabilise aussi les ouvertures suivantes, pas uniquement la première.
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      setTimeout(() => {
-        if (activeInput !== input || !input.isConnected) return;
-        reposition();
+      [620, 850, 1080, 1320].forEach(delay => {
         setTimeout(() => {
           if (activeInput !== input || !input.isConnected) return;
-          const visibleBottom = Math.min(
-            scrollArea.getBoundingClientRect().bottom,
-            keyboard.getBoundingClientRect().top
-          ) - 18;
-          if (input.getBoundingClientRect().bottom > visibleBottom + 4) reposition();
-        }, 560);
-      }, 560);
+          reposition();
+        }, delay);
+      });
     }));
   }
 
   function hide() {
+    // Annule toute animation en cours avant de restaurer le panneau.
+    document.querySelectorAll('.pk-scroll-spacer').forEach(spacer => {
+      const area = spacer.parentElement;
+      if (area?._pkScrollFrame) {
+        cancelAnimationFrame(area._pkScrollFrame);
+        area._pkScrollFrame = null;
+      }
+    });
     keyboard.classList.remove('pk-visible');
     document.body.classList.remove('pk-open');
     document.getElementById('edit-overlay')?.classList.remove('pk-open');
