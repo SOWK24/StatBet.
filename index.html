@@ -1159,15 +1159,15 @@ input[type="submit"]:active, input[type="reset"]:active, summary:active,
 
     <div class="form-row">
       <label class="form-label" for="sync-url">URL du projet Supabase</label>
-      <input class="form-input" id="sync-url" style="font-size:14px;" placeholder="https://xxxx.supabase.co" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <input class="form-input sync-input" id="sync-url" style="font-size:16px;" placeholder="https://xxxx.supabase.co" autocomplete="off" autocapitalize="off" spellcheck="false">
     </div>
     <div class="form-row">
       <label class="form-label" for="sync-key">Clé anon public</label>
-      <input class="form-input" id="sync-key" style="font-size:13px;" placeholder="eyJhbGciOi..." autocomplete="off" autocapitalize="off" spellcheck="false">
+      <input class="form-input sync-input" id="sync-key" style="font-size:16px;" placeholder="eyJhbGciOi..." autocomplete="off" autocapitalize="off" spellcheck="false">
     </div>
     <div class="form-row">
       <label class="form-label" for="sync-code">Code perso (identifiant de tes données)</label>
-      <input class="form-input" id="sync-code" style="font-size:16px;" placeholder="ex: m0nC0deSecret42" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <input class="form-input sync-input" id="sync-code" style="font-size:16px;" placeholder="ex: m0nC0deSecret42" autocomplete="off" autocapitalize="off" spellcheck="false">
     </div>
 
     <div class="sync-status-line" id="sync-status-line">Non connecté.</div>
@@ -2716,6 +2716,19 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
   animation: none !important;
   transform: none !important;
   filter: none !important;
+}
+/* Safari iOS zoome automatiquement les champs dont la police est < 16px.
+   Ce zoom de viewport donne l'impression que tout le panneau grossit. */
+#sync-overlay input,
+#sync-overlay textarea,
+#sync-overlay select {
+  font-size: 16px !important;
+  line-height: 1.4;
+  touch-action: manipulation;
+}
+#sync-overlay .modal-sheet {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 </style>
 </body>
