@@ -1866,13 +1866,13 @@ function updateActivePage() {
   const name = historyIsCloser ? 'history' : 'dashboard';
   document.querySelectorAll('.tab-btn').forEach(button => button.classList.toggle('active', button.dataset.tab === name));
   document.querySelectorAll('.panel').forEach(panel => panel.classList.toggle('active', panel.id === `panel-${name}`));
-  if (name === 'history') renderHistory();
 }
 
 function switchTab(name) {
   if (!PAGE_ORDER.includes(name)) return;
   const viewport = document.getElementById('pages-viewport');
   const w = viewport?.clientWidth || window.innerWidth;
+  if (name === 'history') renderHistory();
   pageOffset = name === 'history' ? -w : 0;
   updateActivePage();
   haptique('leger');
@@ -1939,13 +1939,16 @@ function initSwipePageNavigation() {
     tracking = false;
     viewport.classList.remove('is-page-dragging');
     if (horizontal) {
-      // Déclenchement très agressif : seulement 2 % de la largeur de l'écran.
+      // À la libération, termine le déplacement avec une animation continue.
+      // Le contenu n'est jamais reconstruit pendant le geste.
       const threshold = width() * 0.02;
       const moved = pageOffset - startOffset;
       if (moved <= -threshold) pageOffset = -width();
       else if (moved >= threshold) pageOffset = 0;
       else pageOffset = startOffset;
-      updateActivePage();
+      const targetPage = pageOffset <= -width() / 2 ? 'history' : 'dashboard';
+      document.querySelectorAll('.tab-btn').forEach(button => button.classList.toggle('active', button.dataset.tab === targetPage));
+      document.querySelectorAll('.panel').forEach(panel => panel.classList.toggle('active', panel.id === `panel-${targetPage}`));
       applyPageOffset(true);
     }
   }
