@@ -130,8 +130,14 @@ body.pk-open #app { height:calc(100% - var(--pk-height, 0px)); }
 @keyframes numberPop { 0%{transform:scale(1)} 45%{transform:scale(1.07)} 100%{transform:scale(1)} }
 .chart-wrap { animation: chartEnter .5s ease-out both; }
 @keyframes chartEnter { from {opacity:0;transform:translateY(10px)} to {opacity:1;transform:translateY(0)} }
- .bet-list { display:none; flex-direction:column; gap:6px; }
-.bet-list.show { animation:panelEnter .25s ease-out both; }
+ .bet-list {
+  display:flex; flex-direction:column; gap:6px; overflow:hidden;
+  max-height:0; opacity:0; transform:translateY(-10px);
+  transition:max-height .48s cubic-bezier(.22,1,.36,1),opacity .3s ease,transform .42s cubic-bezier(.22,1,.36,1);
+  will-change:max-height,opacity,transform;
+}
+.bet-list.show { opacity:1; transform:translateY(0); }
+@media (prefers-reduced-motion:reduce) { .bet-list { transition:none!important; } }
 .history-toggle { width:100%; margin:0 0 12px; border:1px solid var(--border); background:var(--surface); color:var(--text); border-radius:8px; padding:12px; font:600 12px Inter,sans-serif; }
 .history-toggle:active { transform:scale(.99); }
 
@@ -521,7 +527,9 @@ canvas { display:block; width:100%; cursor:pointer; touch-action:pan-y; }
 /* ── Edit modal (réutilise le style du sheet) ── */
 #edit-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:300; align-items:flex-end; justify-content:center; }
 #edit-overlay.show { display:flex; }
-#edit-sheet { background:var(--surface); border-radius:18px 18px 0 0; padding:24px 20px 36px; width:100%; max-width:480px; animation:slideUp .22s cubic-bezier(.22,1,.36,1); }
+#edit-sheet { background:var(--surface); border-radius:18px 18px 0 0; padding:24px 20px 36px; width:100%; max-width:480px; max-height:calc(100% - 12px); overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; animation:slideUp .22s cubic-bezier(.22,1,.36,1); }
+#edit-overlay.pk-open { bottom:var(--pk-height, 0px); }
+#edit-sheet .pk-scroll-spacer { height:24px; }
 #edit-sheet h3 { font-family:var(--font-d); font-size:20px; font-weight:800; letter-spacing:.5px; margin-bottom:16px; }
 #edit-cancel  { background:var(--surface2); color:var(--text2); }
 #edit-confirm { background:var(--wina); color:#fff; box-shadow:0 4px 16px var(--wina-glow); }
@@ -2010,13 +2018,25 @@ function getRecordDisplayData() {
 
 function animateRecordCardResize(card, previousHeight) {
   if (!card || !previousHeight) return;
-  const nextHeight = card.scrollHeight;
+  card.getAnimations().forEach(animation => animation.cancel());
+  card.style.height = 'auto';
+  const nextHeight = card.getBoundingClientRect().height;
   card.style.height = previousHeight + 'px';
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { card.style.height = ''; return; }
-  const animation = card.animate([{ height: previousHeight + 'px' },{ height: nextHeight + 'px' }], { duration: 430, easing: 'cubic-bezier(.22,1,.36,1)' });
-  animation.onfinish = () => { card.style.height = ''; };
+  card.style.overflow = 'hidden';
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    card.style.height = ''; card.style.overflow = ''; return;
+  }
+  const animation = card.animate(
+    [{ height: previousHeight + 'px' }, { height: nextHeight + 'px' }],
+    { duration: 480, easing: 'cubic-bezier(.22,1,.36,1)' }
+  );
+  animation.onfinish = () => { card.style.height = ''; card.style.overflow = ''; };
+  animation.oncancel = () => { card.style.height = ''; card.style.overflow = ''; };
   card.querySelectorAll(':scope > *').forEach((child, index) => {
-    child.animate([{ opacity: 0, transform: 'translateY(-8px)' },{ opacity: 1, transform: 'translateY(0)' }], { duration: 340, delay: Math.min(index * 35, 90), easing: 'cubic-bezier(.22,1,.36,1)' });
+    child.animate(
+      [{ opacity: 0, transform: 'translateY(-12px)' }, { opacity: 1, transform: 'translateY(0)' }],
+      { duration: 360, delay: Math.min(index * 45, 120), easing: 'cubic-bezier(.22,1,.36,1)' }
+    );
   });
 }
 
@@ -2636,10 +2656,9 @@ function applyHistoryVisibility(container) {
     const btn = block.querySelector('.history-toggle');
     if (!list || !btn) return;
     const open = historyVisibleByYear[year] === true;
-    list.classList.toggle('show', open);
     list.style.display = 'flex';
+    list.classList.toggle('show', open);
     list.style.maxHeight = open ? list.scrollHeight + 'px' : '0px';
-    list.style.opacity = open ? '1' : '0';
     btn.setAttribute('aria-expanded', String(open));
     btn.textContent = open ? 'Masquer l’historique' : 'Afficher tout l’historique (' + list.children.length + ')';
   });
@@ -2743,9 +2762,24 @@ function toggleBetList(btn) {
   const block = btn.closest('.year-block');
   if (!block) return;
   const year = block.dataset.year;
-  historyVisibleByYear[year] = historyVisibleByYear[year] !== true;
+  const list = block.querySelector('.bet-list');
+  if (!list) return;
+  const opening = historyVisibleByYear[year] !== true;
+  historyVisibleByYear[year] = opening;
   persistHistoryVisibility();
-  applyHistoryVisibility(block.parentElement);
+  list.style.display = 'flex';
+  if (opening) {
+    list.classList.add('show');
+    list.style.maxHeight = list.scrollHeight + 'px';
+  } else {
+    list.style.maxHeight = list.getBoundingClientRect().height + 'px';
+    requestAnimationFrame(() => {
+      list.classList.remove('show');
+      list.style.maxHeight = '0px';
+    });
+  }
+  btn.setAttribute('aria-expanded', String(opening));
+  btn.textContent = opening ? 'Masquer l’historique' : 'Afficher tout l’historique (' + list.children.length + ')';
 }
 
 function replayChart(btn) {
@@ -2931,6 +2965,7 @@ function openEditModal(id) {
   document.getElementById('edit-gain-row').style.display = isWin ? '' : 'none';
 
   document.getElementById('edit-overlay').classList.add('show');
+  if (document.body.classList.contains('pk-open')) document.getElementById('edit-overlay').classList.add('pk-open');
 }
 
 function editSelectResult(type) {
@@ -2943,7 +2978,7 @@ function editSelectResult(type) {
 
 function closeEditModal() {
   pendingEditId = null;
-  document.getElementById('edit-overlay').classList.remove('show');
+  document.getElementById('edit-overlay').classList.remove('show', 'pk-open');
 }
 
 function handleEditOverlayClick(e) {
@@ -3045,43 +3080,55 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
       <button type="button" class="pk-done" data-pk="done">Terminé <span>✓</span></button>
     </div>
     <div class="pk-grid">
-      <button type="button" data-pk="1">1</button><button type="button" data-pk="2">2</button><button type="button" data-pk="3">3</button>
-      <button type="button" data-pk="4">4</button><button type="button" data-pk="5">5</button><button type="button" data-pk="6">6</button>
-      <button type="button" data-pk="7">7</button><button type="button" data-pk="8">8</button><button type="button" data-pk="9">9</button>
-      <button type="button" class="pk-action" data-pk="clear">AC</button><button type="button" data-pk="0">0</button><button type="button" class="pk-action pk-delete" data-pk="back" aria-label="Effacer le dernier chiffre">⌫</button>
-      <button type="button" class="pk-decimal" data-pk="decimal">,</button>
-      <button type="button" class="pk-enter" data-pk="done" aria-label="Valider la saisie">Valider <span>✓</span></button>
-    </div>`;
-  document.body.appendChild(keyboard);
-
-  function buzz(kind = 'tap') {
-    // L'API Vibration est disponible sur certains navigateurs Android.
-    // iOS Safari ne permet pas à une page web de commander directement le Taptic Engine.
-    try {
-      if (typeof navigator.vibrate === 'function') navigator.vibrate(kind === 'done' ? [10, 25, 16] : 8);
-    } catch (_) {}
-  }
-
-  function refreshInput(input) {
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-    input.dispatchEvent(new Event('change', { bubbles: true }));
-  }
-
-  function show(input) {
+      <button type="button" data-pk="1">1</b  function show(input) {
     if (!input || input.disabled) return;
     activeInput = input;
     clearTimeout(hideTimer);
+    document.querySelectorAll('.pk-scroll-spacer').forEach(spacer => spacer.remove());
     keyboard.classList.add('pk-visible');
-    document.documentElement.style.setProperty('--pk-height', keyboard.getBoundingClientRect().height + 'px');
     document.body.classList.add('pk-open');
+    document.getElementById('edit-overlay')?.classList.add('pk-open');
     keyboard.querySelectorAll('button').forEach((button, index) => {
       button.style.setProperty('--pk-delay', index + 'ms');
     });
-    // Ajoute une réserve de défilement invisible sous le formulaire,
-    // pour pouvoir remonter les derniers champs au-dessus du clavier.
-    const scrollArea = input.closest('.panel-inner');
-    if (scrollArea) {
-      const previousSpacer = scrollArea.querySelector('.pk-scroll-spacer');
+    requestAnimationFrame(() => {
+      if (activeInput !== input) return;
+      const keyboardHeight = keyboard.getBoundingClientRect().height;
+      document.documentElement.style.setProperty('--pk-height', keyboardHeight + 'px');
+      const scrollArea = input.closest('#edit-sheet, .panel-inner');
+      if (!scrollArea) return;
+      const spacer = document.createElement('div');
+      spacer.className = 'pk-scroll-spacer';
+      spacer.setAttribute('aria-hidden', 'true');
+      spacer.style.height = (keyboardHeight + 32) + 'px';
+      scrollArea.appendChild(spacer);
+      const revealInput = () => {
+        if (activeInput !== input || !input.isConnected) return;
+        const keyboardRect = keyboard.getBoundingClientRect();
+        const areaRect = scrollArea.getBoundingClientRect();
+        const inputRect = input.getBoundingClientRect();
+        const visibleBottom = Math.min(areaRect.bottom, keyboardRect.top) - 18;
+        const visibleTop = areaRect.top + 16;
+        let delta = 0;
+        if (inputRect.bottom > visibleBottom) delta = inputRect.bottom - visibleBottom + 18;
+        else if (inputRect.top < visibleTop) delta = inputRect.top - visibleTop - 8;
+        if (Math.abs(delta) > 2) scrollArea.scrollBy({ top: delta, behavior: 'smooth' });
+      };
+      revealInput();
+      setTimeout(revealInput, 180);
+      setTimeout(revealInput, 420);
+    });
+  }
+
+  function hide() {
+    keyboard.classList.remove('pk-visible');
+    document.body.classList.remove('pk-open');
+    document.getElementById('edit-overlay')?.classList.remove('pk-open');
+    document.documentElement.style.removeProperty('--pk-height');
+    document.querySelectorAll('.pk-scroll-spacer').forEach(spacer => spacer.remove());
+    activeInput = null;
+  }
+);
       if (previousSpacer) previousSpacer.remove();
       const spacer = document.createElement('div');
       spacer.className = 'pk-scroll-spacer';
