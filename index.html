@@ -471,8 +471,8 @@ canvas { display:block; width:100%; cursor:pointer; touch-action:pan-y; }
 .ctt-row.ctt-bilan strong.pos { color:var(--win); }
 .ctt-row.ctt-bilan strong.neg { color:var(--loss); }
 
- .bet-list { display:flex; flex-direction:column; gap:9px; overflow:hidden; max-height:0; opacity:0; transition:max-height .38s cubic-bezier(.22,1,.36,1),opacity .24s ease; will-change:max-height,opacity; }
-.bet-list.show { opacity:1; }
+ .bet-list { display:flex; flex-direction:column; gap:9px; overflow:hidden; max-height:0; opacity:0; transform:translateY(-9px); transition:max-height .46s cubic-bezier(.22,1,.36,1),opacity .3s ease,transform .42s cubic-bezier(.22,1,.36,1); will-change:max-height,opacity,transform; }
+.bet-list.show { opacity:1; transform:translateY(0); }
 .bet-row { display:flex; align-items:center; padding:14px 12px; border-radius:8px; border-left:3px solid; gap:10px; min-height:76px; }
 .bet-row.win  { background:var(--win-bg);  border-color:var(--win-border); }
 .bet-row.loss { background:var(--loss-bg); border-color:var(--loss-border); }
@@ -2008,8 +2008,21 @@ function getRecordDisplayData() {
   return { id: best.id, mise: best.mise, gain: best.gain, date: best.date, manual: false };
 }
 
+function animateRecordCardResize(card, previousHeight) {
+  if (!card || !previousHeight) return;
+  const nextHeight = card.scrollHeight;
+  card.style.height = previousHeight + 'px';
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { card.style.height = ''; return; }
+  const animation = card.animate([{ height: previousHeight + 'px' },{ height: nextHeight + 'px' }], { duration: 430, easing: 'cubic-bezier(.22,1,.36,1)' });
+  animation.onfinish = () => { card.style.height = ''; };
+  card.querySelectorAll(':scope > *').forEach((child, index) => {
+    child.animate([{ opacity: 0, transform: 'translateY(-8px)' },{ opacity: 1, transform: 'translateY(0)' }], { duration: 340, delay: Math.min(index * 35, 90), easing: 'cubic-bezier(.22,1,.36,1)' });
+  });
+}
+
 function renderRecordCard() {
   const card = document.getElementById('record-card');
+  const previousHeight = card.getBoundingClientRect().height;
   const data = getRecordDisplayData();
 
   if (!data) {
@@ -2031,6 +2044,7 @@ function renderRecordCard() {
       </div>
       <button class="record-manual-btn" onclick="openRecordEdit()">✎ Saisir manuellement</button>
     `;
+    animateRecordCardResize(card, previousHeight);
     return;
   }
 
@@ -2066,10 +2080,12 @@ function renderRecordCard() {
       </svg>
     </button>
   `;
+  animateRecordCardResize(card, previousHeight);
 }
 
 function openRecordEdit() {
   const card = document.getElementById('record-card');
+  const previousHeight = card.getBoundingClientRect().height;
   const data = getRecordDisplayData() || { mise: '', gain: '', date: new Date().toISOString().slice(0,10) };
   const dateVal = data.date ? new Date(data.date).toISOString().slice(0,10) : new Date().toISOString().slice(0,10);
 
@@ -2097,6 +2113,7 @@ function openRecordEdit() {
       ${getRecordOverride() ? `<button class="record-edit-reset" onclick="resetRecordEdit()">Revenir au calcul automatique</button>` : ''}
     </div>
   `;
+  animateRecordCardResize(card, previousHeight);
 }
 
 function saveRecordEdit() {
