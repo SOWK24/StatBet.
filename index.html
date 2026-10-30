@@ -1929,7 +1929,7 @@ function initSwipePageNavigation() {
     }
     event.preventDefault();
     // Amplifie le déplacement horizontal : le doigt parcourt moins de distance pour le même mouvement de page.
-    pageOffset = Math.max(-width(), Math.min(0, startOffset + dx * 2));
+    pageOffset = Math.max(-width(), Math.min(0, startOffset + dx * 5));
     applyPageOffset(false);
   }, { passive: false });
 
@@ -2476,7 +2476,7 @@ function drawChart(canvas, data) {
   ctx.lineTo(PAD.left + cW, y0);
   ctx.stroke();
 
-  const bars = cd.map((m, i) => ({ x: PAD.left + slot * i, w: slot, cx: PAD.left + slot * i + slot / 2, m }));
+  const bars = cd.map((m, i) => ({ x: PAD.left + slot * i, w: slot, cx: PAD.left + slot * i + slot / 2, m, hitbox: null }));
   const drawBar = (bar, progress) => {
     const m = bar.m, i = cd.indexOf(m), cx = bar.cx;
     const xSlot = PAD.left + slot * i;
@@ -2494,7 +2494,11 @@ function drawChart(canvas, data) {
     const yVal = y0 + (targetY - y0) * progress;
     const top = Math.min(yVal, y0);
     const h = Math.max(Math.abs(yVal - y0), progress > 0 ? 1.5 : 0);
-    const isPos = m.bilan >= 0;
+    const isPos = m.bilan > 0;
+    // Zone interactive strictement limitée au rectangle réellement dessiné en vert.
+    bar.hitbox = isPos && progress >= 1
+      ? { left: x = cx - barW / 2, right: x + barW, top, bottom: top + h }
+      : null;
     const color = isPos ? '#A6FF3B' : '#FF6B75';
     const x = cx - barW / 2;
     const r = Math.min(4, barW / 2, h);
@@ -2580,49 +2584,35 @@ function drawChart(canvas, data) {
   }
   function hideTip() { tip.classList.remove('show'); }
 
-  function findBar(clientX) {
+  function findBar(clientX, clientY) {
     const rect = canvas.getBoundingClientRect();
-    const x = clientX - rect.left;
-    return bars.find(b => x >= b.x && x <= b.x + b.w);
+    const x = (clientX - rect.left) * (W / rect.width);
+    const y = (clientY - rect.top) * (H / rect.height);
+    return bars.find(b => {
+      const hit = b.hitbox;
+      return hit && x >= hit.left && x <= hit.right && y >= hit.top && y <= hit.bottom;
+    });
   }
 
-  let activeBarKey = '';
   let pointerStart = null;
   let suppressClickUntil = 0;
-  canvas.onclick = (e) => {
+  canvas.onclick = e => {
     if (Date.now() < suppressClickUntil) return;
-    const bar = findBar(e.clientX);
-    if (bar) { showTip(bar, e.clientX); activeBarKey = bar.m.key; }
+    const bar = findBar(e.clientX, e.clientY);
+    if (bar) showTip(bar, e.clientX);
   };
+  // Un déplacement du doigt sert au swipe, jamais à ouvrir une fiche mensuelle.
   canvas.onpointerdown = e => {
-    pointerStart = { x:e.clientX, y:e.clientY, id:e.pointerId };
-    activeBarKey = '';
-    try { canvas.setPointerCapture(e.pointerId); } catch(err) {}
-  };
-  // Survol ou glissement horizontal : aucun glow ni changement de couleur,
-  // seulement un retour haptique léger au passage d'une barre à l'autre.
-  canvas.onpointermove = e => {
-    if (!pointerStart || pointerStart.id !== e.pointerId) return;
-    const bar = findBar(e.clientX);
-    if (bar && activeBarKey !== bar.m.key) {
-      activeBarKey = bar.m.key;
-      haptique('leger');
-    }
+    pointerStart = { x: e.clientX, y: e.clientY, id: e.pointerId };
   };
   canvas.onpointerup = e => {
     if (!pointerStart || pointerStart.id !== e.pointerId) return;
-    const moved = Math.hypot(e.clientX - pointerStart.x, e.clientY - pointerStart.y) > 10;
+    const moved = Math.hypot(e.clientX - pointerStart.x, e.clientY - pointerStart.y) > 8;
     pointerStart = null;
-    if (!moved) return;
-    const bar = findBar(e.clientX);
-    if (bar) {
-      showTip(bar, e.clientX);
-      suppressClickUntil = Date.now() + 450;
-    }
+    if (moved) suppressClickUntil = Date.now() + 500;
   };
   canvas.onpointercancel = () => { pointerStart = null; };
-  canvas.ontouchstart = null;
-  canvas.setAttribute('aria-label','Graphique interactif : touchez une barre ou faites glisser le doigt pour afficher les statistiques du mois');
+  canvas.setAttribute('aria-label','Graphique interactif : touchez uniquement une barre verte pour afficher les statistiques du mois');
 }
 
 /* ─── Subtle tactile motion for decorative, non-interactive surfaces ─── */
