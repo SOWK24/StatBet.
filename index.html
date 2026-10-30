@@ -1919,7 +1919,7 @@ function initSwipePageNavigation() {
     const dx = touch.clientX - startX;
     const dy = touch.clientY - startY;
     if (!horizontal) {
-      if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+      if (Math.abs(dx) < 2 && Math.abs(dy) < 2) return;
       if (Math.abs(dy) > Math.abs(dx)) {
         tracking = false;
         return;
@@ -1928,7 +1928,8 @@ function initSwipePageNavigation() {
       viewport.classList.add('is-page-dragging');
     }
     event.preventDefault();
-    pageOffset = Math.max(-width(), Math.min(0, startOffset + dx));
+    // Amplifie le déplacement horizontal : le doigt parcourt moins de distance pour le même mouvement de page.
+    pageOffset = Math.max(-width(), Math.min(0, startOffset + dx * 2));
     applyPageOffset(false);
   }, { passive: false });
 
