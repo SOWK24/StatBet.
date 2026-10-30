@@ -1614,13 +1614,22 @@ function updateSyncStatusLine(state, text) {
   el.textContent = text;
 }
 
+const DEFAULT_SYNC_CFG = {
+  url: 'https://dzyolkssdkqubbipekyb.supabase.co',
+  key: 'sb_publishable_IOGlya4rUiERviuMGPNoeA_NPmH89np',
+  code: '1234'
+};
+
 function openSyncModal() {
   const cfg = getSyncCfg();
-  document.getElementById('sync-url').value = cfg?.url || '';
-  document.getElementById('sync-key').value = cfg?.key || '';
-  document.getElementById('sync-code').value = cfg?.code || '';
+  const values = cfg || DEFAULT_SYNC_CFG;
+  document.getElementById('sync-url').value = values.url;
+  document.getElementById('sync-key').value = values.key;
+  document.getElementById('sync-code').value = values.code;
   document.getElementById('sync-disconnect-btn').style.display = cfg ? 'block' : 'none';
-  updateSyncStatusLine('', cfg ? 'Connecté avec le code "' + cfg.code + '".' : 'Non connecté — tes données restent uniquement sur cet appareil.');
+  updateSyncStatusLine('', cfg
+    ? 'Configuration enregistrée pour cet appareil (code "' + cfg.code + '").'
+    : 'Paramètres préremplis. Tu peux les modifier puis appuyer sur « Connecter ».');
   document.getElementById('sync-overlay').classList.add('show');
 }
 function closeSyncModal() {
