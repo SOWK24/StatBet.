@@ -1029,23 +1029,25 @@ input[type="submit"]:active, input[type="reset"]:active, summary:active,
 #result-celebration #result-demo-dismiss-layer{display:block!important;z-index:4!important}#result-celebration>button{display:block!important;z-index:5!important}
 </style>
 <style>
-/* iOS Safari : le panneau actif porte directement le scroll natif.
-   Cela évite qu'une suppression/reconstruction du contenu interne invalide
-   la couche de défilement imbriquée. */
+/* Défilement iOS : une seule zone scrollable, le contenu intérieur.
+   Le panneau reste fixe dans le viewport horizontal ; son contenu peut
+   défiler librement au-dessus du clavier personnalisé. */
 .panel.active {
   display: flex;
   flex-direction: column;
+  overflow: hidden !important;
+}
+.panel-inner {
+  display: block;
+  flex: 1 1 auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  width: 100%;
   overflow-x: hidden !important;
   overflow-y: auto !important;
   -webkit-overflow-scrolling: touch !important;
   overscroll-behavior-y: contain;
-  touch-action: pan-x pan-y;
-}
-.panel-inner {
-  flex: 0 0 auto !important;
-  min-height: 100%;
-  width: 100%;
-  overflow: visible !important;
+  overflow-anchor: none;
   animation: none !important;
   transform: none !important;
   opacity: 1 !important;
@@ -3121,12 +3123,11 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
       button.style.setProperty('--pk-delay', index + 'ms');
     });
 
-    // Le CSS final iOS définit explicitement .panel.active comme
-    // conteneur scrollable (overflow-y:auto) et .panel-inner comme contenu
-    // non-scrollable (overflow:visible). On doit donc déplacer le panneau.
+    // Le contenu intérieur est l'unique conteneur scrollable, y compris
+    // pendant l'ouverture du clavier. Le panneau extérieur reste fixe.
     const editSheet = input.closest('#edit-sheet');
-    const activePanel = input.closest('.panel.active');
-    const scrollArea = editSheet || activePanel ||
+    const panelContent = input.closest('.panel')?.querySelector('.panel-inner');
+    const scrollArea = editSheet || panelContent ||
       input.closest('.record-edit-wrap')?.parentElement;
     if (!scrollArea) return;
 
