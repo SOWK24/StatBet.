@@ -1859,6 +1859,56 @@ function switchTab(name) {
   if (name === 'history') renderHistory();
 }
 
+/* Navigation par balayage horizontal entre les pages, sans bloquer le scroll vertical. */
+function initSwipePageNavigation() {
+  const pageOrder = ['dashboard', 'history'];
+  document.querySelectorAll('.panel-inner').forEach(container => {
+    let startX = 0;
+    let startY = 0;
+    let tracking = false;
+
+    container.addEventListener('touchstart', event => {
+      const touch = event.touches && event.touches[0];
+      if (!touch || event.touches.length !== 1) {
+        tracking = false;
+        return;
+      }
+      // Ne pas détourner les interactions avec les contrôles, graphiques ou fenêtres modales.
+      if (event.target.closest('button, input, select, textarea, a, canvas, [contenteditable="true"], .chart-tooltip, .modal-sheet')) {
+        tracking = false;
+        return;
+      }
+      startX = touch.clientX;
+      startY = touch.clientY;
+      tracking = true;
+    }, { passive: true });
+
+    container.addEventListener('touchend', event => {
+      if (!tracking) return;
+      tracking = false;
+      const touch = event.changedTouches && event.changedTouches[0];
+      if (!touch) return;
+
+      const deltaX = touch.clientX - startX;
+      const deltaY = touch.clientY - startY;
+      // Seuil et dominance horizontale : un scroll vertical ne change jamais de page.
+      if (Math.abs(deltaX) < 65 || Math.abs(deltaX) < Math.abs(deltaY) * 1.35) return;
+
+      const activeName = document.querySelector('.tab-btn.active')?.dataset.tab;
+      const currentIndex = pageOrder.indexOf(activeName);
+      if (currentIndex < 0) return;
+
+      // Doigt vers la gauche = page suivante ; doigt vers la droite = page précédente.
+      const nextIndex = deltaX < 0 ? currentIndex + 1 : currentIndex - 1;
+      if (nextIndex < 0 || nextIndex >= pageOrder.length) return;
+      switchTab(pageOrder[nextIndex]);
+    }, { passive: true });
+
+    container.addEventListener('touchcancel', () => { tracking = false; }, { passive: true });
+  });
+}
+initSwipePageNavigation();
+
 /* Compteurs fluides : l'animation ne modifie que l'affichage, jamais les données stockées. */
 const currencyAnimations = new WeakMap();
 function animateCurrencyValue(element, target) {
