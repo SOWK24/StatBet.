@@ -3013,12 +3013,18 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
       const style = getComputedStyle(el);
       return /(auto|scroll)/.test(style.overflowY) && el.scrollHeight > el.clientHeight + 2;
     };
-    let scrollArea = input.parentElement;
-    while (scrollArea && scrollArea !== document.body && !isScrollable(scrollArea)) {
-      scrollArea = scrollArea.parentElement;
+    // Dans Nouveau pari, le défilement appartient explicitement à .panel-inner.
+    // Le choisir en priorité garantit que la réserve apparaît bien après le formulaire.
+    let scrollArea = input.closest('.panel-inner');
+    if (!scrollArea) {
+      scrollArea = input.closest('.modal-sheet') || input.closest('#edit-sheet');
     }
-    if (!scrollArea || scrollArea === document.body) {
-      scrollArea = input.closest('.panel-inner') || input.closest('.modal-sheet') || input.closest('#edit-sheet');
+    if (!scrollArea) {
+      scrollArea = input.parentElement;
+      while (scrollArea && scrollArea !== document.body && !isScrollable(scrollArea)) {
+        scrollArea = scrollArea.parentElement;
+      }
+      if (scrollArea === document.body) scrollArea = null;
     }
     if (scrollArea) {
       let spacer = scrollArea.querySelector(':scope > .pk-scroll-spacer');
@@ -3033,7 +3039,8 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
         if (activeInput !== input) return;
         const keyboardRect = keyboard.getBoundingClientRect();
         const areaRect = scrollArea.getBoundingClientRect();
-        spacer.style.height = Math.max(220, window.innerHeight - keyboardRect.top + 140) + 'px';
+        // Grande zone vide réellement scrollable sous le dernier élément du formulaire.
+        spacer.style.height = Math.max(300, window.innerHeight - keyboardRect.top + 220) + 'px';
         const inputRect = input.getBoundingClientRect();
         const visibleBottom = Math.min(areaRect.bottom, keyboardRect.top) - 20;
         const visibleTop = areaRect.top + 16;
@@ -3081,24 +3088,22 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
     }));
   }).observe(document.body, { childList: true, subtree: true });
 
-  // Déclenchement tactile natif + pointerdown pour couvrir Safari iOS et les autres navigateurs.
-  function handleKeyboardPress(event) {
+  // Ouverture au clic/tap terminé : un seul appui suffit, sans déclenchement
+  // anticipé au touchstart/pointerdown pendant un appui prolongé.
+  document.addEventListener('click', event => {
     const target = event.target instanceof Element ? event.target : null;
     const input = target?.closest('input[data-pauly-numeric]');
     if (input) {
-      if (event.type === 'pointerdown') event.preventDefault();
       show(input);
       return;
     }
     if (!target?.closest('#pauly-keyboard') && keyboard.classList.contains('pk-visible')) hide();
-  }
-  document.addEventListener('touchstart', handleKeyboardPress, { capture: true, passive: true });
-  document.addEventListener('pointerdown', handleKeyboardPress, true);
+  });
 
-  // Filet de sécurité pour les focus clavier/accessibilité et les champs injectés ensuite.
-  document.addEventListener('focusin', event => {
+  // Le focus clavier/accessibilité reste pris en charge sans doubler les événements tactiles.
+  document.addEventListener('keydown', event => {
     const input = event.target.closest?.('input[data-pauly-numeric]');
-    if (input) show(input);
+    if (input && (event.key === 'Enter' || event.key === ' ')) show(input);
   });
 
   // L'état vert suit uniquement le contact du doigt et disparaît au relâchement.
