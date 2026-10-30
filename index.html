@@ -3106,6 +3106,9 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
   }
 
   let scrollRestore = null;
+  let repositionTimer = null;
+  let activeScrollArea = null;
+  let activeScrollSpacer = null;
   let lastPointerOpenedInput = null;
   let lastPointerOpenedAt = 0;
 
@@ -3113,105 +3116,80 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
     if (!input || input.disabled) return;
     activeInput = input;
     clearTimeout(hideTimer);
+    clearTimeout(repositionTimer);
+
+    // Nettoyer la tentative précédente avant de mesurer le nouveau champ.
+    if (activeScrollArea?._pkScrollFrame) {
+      cancelAnimationFrame(activeScrollArea._pkScrollFrame);
+      activeScrollArea._pkScrollFrame = null;
+    }
+    activeScrollSpacer?.remove();
+    activeScrollArea = null;
+    activeScrollSpacer = null;
 
     keyboard.classList.add('pk-visible');
-    const initialKeyboardHeight = Math.ceil(keyboard.offsetHeight || keyboard.scrollHeight || 190);
-    document.documentElement.style.setProperty('--pk-height', initialKeyboardHeight + 'px');
+    const keyboardHeight = Math.ceil(keyboard.offsetHeight || keyboard.scrollHeight || 190);
+    document.documentElement.style.setProperty('--pk-height', keyboardHeight + 'px');
     document.body.classList.add('pk-open');
     document.getElementById('edit-overlay')?.classList.add('pk-open');
     keyboard.querySelectorAll('button').forEach((button, index) => {
       button.style.setProperty('--pk-delay', index + 'ms');
     });
 
-    // Le contenu intérieur est l'unique conteneur scrollable, y compris
-    // pendant l'ouverture du clavier. Le panneau extérieur reste fixe.
+    // Le contenu intérieur est l'unique conteneur scrollable.
     const editSheet = input.closest('#edit-sheet');
     const panelContent = input.closest('.panel')?.querySelector('.panel-inner');
     const scrollArea = editSheet || panelContent ||
       input.closest('.record-edit-wrap')?.parentElement;
     if (!scrollArea) return;
 
-    // Une seule zone de scroll par ouverture : supprimer l'éventuel ancien
-    // espace de réserve et annuler toute animation précédente.
-    if (scrollArea._pkScrollFrame) {
-      cancelAnimationFrame(scrollArea._pkScrollFrame);
-      scrollArea._pkScrollFrame = null;
-    }
-    scrollArea.querySelectorAll(':scope > .pk-scroll-spacer').forEach(node => node.remove());
-
+    activeScrollArea = scrollArea;
     const spacer = document.createElement('div');
     spacer.className = 'pk-scroll-spacer';
     spacer.setAttribute('aria-hidden', 'true');
-    spacer.style.cssText = 'display:block;flex:0 0 auto;width:100%;height:1000px;min-height:1000px;pointer-events:none;';
+    spacer.style.cssText = 'display:block;flex:0 0 auto;width:100%;height:900px;min-height:900px;pointer-events:none;';
     scrollArea.appendChild(spacer);
+    activeScrollSpacer = spacer;
 
-    const reposition = () => {
-      if (activeInput !== input || !input.isConnected || !scrollArea.isConnected) return;
+    // Attendre la fin du redimensionnement du panneau et l'arrivée du clavier.
+    // Une seule mesure évite les animations RAF concurrentes qui se relancent.
+    repositionTimer = setTimeout(() => {
+      repositionTimer = null;
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        if (activeInput !== input || !input.isConnected || !scrollArea.isConnected) return;
 
-      const keyboardRect = keyboard.getBoundingClientRect();
-      const keyboardHeight = Math.ceil(keyboardRect.height || keyboard.offsetHeight || 190);
-      document.documentElement.style.setProperty('--pk-height', keyboardHeight + 'px');
+        const keyboardRect = keyboard.getBoundingClientRect();
+        const areaRect = scrollArea.getBoundingClientRect();
+        const fieldRect = input.getBoundingClientRect();
+        const visibleTop = areaRect.top + 16;
+        const visibleBottom = Math.min(areaRect.bottom, keyboardRect.top) - 24;
 
-      // Laisse une grande marge après le contenu pour pouvoir déplacer
-      // l'ensemble du panneau et placer le champ sélectionné au-dessus du clavier.
-      const reserve = Math.max(1000, Math.ceil(scrollArea.clientHeight * 2));
-      spacer.style.height = reserve + 'px';
-      spacer.style.minHeight = reserve + 'px';
-      void scrollArea.offsetHeight;
+        let delta = 0;
+        if (fieldRect.bottom > visibleBottom) delta = fieldRect.bottom - visibleBottom;
+        else if (fieldRect.top < visibleTop) delta = fieldRect.top - visibleTop;
+        if (Math.abs(delta) < 2) return;
 
-      const areaRect = scrollArea.getBoundingClientRect();
-      const fieldRect = input.getBoundingClientRect();
-      const visibleTop = areaRect.top + 18;
-      const visibleBottom = Math.min(areaRect.bottom, keyboardRect.top) - 28;
-      let delta = 0;
-      if (fieldRect.bottom > visibleBottom) delta = fieldRect.bottom - visibleBottom;
-      else if (fieldRect.top < visibleTop) delta = fieldRect.top - visibleTop;
-      if (Math.abs(delta) < 3) return;
+        const maxScroll = Math.max(0, scrollArea.scrollHeight - scrollArea.clientHeight);
+        const destination = Math.max(0, Math.min(maxScroll, scrollArea.scrollTop + delta));
+        if (Math.abs(destination - scrollArea.scrollTop) < 2) return;
 
-      const maxScroll = Math.max(0, scrollArea.scrollHeight - scrollArea.clientHeight);
-      const destination = Math.max(0, Math.min(maxScroll, scrollArea.scrollTop + delta));
-      if (Math.abs(destination - scrollArea.scrollTop) < 2) return;
-
-      if (scrollArea._pkScrollFrame) cancelAnimationFrame(scrollArea._pkScrollFrame);
-      const from = scrollArea.scrollTop;
-      const distance = destination - from;
-      const started = performance.now();
-      const duration = 850;
-      const ease = t => 1 - Math.pow(1 - t, 3);
-      const animate = now => {
-        if (activeInput !== input || !input.isConnected) {
-          scrollArea._pkScrollFrame = null;
-          return;
-        }
-        const progress = Math.min(1, (now - started) / duration);
-        scrollArea.scrollTop = from + distance * ease(progress);
-        if (progress < 1) scrollArea._pkScrollFrame = requestAnimationFrame(animate);
-        else scrollArea._pkScrollFrame = null;
-      };
-      scrollArea._pkScrollFrame = requestAnimationFrame(animate);
-    };
-
-    // Mesures répétées pendant et après les transitions : la hauteur du panneau
-    // change avec l'ouverture du clavier sur iOS, puis se stabilise.
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      [180, 420, 650, 900, 1180].forEach(delay => {
-        setTimeout(() => {
-          if (activeInput === input && input.isConnected) reposition();
-        }, delay);
-      });
-    }));
+        // Laisser WebKit gérer le défilement animé, sans boucles concurrentes.
+        scrollArea.scrollTo({ top: destination, behavior: 'smooth' });
+      }));
+    }, 580);
   }
 
   function hide() {
-    // Annule le défilement en cours avant de retirer les espaces temporaires.
-    document.querySelectorAll('.pk-scroll-spacer').forEach(spacer => {
-      const area = spacer.parentElement;
-      if (area?._pkScrollFrame) {
-        cancelAnimationFrame(area._pkScrollFrame);
-        area._pkScrollFrame = null;
-      }
-      spacer.remove();
-    });
+    clearTimeout(repositionTimer);
+    repositionTimer = null;
+    if (activeScrollArea?._pkScrollFrame) {
+      cancelAnimationFrame(activeScrollArea._pkScrollFrame);
+      activeScrollArea._pkScrollFrame = null;
+    }
+    activeScrollSpacer?.remove();
+    activeScrollSpacer = null;
+    activeScrollArea = null;
+
     keyboard.classList.remove('pk-visible');
     document.body.classList.remove('pk-open');
     document.getElementById('edit-overlay')?.classList.remove('pk-open');
