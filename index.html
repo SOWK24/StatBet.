@@ -2977,22 +2977,11 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
       <button type="button" class="pk-zero" data-pk="00">00</button>
       <button type="button" class="pk-enter" data-pk="done" aria-label="Valider la saisie">Valider <span>✓</span></button>
     </div>`;
-  // iOS Safari : un vrai switch natif invisible sous chaque touche déclenche
-  // le Taptic Engine au contact du doigt (le clic doit rester un vrai geste).
-  keyboard.querySelectorAll('button[data-pk]').forEach(button => {
-    const hapticSwitch = document.createElement('input');
-    hapticSwitch.type = 'checkbox';
-    hapticSwitch.setAttribute('switch', '');
-    hapticSwitch.className = 'pk-haptic-switch';
-    hapticSwitch.setAttribute('aria-hidden', 'true');
-    hapticSwitch.tabIndex = -1;
-    button.appendChild(hapticSwitch);
-  });
   document.body.appendChild(keyboard);
 
   function buzz(kind = 'tap') {
-    // Android et navigateurs compatibles : vibration via l'API standard.
-    // Sur iPhone, le switch natif ci-dessus produit le retour Taptic au toucher.
+    // L'API Vibration est disponible sur certains navigateurs Android.
+    // iOS Safari ne permet pas à une page web de commander directement le Taptic Engine.
     try {
       if (typeof navigator.vibrate === 'function') navigator.vibrate(kind === 'done' ? [10, 25, 16] : 8);
     } catch (_) {}
@@ -3043,7 +3032,8 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
     }));
   }).observe(document.body, { childList: true, subtree: true });
 
-  document.addEventListener('click', event => {
+  // pointerdown ouvre le clavier dès le contact, sans attendre le click synthétique iOS.
+  document.addEventListener('pointerdown', event => {
     const input = event.target.closest?.('input[data-pauly-numeric]');
     if (input) {
       event.preventDefault();
@@ -3051,6 +3041,12 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
       return;
     }
     if (!event.target.closest?.('#pauly-keyboard') && keyboard.classList.contains('pk-visible')) hide();
+  }, true);
+
+  // Filet de sécurité pour les focus clavier/accessibilité et les champs injectés ensuite.
+  document.addEventListener('focusin', event => {
+    const input = event.target.closest?.('input[data-pauly-numeric]');
+    if (input) show(input);
   });
 
   keyboard.addEventListener('click', event => {
@@ -3130,7 +3126,7 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
 
 /* Clavier numérique propriétaire Pauly’Bet */
 #pauly-keyboard {
-  position:fixed; z-index:9999; left:0; right:0; bottom:0;
+  position:fixed; z-index:100000; left:0; right:0; bottom:0;
   padding:12px 16px calc(14px + env(safe-area-inset-bottom));
   background:linear-gradient(180deg,rgba(20,27,19,.98),rgba(8,12,8,.99));
   border-top:1px solid rgba(166,255,59,.24);
