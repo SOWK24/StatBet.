@@ -3121,12 +3121,12 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
       button.style.setProperty('--pk-delay', index + 'ms');
     });
 
-    // Le panneau (.panel) masque le débordement ; le vrai conteneur
-    // scrollable défini par le CSS est son enfant .panel-inner.
-    // Le modal d'édition conserve son propre scroll indépendant.
+    // Le CSS final iOS définit explicitement .panel.active comme
+    // conteneur scrollable (overflow-y:auto) et .panel-inner comme contenu
+    // non-scrollable (overflow:visible). On doit donc déplacer le panneau.
     const editSheet = input.closest('#edit-sheet');
-    const panelContent = input.closest('.panel.active')?.querySelector('.panel-inner');
-    const scrollArea = editSheet || panelContent ||
+    const activePanel = input.closest('.panel.active');
+    const scrollArea = editSheet || activePanel ||
       input.closest('.record-edit-wrap')?.parentElement;
     if (!scrollArea) return;
 
