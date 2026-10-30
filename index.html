@@ -1919,8 +1919,9 @@ function initSwipePageNavigation() {
     const dx = touch.clientX - startX;
     const dy = touch.clientY - startY;
     if (!horizontal) {
-      if (Math.abs(dx) < 2 && Math.abs(dy) < 2) return;
-      if (Math.abs(dy) > Math.abs(dx)) {
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+      // Tolère un geste légèrement diagonal sans confondre avec un vrai scroll vertical.
+      if (Math.abs(dy) > Math.abs(dx) * 1.5) {
         tracking = false;
         return;
       }
@@ -1929,7 +1930,7 @@ function initSwipePageNavigation() {
     }
     event.preventDefault();
     // Amplifie le déplacement horizontal : le doigt parcourt moins de distance pour le même mouvement de page.
-    pageOffset = Math.max(-width(), Math.min(0, startOffset + dx * 5));
+    pageOffset = Math.max(-width(), Math.min(0, startOffset + dx * 12));
     applyPageOffset(false);
   }, { passive: false });
 
@@ -2587,12 +2588,23 @@ function drawChart(canvas, data) {
 
   function findBar(clientX, clientY) {
     const rect = canvas.getBoundingClientRect();
-    const x = (clientX - rect.left) * (W / rect.width);
-    const y = (clientY - rect.top) * (H / rect.height);
+    const cssX = clientX - rect.left;
+    const cssY = clientY - rect.top;
+    if (cssX < 0 || cssY < 0 || cssX >= rect.width || cssY >= rect.height) return null;
+
+    // Vérifie la couleur du pixel réellement peint : aucune zone rectangulaire invisible n'est cliquable.
+    const px = Math.max(0, Math.min(canvas.width - 1, Math.floor(cssX * canvas.width / rect.width)));
+    const py = Math.max(0, Math.min(canvas.height - 1, Math.floor(cssY * canvas.height / rect.height)));
+    const pixel = ctx.getImageData(px, py, 1, 1).data;
+    const isGreenBarPixel = pixel[3] > 0 && pixel[1] > 190 && pixel[0] > 90 && pixel[0] < 220 && pixel[2] < 110;
+    if (!isGreenBarPixel) return null;
+
+    const x = cssX * (W / rect.width);
+    const y = cssY * (H / rect.height);
     return bars.find(b => {
       const hit = b.hitbox;
       return hit && x >= hit.left && x <= hit.right && y >= hit.top && y <= hit.bottom;
-    });
+    }) || null;
   }
 
   let pointerStart = null;
