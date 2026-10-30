@@ -2939,6 +2939,8 @@ function doEdit() {
 
 /* ─── Init ──────────────────────────────────────────────────────────── */
 renderDashboard();
+// Active réellement les gestes horizontaux après la création des deux panneaux.
+initSwipePageNavigation();
 document.addEventListener('keydown', e => {
   const celebration = document.getElementById('result-celebration');
   if (celebration?.classList.contains('show') && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); closeResultCelebration(); return; }
