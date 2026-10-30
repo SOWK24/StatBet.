@@ -1900,87 +1900,79 @@ function initSwipePageNavigation() {
   const width = () => viewport.clientWidth || window.innerWidth;
   let tracking = false;
   let horizontal = false;
+  let pointerId = null;
   let startX = 0;
   let startY = 0;
   let startOffset = 0;
   let latestX = 0;
   let latestTime = 0;
   let velocityX = 0;
-  let moveFrame = 0;
 
   viewport.style.touchAction = 'pan-y';
   applyPageOffset(false);
 
-  viewport.addEventListener('touchstart', event => {
-    if (event.touches.length !== 1 || event.target.closest('button,input,select,textarea,a,[contenteditable="true"],.chart-tooltip,.modal-sheet')) {
+  viewport.addEventListener('pointerdown', event => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    if (event.target.closest('button,input,select,textarea,a,[contenteditable="true"],.chart-tooltip,.modal-sheet')) {
       tracking = false;
       return;
     }
-    const touch = event.touches[0];
     tracking = true;
     horizontal = false;
-    startX = touch.clientX;
-    startY = touch.clientY;
-    latestX = touch.clientX;
+    pointerId = event.pointerId;
+    startX = latestX = event.clientX;
+    startY = event.clientY;
     latestTime = performance.now();
     velocityX = 0;
-    if (moveFrame) cancelAnimationFrame(moveFrame);
-    moveFrame = 0;
     startOffset = pageOffset;
-    // Interrompt toute transition en cours à sa position visuelle exacte.
-    const matrix = new DOMMatrixReadOnly(getComputedStyle(document.getElementById('panel-dashboard')).transform);
+    // Reprend exactement la position affichée, même si une transition est en cours.
+    const dashboard = document.getElementById('panel-dashboard');
+    const matrix = new DOMMatrixReadOnly(getComputedStyle(dashboard).transform);
     if (Number.isFinite(matrix.m41)) startOffset = matrix.m41;
     pageOffset = Math.max(-width(), Math.min(0, startOffset));
     startOffset = pageOffset;
     applyPageOffset(false);
-  }, { passive: true });
+  });
 
-  viewport.addEventListener('touchmove', event => {
-    if (!tracking || event.touches.length !== 1) return;
-    const touch = event.touches[0];
-    const dx = touch.clientX - startX;
-    const dy = touch.clientY - startY;
+  viewport.addEventListener('pointermove', event => {
+    if (!tracking || event.pointerId !== pointerId) return;
+    const dx = event.clientX - startX;
+    const dy = event.clientY - startY;
     if (!horizontal) {
-      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
-      // Tolère un geste légèrement diagonal sans confondre avec un vrai scroll vertical.
-      if (Math.abs(dy) > Math.abs(dx) * 1.5) {
+      if (Math.abs(dx) < 2 && Math.abs(dy) < 2) return;
+      // Laisse les gestes verticaux au scroll natif de la page.
+      if (Math.abs(dy) > Math.abs(dx) * 1.25) {
         tracking = false;
+        pointerId = null;
         return;
       }
       horizontal = true;
       viewport.classList.add('is-page-dragging');
+      try { viewport.setPointerCapture(event.pointerId); } catch (e) {}
     }
     event.preventDefault();
     const now = performance.now();
     const elapsed = Math.max(1, now - latestTime);
-    // Mesure la vitesse réelle du doigt pour anticiper légèrement la fin du balayage.
-    velocityX = (touch.clientX - latestX) / elapsed;
-    latestX = touch.clientX;
+    velocityX = (event.clientX - latestX) / elapsed;
+    latestX = event.clientX;
     latestTime = now;
-    // Suivi direct du doigt, avec une seule mise à jour visuelle par image.
+    // Mise à jour immédiate : aucun requestAnimationFrame ni multiplicateur,
+    // la position de la page correspond au déplacement réel du doigt.
     pageOffset = Math.max(-width(), Math.min(0, startOffset + dx));
-    if (!moveFrame) {
-      moveFrame = requestAnimationFrame(() => {
-        moveFrame = 0;
-        applyPageOffset(false);
-      });
-    }
-  }, { passive: false });
+    applyPageOffset(false);
+  });
 
-  function stopGesture() {
-    if (!tracking) return;
+  function stopGesture(event) {
+    if (!tracking || (event && event.pointerId !== pointerId)) return;
     tracking = false;
+    const activePointer = pointerId;
+    pointerId = null;
     viewport.classList.remove('is-page-dragging');
     if (horizontal) {
-      if (moveFrame) {
-        cancelAnimationFrame(moveFrame);
-        moveFrame = 0;
-        applyPageOffset(false);
-      }
-      // Une légère inertie tient compte de la vitesse du doigt, comme une navigation native.
-      const projectedOffset = pageOffset + velocityX * 150;
+      // Petite inertie native : un balayage rapide peut terminer le changement sans grand déplacement.
+      const projectedOffset = pageOffset + velocityX * 120;
       const moved = projectedOffset - startOffset;
-      const threshold = width() * 0.015;
+      const threshold = width() * 0.012;
       if (moved <= -threshold) pageOffset = -width();
       else if (moved >= threshold) pageOffset = 0;
       else pageOffset = startOffset;
@@ -1989,9 +1981,15 @@ function initSwipePageNavigation() {
       document.querySelectorAll('.panel').forEach(panel => panel.classList.toggle('active', panel.id === `panel-${targetPage}`));
       applyPageOffset(true);
     }
+    if (activePointer !== null) {
+      try {
+        if (viewport.hasPointerCapture(activePointer)) viewport.releasePointerCapture(activePointer);
+      } catch (e) {}
+    }
   }
-  viewport.addEventListener('touchend', stopGesture, { passive: true });
-  viewport.addEventListener('touchcancel', stopGesture, { passive: true });
+  viewport.addEventListener('pointerup', stopGesture);
+  viewport.addEventListener('pointercancel', stopGesture);
+  viewport.addEventListener('lostpointercapture', stopGesture);
 
   window.addEventListener('resize', () => {
     const oldWidth = viewport.clientWidth || window.innerWidth;
