@@ -95,8 +95,11 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:v
 .btn-secondary { flex:1; padding:13px 10px; border-radius:9px; border:1px solid var(--border); background:var(--surface2); color:var(--text2); font-family:var(--font-d); font-size:14px; font-weight:700; letter-spacing:.5px; cursor:pointer; text-transform:uppercase; }
 .btn-danger-text { background:none; border:none; color:var(--loss); font-size:12.5px; font-weight:600; cursor:pointer; margin-top:14px; display:block; text-align:center; width:100%; padding:8px; }
 
-#app { max-width:480px; width:100%; height:100dvh; min-height:100dvh; margin:0 auto; display:flex; flex-direction:column; position:relative; overflow:hidden; }
-body { height:100%; overflow:hidden; }
+html, body { width:100%; height:100%; min-height:0; overflow:hidden; overscroll-behavior:none; }
+body { position:fixed; inset:0; }
+#app { position:fixed; inset:0; width:100%; max-width:480px; height:100%; min-height:0; margin:0 auto; display:flex; flex-direction:column; overflow:hidden; overscroll-behavior:none; }
+#tabbar { flex:0 0 auto; }
+
 
 
 #tabbar { position:sticky; top:0; z-index:100; display:flex; background:var(--surface); border-bottom:1px solid var(--border); }
@@ -109,8 +112,8 @@ body { height:100%; overflow:hidden; }
 .tab-btn.active { color:var(--text); border-bottom-color:var(--wina); }
 .tab-btn svg { flex-shrink:0; }
 
-.panel { display:none; flex:1 1 0; min-height:0; flex-direction:column; overflow-x:hidden; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior-y:contain; }
-.panel.active { display:flex; overflow-anchor:none; scroll-behavior:auto; }
+.panel { display:none; flex:1 1 0; height:0; min-height:0; min-width:0; flex-direction:column; overflow-x:hidden; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; scroll-behavior:auto; }
+.panel.active { display:flex; overflow-anchor:none; }
 .panel-inner { padding:20px 16px 100px; }
 .panel.active .panel-inner { animation: panelEnter .32s ease-out both; }
 @keyframes panelEnter { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
@@ -2599,15 +2602,37 @@ function getDeletedBetIds() {
   try { return new Set(JSON.parse(localStorage.getItem(DELETED_BETS_KEY) || '[]')); }
   catch (_) { return new Set(); }
 }
+
+// Safari peut faire défiler le document, le panneau ou un autre ancêtre selon
+// le contexte PWA. On mémorise tous les conteneurs réellement défilés au toucher
+// de la corbeille, avant que le navigateur ne déplace le focus.
+let pendingBetDeleteScrollSnapshot = null;
+function captureBetDeleteScroll() {
+  const elements = [];
+  const candidates = [document.scrollingElement, document.documentElement, document.body, ...document.querySelectorAll('*')];
+  const seen = new Set();
+  for (const el of candidates) {
+    if (!el || seen.has(el)) continue;
+    seen.add(el);
+    if (el.scrollTop > 0 || el.scrollLeft > 0) {
+      elements.push({ el, top: el.scrollTop, left: el.scrollLeft });
+    }
+  }
+  return { elements, x: window.scrollX || 0, y: window.scrollY || 0 };
+}
+document.addEventListener('pointerdown', event => {
+  const target = event.target instanceof Element ? event.target : null;
+  if (target?.closest('.bet-delete')) pendingBetDeleteScrollSnapshot = captureBetDeleteScroll();
+}, true);
+
 function deleteBet(id) {
   const bet = bets.find(b => b.id === id);
   if (!bet) return;
 
-  const panel = document.getElementById('panel-history');
-  const savedPanelScroll = panel ? panel.scrollTop : 0;
-  const savedWindowScroll = window.scrollY || document.documentElement.scrollTop || 0;
-  // Empêcher le focus de rester sur le bouton qui va être retiré du DOM.
-  if (document.activeElement && document.activeElement.classList.contains('bet-delete')) document.activeElement.blur();
+  const scrollSnapshot = pendingBetDeleteScrollSnapshot || captureBetDeleteScroll();
+  pendingBetDeleteScrollSnapshot = null;
+  const activeElement = document.activeElement;
+  if (activeElement && activeElement.classList.contains('bet-delete')) activeElement.blur();
 
   const row = document.getElementById('bet-row-' + String(id));
   const yearBlock = row?.closest('.year-block');
@@ -2615,6 +2640,7 @@ function deleteBet(id) {
   const deletedIds = getDeletedBetIds();
   deletedIds.add(id);
   try { localStorage.setItem(DELETED_BETS_KEY, JSON.stringify([...deletedIds])); } catch (_) {}
+
   bets = bets.filter(item => item.id !== id);
   saveBets(bets);
   renderDashboard();
@@ -2635,25 +2661,40 @@ function deleteBet(id) {
         values[2].classList.toggle('pos', stats.bilanNet > 0);
         values[2].classList.toggle('neg', stats.bilanNet < 0);
       }
-      const list = yearBlock.querySelector('.bet-list');
       const toggle = yearBlock.querySelector('.history-toggle');
-      if (toggle && list && historyVisibleByYear[year] !== true) toggle.textContent = 'Afficher tout l’historique (' + yearBets.length + ')';
+      if (toggle && historyVisibleByYear[year] !== true) {
+        toggle.textContent = 'Afficher tout l’historique (' + yearBets.length + ')';
+      }
       const canvas = yearBlock.querySelector('canvas[data-year]');
       if (canvas) drawChart(canvas, yearBets);
     }
   }
-  const historyContainer = document.getElementById('history-container');
-  if (historyContainer && !historyContainer.querySelector('.year-block')) historyContainer.innerHTML = '<div class="empty-state"><p>Aucun pari</p><p>Saisis ton premier pari dans Mon Activité.</p></div>';
 
+  const historyContainer = document.getElementById('history-container');
+  if (historyContainer && !historyContainer.querySelector('.year-block')) {
+    historyContainer.innerHTML = '<div class="empty-state"><p>Aucun pari</p><p>Saisis ton premier pari dans Mon Activité.</p></div>';
+  }
+
+  // Restauration de chaque conteneur qui défilait, sans forcer window.scrollTo(0, 0).
   const restoreScroll = () => {
-    if (panel) panel.scrollTop = savedPanelScroll;
-    window.scrollTo(0, savedWindowScroll);
+    for (const item of scrollSnapshot.elements) {
+      if (item.el && item.el.isConnected) {
+        item.el.scrollTop = item.top;
+        item.el.scrollLeft = item.left;
+      }
+    }
+    if (scrollSnapshot.x || scrollSnapshot.y) window.scrollTo(scrollSnapshot.x, scrollSnapshot.y);
   };
   restoreScroll();
-  requestAnimationFrame(restoreScroll);
-  setTimeout(restoreScroll, 80);
+  requestAnimationFrame(() => {
+    restoreScroll();
+    requestAnimationFrame(restoreScroll);
+  });
+  setTimeout(restoreScroll, 120);
+
   showToast('Pari supprimé', 'loss');
 }
+
 /* ─── Édition ───────────────────────────────────────────────────────── */
 let pendingEditId = null;
 let editSelectedResult = null;
