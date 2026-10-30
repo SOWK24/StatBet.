@@ -3107,52 +3107,75 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
     activeInput = input;
     clearTimeout(hideTimer);
     document.querySelectorAll('.pk-scroll-spacer').forEach(spacer => spacer.remove());
+
+    // Le clavier apparaît immédiatement ; la hauteur de l'application est
+    // réservée avant le repositionnement du champ.
     keyboard.classList.add('pk-visible');
     document.body.classList.add('pk-open');
     document.getElementById('edit-overlay')?.classList.add('pk-open');
     keyboard.querySelectorAll('button').forEach((button, index) => {
       button.style.setProperty('--pk-delay', index + 'ms');
     });
-    // Laisser le navigateur appliquer d'abord la nouvelle hauteur de l'application.
+
+    const keyboardHeight = Math.ceil(keyboard.getBoundingClientRect().height);
+    document.documentElement.style.setProperty('--pk-height', keyboardHeight + 'px');
+
     requestAnimationFrame(() => requestAnimationFrame(() => {
       if (activeInput !== input || !input.isConnected) return;
-      const keyboardHeight = keyboard.getBoundingClientRect().height;
-      document.documentElement.style.setProperty('--pk-height', keyboardHeight + 'px');
 
-      // Le conteneur réellement défilant dépend de l'écran (formulaire,
-      // fenêtre de modification ou fiche du record).
-      const scrollArea = input.closest('#edit-sheet, .panel-inner') ||
+      // Sélectionner le vrai conteneur qui défile, selon l'écran actif.
+      const scrollArea = input.closest('#edit-sheet') ||
+        input.closest('.panel-inner') ||
         input.closest('.record-edit-wrap')?.parentElement;
       if (!scrollArea) return;
 
-      const previousSpacer = scrollArea.querySelector(':scope > .pk-scroll-spacer');
-      if (previousSpacer) previousSpacer.remove();
-      const spacer = document.createElement('div');
-      spacer.className = 'pk-scroll-spacer';
-      spacer.setAttribute('aria-hidden', 'true');
-      spacer.style.height = (keyboardHeight + 44) + 'px';
-      scrollArea.appendChild(spacer);
+      let spacer = scrollArea.querySelector(':scope > .pk-scroll-spacer');
+      if (!spacer) {
+        spacer = document.createElement('div');
+        spacer.className = 'pk-scroll-spacer';
+        spacer.setAttribute('aria-hidden', 'true');
+        scrollArea.appendChild(spacer);
+      }
+      spacer.style.height = (keyboardHeight + 56) + 'px';
 
-      // Recalcule à chaque étape de l'animation du clavier et du redimensionnement
-      // de l'application : le champ actif reste automatiquement juste au-dessus.
-      const revealInput = () => {
-        if (activeInput !== input || !input.isConnected || !keyboard.classList.contains('pk-visible')) return;
+      // Le champ est recentré dans la partie réellement visible, au-dessus
+      // du clavier. Cela fonctionne même s'il était partiellement coupé
+      // au moment où l'utilisateur le touche.
+      const revealInput = (behavior = 'auto') => {
+        if (activeInput !== input || !input.isConnected ||
+            !keyboard.classList.contains('pk-visible')) return;
+
         const keyboardRect = keyboard.getBoundingClientRect();
         const areaRect = scrollArea.getBoundingClientRect();
         const inputRect = input.getBoundingClientRect();
         const visibleTop = areaRect.top + 12;
-        const visibleBottom = Math.min(areaRect.bottom, keyboardRect.top) - 14;
+        const visibleBottom = Math.min(areaRect.bottom, keyboardRect.top) - 16;
+        const availableHeight = Math.max(0, visibleBottom - visibleTop);
         let delta = 0;
+
         if (inputRect.bottom > visibleBottom) {
-          delta = inputRect.bottom - visibleBottom + 14;
+          delta = inputRect.bottom - visibleBottom + 12;
         } else if (inputRect.top < visibleTop) {
-          delta = inputRect.top - visibleTop - 10;
+          delta = inputRect.top - visibleTop - 12;
+        } else if (inputRect.height < availableHeight) {
+          // Le champ reste dans une position confortable, pas collé au bord.
+          const idealTop = visibleTop + Math.min(availableHeight * 0.58, availableHeight - inputRect.height);
+          if (inputRect.top > idealTop) delta = inputRect.top - idealTop;
         }
-        if (Math.abs(delta) > 2) scrollArea.scrollBy({ top: delta, behavior: 'smooth' });
+
+        if (Math.abs(delta) > 2) {
+          const maxScroll = Math.max(0, scrollArea.scrollHeight - scrollArea.clientHeight);
+          const nextTop = Math.max(0, Math.min(maxScroll, scrollArea.scrollTop + delta));
+          scrollArea.scrollTo({ top: nextTop, behavior });
+        }
       };
 
-      revealInput();
-      [70,150,260,400,560,760].forEach(delay => setTimeout(revealInput, delay));
+      // Premier déplacement fluide, puis petites corrections une fois
+      // les transitions de hauteur et de clavier terminées.
+      revealInput('smooth');
+      [120, 280, 460].forEach(delay => {
+        setTimeout(() => revealInput('auto'), delay);
+      });
     }));
   }
 
