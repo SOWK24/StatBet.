@@ -95,7 +95,9 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:v
 .btn-secondary { flex:1; padding:13px 10px; border-radius:9px; border:1px solid var(--border); background:var(--surface2); color:var(--text2); font-family:var(--font-d); font-size:14px; font-weight:700; letter-spacing:.5px; cursor:pointer; text-transform:uppercase; }
 .btn-danger-text { background:none; border:none; color:var(--loss); font-size:12.5px; font-weight:600; cursor:pointer; margin-top:14px; display:block; text-align:center; width:100%; padding:8px; }
 
-#app { max-width:480px; margin:0 auto; min-height:100dvh; display:flex; flex-direction:column; position:relative; }
+#app { max-width:480px; width:100%; height:100dvh; min-height:100dvh; margin:0 auto; display:flex; flex-direction:column; position:relative; overflow:hidden; }
+body { height:100%; overflow:hidden; }
+
 
 #tabbar { position:sticky; top:0; z-index:100; display:flex; background:var(--surface); border-bottom:1px solid var(--border); }
 .tab-btn {
@@ -107,7 +109,7 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:v
 .tab-btn.active { color:var(--text); border-bottom-color:var(--wina); }
 .tab-btn svg { flex-shrink:0; }
 
-.panel { display:none; flex:1; flex-direction:column; overflow-y:auto; }
+.panel { display:none; flex:1 1 0; min-height:0; flex-direction:column; overflow-x:hidden; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior-y:contain; }
 .panel.active { display:flex; }
 .panel-inner { padding:20px 16px 100px; }
 .panel.active .panel-inner { animation: panelEnter .32s ease-out both; }
@@ -2604,7 +2606,7 @@ function deleteBet(id) {
   // Suppression ciblée : ne pas reconstruire #history-container.
   // Remplacer tout l'historique recréait les éléments sous le doigt et faisait
   // parfois repositionner le scroll par Safari sur mobile.
-  const row = document.getElementById('bet-row-' + CSS.escape(String(id)));
+  const row = document.getElementById('bet-row-' + String(id));
   const yearBlock = row?.closest('.year-block');
   const year = Number(bet.year || new Date(bet.date).getFullYear());
 
