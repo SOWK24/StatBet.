@@ -1941,7 +1941,7 @@ function initSwipePageNavigation() {
     }
     event.preventDefault();
     // Amplifie le déplacement horizontal : le doigt parcourt moins de distance pour le même mouvement de page.
-    pageOffset = Math.max(-width(), Math.min(0, startOffset + dx * 30));
+    pageOffset = Math.max(-width(), Math.min(0, startOffset + dx * 3));
     applyPageOffset(false);
   }, { passive: false });
 
@@ -1952,7 +1952,7 @@ function initSwipePageNavigation() {
     if (horizontal) {
       // À la libération, termine le déplacement avec une animation continue.
       // Le contenu n'est jamais reconstruit pendant le geste.
-      const threshold = width() * 0.02;
+      const threshold = width() * 0.005;
       const moved = pageOffset - startOffset;
       if (moved <= -threshold) pageOffset = -width();
       else if (moved >= threshold) pageOffset = 0;
