@@ -3118,14 +3118,25 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
       button.style.setProperty('--pk-delay', index + 'ms');
     });
 
-    // Le vrai conteneur scrollable des pages est .panel.active :
-    // .panel-inner est volontairement en overflow:visible et ne peut pas défiler.
-    // Dans la fenêtre de modification, c'est #edit-sheet qui porte le scroll.
+    // Le vrai conteneur scrollable des pages est .panel.active.
+    // On le force temporairement en bloc scrollable : iOS Safari ne fait pas
+    // toujours défiler un conteneur flex imbriqué lorsque sa hauteur est animée.
+    // Dans la fenêtre de modification, #edit-sheet reste le conteneur dédié.
+    const pagePanel = input.closest('.panel.active');
     const scrollArea = input.closest('#edit-sheet') ||
-      input.closest('.panel.active') ||
+      pagePanel ||
       input.closest('.panel-inner') ||
       input.closest('.record-edit-wrap')?.parentElement;
     if (!scrollArea) return;
+
+    if (pagePanel && scrollArea === pagePanel) {
+      pagePanel.style.setProperty('display', 'block', 'important');
+      pagePanel.style.setProperty('height', '100%', 'important');
+      pagePanel.style.setProperty('min-height', '0', 'important');
+      pagePanel.style.setProperty('overflow-x', 'hidden', 'important');
+      pagePanel.style.setProperty('overflow-y', 'auto', 'important');
+      pagePanel.style.setProperty('-webkit-overflow-scrolling', 'touch', 'important');
+    }
 
     let spacer = scrollArea.querySelector(':scope > .pk-scroll-spacer');
     if (!spacer) {
@@ -3141,7 +3152,7 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
       const keyboardRect = keyboard.getBoundingClientRect();
       const keyboardHeight = Math.ceil(keyboard.offsetHeight || keyboardRect.height || keyboard.scrollHeight || 190);
       document.documentElement.style.setProperty('--pk-height', keyboardHeight + 'px');
-      spacer.style.cssText = 'display:block;width:100%;height:' + (keyboardHeight + 220) + 'px;pointer-events:none;';
+      spacer.style.cssText = 'display:block;flex:0 0 auto;width:100%;height:' + (keyboardHeight + 260) + 'px;min-height:' + (keyboardHeight + 260) + 'px;pointer-events:none;';
 
       // Le clavier est fixe : on aligne le champ dans la zone réellement visible.
       // Utiliser scrollTop directement évite les incohérences de scrollIntoView sur iOS.
@@ -3189,26 +3200,29 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
       }
     };
 
-    // Laisser le clavier terminer son apparition, puis effectuer un seul
-    // défilement animé. Des appels smooth successifs annulaient l'animation iOS.
+    // Attendre que le clavier et la réduction de hauteur de l'application
+    // soient terminés : mesurer pendant leurs transitions donne une mauvaise
+    // destination et peut laisser le champ derrière le clavier.
     requestAnimationFrame(() => {
-      setTimeout(() => {
-        if (activeInput !== input || !input.isConnected) return;
-        reposition(true);
-
-        // Une seule vérification de sécurité après l'animation, sans relancer
-        // un deuxième défilement si le champ est déjà dans la zone visible.
+      requestAnimationFrame(() => {
         setTimeout(() => {
           if (activeInput !== input || !input.isConnected) return;
-          const area = scrollArea.getBoundingClientRect();
-          const field = input.getBoundingClientRect();
-          const keyboardTop = keyboard.getBoundingClientRect().top;
-          const limit = Math.min(area.bottom, keyboardTop) - 18;
-          if (field.bottom > limit + 3 || field.top < area.top + 10) {
-            reposition(true);
-          }
-        }, 420);
-      }, 280);
+          reposition(true);
+
+          // Vérification après le mouvement : si Safari a limité le scroll,
+          // recalculer une fois avec les dimensions finales réellement visibles.
+          setTimeout(() => {
+            if (activeInput !== input || !input.isConnected) return;
+            const area = scrollArea.getBoundingClientRect();
+            const field = input.getBoundingClientRect();
+            const keyboardTop = keyboard.getBoundingClientRect().top;
+            const limit = Math.min(area.bottom, keyboardTop) - 18;
+            if (field.bottom > limit + 3 || field.top < area.top + 10) {
+              reposition(true);
+            }
+          }, 620);
+        }, 540);
+      });
     });
   }
 
@@ -3218,6 +3232,10 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
     document.getElementById('edit-overlay')?.classList.remove('pk-open');
     document.documentElement.style.removeProperty('--pk-height');
     document.querySelectorAll('.pk-scroll-spacer').forEach(spacer => spacer.remove());
+    document.querySelectorAll('.panel.active').forEach(panel => {
+      ['display','height','min-height','overflow-x','overflow-y','-webkit-overflow-scrolling']
+        .forEach(property => panel.style.removeProperty(property));
+    });
     activeInput = null;
   }
 
