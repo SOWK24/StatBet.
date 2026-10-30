@@ -517,9 +517,19 @@ canvas { display:block; width:100%; cursor:pointer; touch-action:pan-y; }
 .empty-state p:first-child { font-family:var(--font-d); font-size:22px; font-weight:700; margin-bottom:8px; }
 .empty-state p { font-size:14px; color:var(--text2); }
 
-::-webkit-scrollbar { width:4px; }
-::-webkit-scrollbar-track { background:transparent; }
-::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+/* Masquer les indicateurs de défilement pour une apparence d'application native. */
+* {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+*::-webkit-scrollbar,
+*::-webkit-scrollbar-track,
+*::-webkit-scrollbar-thumb {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
 
 @media(min-width:481px){ #app{ border-left:1px solid var(--border); border-right:1px solid var(--border); } }
 
@@ -544,16 +554,7 @@ body {
 .logo-row { margin-bottom:20px; }
 .app-logo { letter-spacing:2.5px; text-shadow:0 0 28px rgba(166,255,59,.08); }
 .app-logo span { color:var(--wina); }
-.logo-row::after {
-  content:'SPORTS DATA · TON SUIVI';
-  display:block;
-  position:absolute;
-  margin-top:58px;
-  font-size:8px;
-  font-weight:700;
-  letter-spacing:2px;
-  color:var(--text3);
-}
+.logo-row::after { content:none !important; display:none !important; }
 .scoreboard {
   border:1px solid rgba(166,255,59,.18);
   border-radius:18px;
