@@ -99,6 +99,10 @@ html, body { width:100%; height:100%; min-height:0; overflow:hidden; overscroll-
 body { position:fixed; inset:0; }
 #app { position:fixed; inset:0; width:100%; max-width:480px; height:100%; min-height:0; margin:0 auto; display:flex; flex-direction:column; overflow:hidden; overscroll-behavior:none; }
 #tabbar { flex:0 0 auto; }
+#pages-viewport { position:relative; flex:1 1 0; min-height:0; min-width:0; width:100%; overflow:hidden; isolation:isolate; }
+#pages-viewport.is-page-dragging { user-select:none; }
+#pages-viewport .panel { display:flex; position:absolute; inset:0; width:100%; height:100%; min-height:0; overflow:hidden; will-change:transform; }
+#pages-viewport .panel-inner { width:100%; height:100%; }
 
 
 
@@ -1103,6 +1107,7 @@ body::-webkit-scrollbar,
     </button>
   </nav>
 
+  <div id="pages-viewport">
   <div id="panel-dashboard" class="panel active">
     <div class="panel-inner">
       <div class="logo-row">
@@ -1189,6 +1194,7 @@ body::-webkit-scrollbar,
         </div>
       </div>
     </div>
+  </div>
   </div>
 </div>
 
@@ -1840,75 +1846,99 @@ function haptique(niveau = 'leger') {
   try { navigator.vibrate(motifs[niveau] || motifs.leger); } catch (e) {}
 }
 
+const PAGE_ORDER = ['dashboard', 'history'];
+
+function setPagePosition(name, offset, animate = true) {
+  const panel = document.getElementById(`panel-${name}`);
+  if (!panel) return;
+  panel.style.transition = animate ? 'transform 300ms cubic-bezier(.22,.8,.25,1)' : 'none';
+  panel.style.transform = `translate3d(${offset}px,0,0)`;
+}
+
 function switchTab(name) {
   const nextPanel = document.getElementById(`panel-${name}`);
   if (!nextPanel) return;
   const currentName = document.querySelector('.tab-btn.active')?.dataset.tab;
   if (currentName === name) return;
-
-  // Sur iOS, les animations transform/WAAPI appliquées aux conteneurs
-  // qui hébergent le scroll natif peuvent laisser les deux onglets figés.
-  // On change donc d'onglet sans animer les panneaux eux-mêmes.
+  const viewport = document.getElementById('pages-viewport');
+  const activeIndex = PAGE_ORDER.indexOf(name);
   haptique('leger');
-  document.querySelectorAll('.tab-btn').forEach(button => {
-    button.classList.toggle('active', button.dataset.tab === name);
-  });
+  document.querySelectorAll('.tab-btn').forEach(button => button.classList.toggle('active', button.dataset.tab === name));
   document.querySelectorAll('.panel').forEach(panel => {
-    panel.classList.toggle('active', panel.id === `panel-${name}`);
+    const panelName = panel.id.replace('panel-', '');
+    panel.classList.toggle('active', panelName === name);
+    setPagePosition(panelName, (PAGE_ORDER.indexOf(panelName) - activeIndex) * (viewport?.clientWidth || window.innerWidth), true);
   });
   if (name === 'history') renderHistory();
 }
 
-/* Navigation par balayage horizontal entre les pages, sans bloquer le scroll vertical. */
+/* Les pages suivent le doigt en temps réel, puis se calent avec une transition douce. */
 function initSwipePageNavigation() {
-  const pageOrder = ['dashboard', 'history'];
-  document.querySelectorAll('.panel-inner').forEach(container => {
-    let startX = 0;
-    let startY = 0;
-    let tracking = false;
+  const viewport = document.getElementById('pages-viewport');
+  if (!viewport) return;
+  const width = () => viewport.clientWidth || window.innerWidth;
+  PAGE_ORDER.forEach((name, index) => setPagePosition(name, index * width(), false));
 
-    container.addEventListener('touchstart', event => {
-      const touch = event.touches && event.touches[0];
-      if (!touch || event.touches.length !== 1) {
-        tracking = false;
-        return;
-      }
-      // Ne pas détourner les interactions avec les contrôles, graphiques ou fenêtres modales.
-      if (event.target.closest('button, input, select, textarea, a, canvas, [contenteditable="true"], .chart-tooltip, .modal-sheet')) {
-        tracking = false;
-        return;
-      }
-      startX = touch.clientX;
-      startY = touch.clientY;
-      tracking = true;
-    }, { passive: true });
+  let tracking = false, horizontal = false, startX = 0, startY = 0, lastX = 0, lastTime = 0, velocity = 0, startIndex = 0;
+  const excluded = 'button,input,select,textarea,a,canvas,[contenteditable="true"],.chart-tooltip,.modal-sheet';
 
-    container.addEventListener('touchend', event => {
-      if (!tracking) return;
-      tracking = false;
-      const touch = event.changedTouches && event.changedTouches[0];
-      if (!touch) return;
+  viewport.addEventListener('touchstart', event => {
+    if (event.touches.length !== 1 || event.target.closest(excluded)) { tracking = false; return; }
+    const touch = event.touches[0];
+    startX = lastX = touch.clientX; startY = touch.clientY;
+    lastTime = performance.now(); velocity = 0; horizontal = false; tracking = true;
+    startIndex = PAGE_ORDER.indexOf(document.querySelector('.tab-btn.active')?.dataset.tab);
+    if (startIndex < 0) tracking = false;
+  }, { passive: true });
 
-      const deltaX = touch.clientX - startX;
-      const deltaY = touch.clientY - startY;
-      // Seuil et dominance horizontale : un scroll vertical ne change jamais de page.
-      if (Math.abs(deltaX) < 65 || Math.abs(deltaX) < Math.abs(deltaY) * 1.35) return;
+  viewport.addEventListener('touchmove', event => {
+    if (!tracking || event.touches.length !== 1) return;
+    const touch = event.touches[0], dx = touch.clientX - startX, dy = touch.clientY - startY;
+    if (!horizontal) {
+      if (Math.abs(dx) < 7 && Math.abs(dy) < 7) return;
+      if (Math.abs(dy) > Math.abs(dx) * 1.15) { tracking = false; return; }
+      if (Math.abs(dx) <= Math.abs(dy) * 1.15) return;
+      horizontal = true;
+      viewport.classList.add('is-page-dragging');
+    }
+    event.preventDefault();
+    const pageWidth = width();
+    const atEdge = (startIndex === 0 && dx > 0) || (startIndex === PAGE_ORDER.length - 1 && dx < 0);
+    const dragX = atEdge ? dx * 0.2 : dx;
+    const targetIndex = dx < 0 ? Math.min(startIndex + 1, PAGE_ORDER.length - 1) : Math.max(startIndex - 1, 0);
+    PAGE_ORDER.forEach((name, index) => {
+      const offset = (index - startIndex) * pageWidth + dragX;
+      setPagePosition(name, offset, false);
+    });
+    const now = performance.now();
+    velocity = (touch.clientX - lastX) / Math.max(1, now - lastTime);
+    lastX = touch.clientX; lastTime = now;
+  }, { passive: false });
 
-      const activeName = document.querySelector('.tab-btn.active')?.dataset.tab;
-      const currentIndex = pageOrder.indexOf(activeName);
-      if (currentIndex < 0) return;
-
-      // Doigt vers la gauche = page suivante ; doigt vers la droite = page précédente.
-      const nextIndex = deltaX < 0 ? currentIndex + 1 : currentIndex - 1;
-      if (nextIndex < 0 || nextIndex >= pageOrder.length) return;
-      switchTab(pageOrder[nextIndex]);
-    }, { passive: true });
-
-    container.addEventListener('touchcancel', () => { tracking = false; }, { passive: true });
+  function finish(cancelled = false) {
+    if (!tracking) return;
+    tracking = false;
+    viewport.classList.remove('is-page-dragging');
+    if (!horizontal) return;
+    const dx = lastX - startX;
+    const change = !cancelled && (Math.abs(dx) >= width() * 0.22 || Math.abs(velocity) >= 0.42);
+    const nextIndex = change ? (dx < 0 ? Math.min(startIndex + 1, PAGE_ORDER.length - 1) : Math.max(startIndex - 1, 0)) : startIndex;
+    const nextName = PAGE_ORDER[nextIndex];
+    if (nextIndex !== startIndex) {
+      document.querySelectorAll('.tab-btn').forEach(button => button.classList.toggle('active', button.dataset.tab === nextName));
+      document.querySelectorAll('.panel').forEach(panel => panel.classList.toggle('active', panel.id === `panel-${nextName}`));
+      if (nextName === 'history') renderHistory();
+      haptique('leger');
+    }
+    PAGE_ORDER.forEach((name, index) => setPagePosition(name, (index - nextIndex) * width(), true));
+  }
+  viewport.addEventListener('touchend', () => finish(false), { passive: true });
+  viewport.addEventListener('touchcancel', () => finish(true), { passive: true });
+  window.addEventListener('resize', () => {
+    const activeIndex = PAGE_ORDER.indexOf(document.querySelector('.tab-btn.active')?.dataset.tab);
+    if (activeIndex >= 0) PAGE_ORDER.forEach((name, index) => setPagePosition(name, (index - activeIndex) * width(), false));
   });
 }
-initSwipePageNavigation();
-
 /* Compteurs fluides : l'animation ne modifie que l'affichage, jamais les données stockées. */
 const currencyAnimations = new WeakMap();
 function animateCurrencyValue(element, target) {
