@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <link rel="apple-touch-icon" sizes="180x180" href="./icon.png?v=paulybet-2">
 <link rel="icon" type="image/png" href="./icon.png?v=paulybet-2">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -101,7 +101,7 @@ html, body { height:100%; background:var(--bg); color:var(--text); font-family:v
 html, body { width:100%; height:100%; min-height:0; overflow:hidden; overscroll-behavior:none; }
 body { position:fixed; inset:0; }
 #app { position:fixed; inset:0; width:100%; max-width:480px; height:100%; min-height:0; margin:0 auto; display:flex; flex-direction:column; overflow:hidden; overscroll-behavior:none; }
-body.pk-open #app { top:0 !important; bottom:auto !important; height:calc(100% - var(--pk-height, 190px)) !important; max-height:calc(100% - var(--pk-height, 190px)) !important; transition:height .22s cubic-bezier(.2,.75,.25,1); }
+body.pk-open #app { top:0 !important; bottom:auto !important; height:calc(100% - var(--pk-height, 190px)) !important; max-height:calc(100% - var(--pk-height, 190px)) !important; transition:height .52s cubic-bezier(.22,.75,.25,1), max-height .52s cubic-bezier(.22,.75,.25,1); will-change:height; }
 #tabbar { flex:0 0 auto; }
 #pages-viewport { position:relative; display:flex; flex:1 1 0; min-height:0; min-width:0; width:100%; overflow-x:auto; overflow-y:hidden; overscroll-behavior-x:contain; scroll-snap-type:x mandatory; scroll-behavior:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; isolation:isolate; }
 #pages-viewport::-webkit-scrollbar { display:none; }
@@ -528,7 +528,7 @@ canvas { display:block; width:100%; cursor:pointer; touch-action:pan-y; }
 #edit-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:300; align-items:flex-end; justify-content:center; }
 #edit-overlay.show { display:flex; }
 #edit-sheet { background:var(--surface); border-radius:18px 18px 0 0; padding:24px 20px 36px; width:100%; max-width:480px; max-height:calc(100% - 12px); overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; animation:slideUp .22s cubic-bezier(.22,1,.36,1); }
-#edit-overlay.pk-open { bottom:var(--pk-height, 0px); }
+#edit-overlay.pk-open { bottom:var(--pk-height, 0px); transition:bottom .52s cubic-bezier(.22,.75,.25,1); }
 #edit-sheet .pk-scroll-spacer { height:24px; }
 #edit-sheet h3 { font-family:var(--font-d); font-size:20px; font-weight:800; letter-spacing:.5px; margin-bottom:16px; }
 #edit-cancel  { background:var(--surface2); color:var(--text2); }
@@ -3087,7 +3087,7 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
       <button type="button" class="pk-decimal" data-pk="decimal">,</button>
       <button type="button" class="pk-enter" data-pk="done" aria-label="Valider la saisie">Valider <span>✓</span></button>
     </div>`;
-  document.body.appendChild(keyboard);
+  // Placer le clavier directement sous <html> évite le clipping causé par le body fixe/overflow:hidden sur iOS.\n  document.documentElement.appendChild(keyboard);
 
   function buzz(kind = 'tap') {
     // L'API Vibration est disponible sur certains navigateurs Android.
@@ -3163,9 +3163,11 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
           if (scrollArea._pkScrollFrame) cancelAnimationFrame(scrollArea._pkScrollFrame);
           const start = scrollArea.scrollTop;
           const distance = destination - start;
-          const duration = 430;
+          const duration = 560;
           const startedAt = performance.now();
-          const ease = t => 1 - Math.pow(1 - t, 3);
+          const ease = t => t < 0.5
+            ? 4 * t * t * t
+            : 1 - Math.pow(-2 * t + 2, 3) / 2;
           const animateScroll = now => {
             const progress = Math.min(1, (now - startedAt) / duration);
             scrollArea.scrollTop = start + distance * ease(progress);
@@ -3203,7 +3205,7 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
             reposition(true);
           }
         }, 420);
-      }, 300);
+      }, 280);
     });
   }
 
@@ -3401,9 +3403,10 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
 /* Clavier numérique propriétaire Pauly’Bet */
 #pauly-keyboard {
   box-sizing:border-box; position:fixed; z-index:100000;
-  left:14px; right:14px;
-  bottom:max(28px, calc(env(safe-area-inset-bottom) + 20px));
-  border-radius:24px; overflow:hidden;
+  left:max(20px, calc(env(safe-area-inset-left, 0px) + 20px));
+  right:max(20px, calc(env(safe-area-inset-right, 0px) + 20px));
+  bottom:calc(env(safe-area-inset-bottom, 0px) + 38px);
+  border-radius:28px; overflow:hidden; clip-path:inset(0 round 28px);
   padding:7px 12px 10px;
   background:linear-gradient(180deg,rgba(20,27,19,.98),rgba(8,12,8,.99));
   border:1px solid rgba(166,255,59,.2);
