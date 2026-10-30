@@ -1938,8 +1938,15 @@ function initSwipePageNavigation() {
     if (!tracking) return;
     tracking = false;
     viewport.classList.remove('is-page-dragging');
-    if (horizontal) updateActivePage();
-    // Aucun aimant, aucun seuil et aucune inertie : on reste exactement où le doigt a lâché.
+    if (horizontal) {
+      // Un balayage court suffit : à partir de 18 % de l'écran,
+      // on termine naturellement sur la page voisine.
+      const threshold = width() * 0.18;
+      const target = pageOffset < -threshold ? -width() : 0;
+      pageOffset = target;
+      updateActivePage();
+      applyPageOffset(true);
+    }
   }
   viewport.addEventListener('touchend', stopGesture, { passive: true });
   viewport.addEventListener('touchcancel', stopGesture, { passive: true });
