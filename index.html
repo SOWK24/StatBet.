@@ -3125,6 +3125,13 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
       input.closest('.record-edit-wrap')?.parentElement;
     if (!scrollArea) return;
 
+    // Certaines règles globales de mise en page avaient désactivé le scroll
+    // des .panel-inner (overflow:visible !important). Le réactiver uniquement
+    // pendant la saisie pour que l'animation scrollTop agisse sur le bon élément.
+    if (scrollArea.classList.contains('panel-inner')) {
+      scrollArea.classList.add('pk-scroll-active');
+    }
+
     let spacer = scrollArea.querySelector(':scope > .pk-scroll-spacer');
     if (!spacer) {
       spacer = document.createElement('div');
@@ -3216,6 +3223,9 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
     document.getElementById('edit-overlay')?.classList.remove('pk-open');
     document.documentElement.style.removeProperty('--pk-height');
     document.querySelectorAll('.pk-scroll-spacer').forEach(spacer => spacer.remove());
+    document.querySelectorAll('.panel-inner.pk-scroll-active').forEach(area => {
+      area.classList.remove('pk-scroll-active');
+    });
     activeInput = null;
   }
 
@@ -3498,6 +3508,22 @@ body.pk-open #app {
   #edit-overlay.pk-open {
     transition-duration: .42s, .28s, .42s !important;
   }
+}
+/* Le conteneur qui porte le champ doit être réellement scrollable
+   pendant la saisie : sans cela scrollTop ne peut pas glisser sur iOS. */
+.panel-inner.pk-scroll-active {
+  display:block !important;
+  flex:1 1 auto !important;
+  width:100% !important;
+  height:100% !important;
+  min-height:0 !important;
+  max-height:100% !important;
+  overflow-x:hidden !important;
+  overflow-y:auto !important;
+  -webkit-overflow-scrolling:touch !important;
+  overscroll-behavior-y:contain !important;
+  scroll-behavior:auto !important;
+  touch-action:pan-y !important;
 }
 </style>
 </body>
