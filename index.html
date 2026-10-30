@@ -1007,13 +1007,16 @@ input[type="submit"]:active, input[type="reset"]:active, summary:active,
 #result-celebration #result-demo-dismiss-layer{display:block!important;z-index:4!important}#result-celebration>button{display:block!important;z-index:5!important}
 </style>
 <style>
-/* iOS Safari : ne jamais transformer/animer le conteneur qui porte le scroll natif. */
+/* iOS Safari : préserver un vrai conteneur de scroll tactile indépendant. */
 .panel-inner,
 .panel.active .panel-inner {
   animation: none !important;
   transform: none !important;
   opacity: 1 !important;
-  -webkit-overflow-scrolling: touch;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-y;
 }
 </style>
 </head>
@@ -2149,6 +2152,23 @@ function showResultCelebration(isWin, amount) {
   }
 }let resultCelebrationTimer = null;
 let pendingResultRefresh = false;
+
+/* iOS Safari peut conserver une couche de scroll native invalidée après
+   la fermeture d'une iframe plein écran. On reconstruit les deux zones
+   défilantes sans toucher à leur contenu ni à leur position. */
+function refreshNativePanelScroll() {
+  document.querySelectorAll('.panel-inner').forEach(scroller => {
+    const savedTop = scroller.scrollTop;
+    scroller.style.webkitOverflowScrolling = 'auto';
+    scroller.style.overflowY = 'hidden';
+    void scroller.offsetHeight;
+    scroller.style.overflowY = 'auto';
+    scroller.style.webkitOverflowScrolling = 'touch';
+    scroller.style.touchAction = 'pan-y';
+    scroller.scrollTop = savedTop;
+  });
+}
+
 function closeResultCelebration() {
   const modal = document.getElementById('result-celebration');
   const wasOpen = !!modal && modal.classList.contains('show');
@@ -2175,6 +2195,14 @@ function closeResultCelebration() {
     renderDashboard();
     if (document.getElementById('panel-history')?.classList.contains('active')) renderHistory();
   }
+  // Laisser Safari retirer l'iframe avant de réinitialiser ses scroll layers.
+  requestAnimationFrame(() => {
+    refreshNativePanelScroll();
+    requestAnimationFrame(() => {
+      refreshNativePanelScroll();
+      document.querySelector('.panel.active .panel-inner')?.style.setProperty('-webkit-overflow-scrolling', 'touch');
+    });
+  });
 }
 
 /* ─── Toast ─────────────────────────────────────────────────────────── */
