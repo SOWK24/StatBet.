@@ -3006,59 +3006,23 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
     keyboard.querySelectorAll('button').forEach((button, index) => {
       button.style.setProperty('--pk-delay', index + 'ms');
     });
-    // Trouve le vrai conteneur scrollable (sur iPhone, ce n'est pas toujours
-    // le parent immédiat du champ). On lui ajoute une réserve sous le formulaire.
-    const isScrollable = el => {
-      if (!el) return false;
-      const style = getComputedStyle(el);
-      return /(auto|scroll)/.test(style.overflowY) && el.scrollHeight > el.clientHeight + 2;
-    };
-    // Dans Nouveau pari, le défilement appartient explicitement à .panel-inner.
-    // Le choisir en priorité garantit que la réserve apparaît bien après le formulaire.
-    let scrollArea = input.closest('.panel-inner');
-    if (!scrollArea) {
-      scrollArea = input.closest('.modal-sheet') || input.closest('#edit-sheet');
-    }
-    if (!scrollArea) {
-      scrollArea = input.parentElement;
-      while (scrollArea && scrollArea !== document.body && !isScrollable(scrollArea)) {
-        scrollArea = scrollArea.parentElement;
-      }
-      if (scrollArea === document.body) scrollArea = null;
-    }
+    // Aucun espace artificiel n'est ajouté sous le formulaire.
+    // Le champ reste simplement visible au-dessus du clavier personnalisé.
+    const scrollArea = input.closest('.panel-inner');
     if (scrollArea) {
-      let spacer = scrollArea.querySelector(':scope > .pk-scroll-spacer');
-      if (!spacer) {
-        spacer = document.createElement('div');
-        spacer.className = 'pk-scroll-spacer';
-        spacer.setAttribute('aria-hidden', 'true');
-        spacer.style.cssText = 'display:block;width:100%;pointer-events:none;';
-        scrollArea.appendChild(spacer);
-      }
-      const revealInput = () => {
-        if (activeInput !== input) return;
-        const keyboardRect = keyboard.getBoundingClientRect();
-        const areaRect = scrollArea.getBoundingClientRect();
-        // Réserve une vraie hauteur de défilement sous le formulaire.
-        const extraSpace = Math.max(320, keyboardRect.height + 220);
-        spacer.style.height = extraSpace + 'px';
-        spacer.style.minHeight = extraSpace + 'px';
-        document.body.style.setProperty('--pk-keyboard-space', extraSpace + 'px');
-        scrollArea.style.setProperty('padding-bottom', 'calc(100px + var(--pk-keyboard-space))', 'important');
-        scrollArea.style.setProperty('scroll-padding-bottom', 'var(--pk-keyboard-space)', 'important');
-        const inputRect = input.getBoundingClientRect();
-        const visibleBottom = Math.min(areaRect.bottom, keyboardRect.top) - 20;
-        const visibleTop = areaRect.top + 16;
-        let delta = 0;
-        if (inputRect.bottom > visibleBottom) delta = inputRect.bottom - visibleBottom + 24;
-        else if (inputRect.top < visibleTop) delta = inputRect.top - visibleTop;
-        if (Math.abs(delta) > 2) {
-          scrollArea.scrollTop += delta;
-        }
-      };
-      // Recalcule après l'apparition et la transition du clavier iOS.
-      [0, 120, 280, 500, 750].forEach(delay => {
-        window.setTimeout(() => requestAnimationFrame(revealInput), delay);
+      [0, 120, 280].forEach(delay => {
+        window.setTimeout(() => {
+          if (activeInput !== input) return;
+          const keyboardRect = keyboard.getBoundingClientRect();
+          const areaRect = scrollArea.getBoundingClientRect();
+          const inputRect = input.getBoundingClientRect();
+          const visibleBottom = Math.min(areaRect.bottom, keyboardRect.top) - 16;
+          const visibleTop = areaRect.top + 16;
+          let delta = 0;
+          if (inputRect.bottom > visibleBottom) delta = inputRect.bottom - visibleBottom + 12;
+          else if (inputRect.top < visibleTop) delta = inputRect.top - visibleTop;
+          if (Math.abs(delta) > 2) scrollArea.scrollTop += delta;
+        }, delay);
       });
     }
   }
@@ -3066,15 +3030,6 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
   function hide() {
     keyboard.classList.remove('pk-visible');
     document.body.classList.remove('pk-open');
-    document.body.style.removeProperty('--pk-keyboard-space');
-    document.querySelectorAll('.pk-scroll-spacer').forEach(node => {
-      const parent = node.parentElement;
-      node.remove();
-      if (parent?.classList.contains('panel-inner')) {
-        parent.style.removeProperty('padding-bottom');
-        parent.style.removeProperty('scroll-padding-bottom');
-      }
-    });
     activeInput = null;
   }
 
@@ -3101,27 +3056,53 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
     }));
   }).observe(document.body, { childList: true, subtree: true });
 
-  // Ouverture à la fin d'un tap (pointerup), jamais au début d'un appui prolongé.
-  // Un unique contact bref sur un champ suffit à afficher le clavier.
+  // Un appui bref ouvre le clavier au relâchement. Un maintien (> 300 ms)
+  // est ignoré : aucun clavier ne s'ouvre simplement parce que le doigt reste posé.
+  let numericPress = null;
+  document.addEventListener('pointerdown', event => {
+    const target = event.target instanceof Element ? event.target : null;
+    const input = target?.closest('input[data-pauly-numeric]');
+    numericPress = input ? {
+      input,
+      pointerId: event.pointerId,
+      startedAt: performance.now()
+    } : null;
+  }, true);
+
   document.addEventListener('pointerup', event => {
     const target = event.target instanceof Element ? event.target : null;
     const input = target?.closest('input[data-pauly-numeric]');
-    if (input) {
-      event.preventDefault();
-      show(input);
+    const press = numericPress;
+    numericPress = null;
+    if (press && input === press.input && event.pointerId === press.pointerId) {
+      const duration = performance.now() - press.startedAt;
+      if (duration <= 300) {
+        event.preventDefault();
+        show(input);
+      }
       return;
     }
     if (!target?.closest('#pauly-keyboard') && keyboard.classList.contains('pk-visible')) hide();
   }, true);
 
+  document.addEventListener('pointercancel', () => { numericPress = null; }, true);
+
   // Repli tactile pour les navigateurs sans Pointer Events.
   if (!('PointerEvent' in window)) {
+    let touchPress = null;
+    document.addEventListener('touchstart', event => {
+      const target = event.target instanceof Element ? event.target : null;
+      const input = target?.closest('input[data-pauly-numeric]');
+      touchPress = input ? { input, startedAt: Date.now() } : null;
+    }, { capture: true, passive: true });
     document.addEventListener('touchend', event => {
       const target = event.target instanceof Element ? event.target : null;
       const input = target?.closest('input[data-pauly-numeric]');
-      if (input) show(input);
-      else if (!target?.closest('#pauly-keyboard') && keyboard.classList.contains('pk-visible')) hide();
+      if (touchPress && input === touchPress.input && Date.now() - touchPress.startedAt <= 300) show(input);
+      touchPress = null;
+      if (!input && !target?.closest('#pauly-keyboard') && keyboard.classList.contains('pk-visible')) hide();
     }, { capture: true, passive: true });
+    document.addEventListener('touchcancel', () => { touchPress = null; }, { capture: true, passive: true });
   }
 
   // Activation clavier/accessibilité via Entrée ou Espace.
