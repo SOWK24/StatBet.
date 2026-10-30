@@ -1100,17 +1100,6 @@ input[type="submit"]:active, input[type="reset"]:active, summary:active,
   </div>
 </div>
 
-<div id="del-overlay" onclick="handleOverlayClick(event)">
-  <div id="del-sheet">
-    <h3>Supprimer ce pari ?</h3>
-    <p id="del-info"></p>
-    <div class="del-actions">
-      <button id="del-cancel" onclick="closeDeleteModal()">Annuler</button>
-      <button id="del-confirm" onclick="doDelete()">🗑 Supprimer</button>
-    </div>
-  </div>
-</div>
-
 <div id="edit-overlay" onclick="handleEditOverlayClick(event)">
   <div id="edit-sheet">
     <h3>Modifier le pari</h3>
@@ -2157,8 +2146,18 @@ function showToast(msg, cls) {
 const chartTooltips = new WeakMap(); // canvas -> { bars: [...], el: tooltipDiv }
 
 function drawChart(canvas, data) {
-  const cd = chartData(data);
   const wrap = canvas.parentElement;
+  // L'historique peut être rendu alors que son onglet est masqué.
+  // Attendre une largeur réelle avant de dessiner le graphique.
+  if (!wrap || wrap.clientWidth < 100) {
+    requestAnimationFrame(() => {
+      if (canvas.isConnected && canvas.parentElement && canvas.parentElement.clientWidth >= 100) {
+        drawChart(canvas, data);
+      }
+    });
+    return;
+  }
+  const cd = chartData(data);
   // Reset any previous tooltip dom for this canvas
   document.querySelectorAll('.chart-tooltip').forEach(el => el.remove());
 
@@ -2432,7 +2431,9 @@ function renderHistory() {
       { id: 'recovery-2026-09-17', mise: 10, gain: 20.5, date: '2026-09-17T16:00:00Z', year: 2026 }
     ];
   if (!Array.isArray(bets)) bets = [];
-  bets = mergeRecoveryBets(bets, recoveryBets);
+  const deletedIds = getDeletedBetIds();
+  const activeRecoveryBets = recoveryBets.filter(b => !deletedIds.has(b.id));
+  bets = mergeRecoveryBets(bets, activeRecoveryBets);
   saveLocalOnly(bets);
   // Mettre aussi à jour les totaux globaux et le record après la réinjection des paris restaurés.
   renderDashboard();
@@ -2494,7 +2495,7 @@ function renderHistory() {
                   <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
                 </svg>
               </button>
-              <button class="bet-delete" onclick="openDeleteModal('${b.id}')" title="Supprimer ce pari">
+              <button class="bet-delete" onclick="deleteBet('${b.id}')" title="Supprimer ce pari">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="3 6 5 6 21 6"/>
                   <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
@@ -2542,41 +2543,27 @@ function toggleYear(btn) {
     if (canvas) {
       const year = Number(canvas.dataset.year);
       const yBets = bets.filter(b => Number(b.year || new Date(b.date).getFullYear()) === year);
-      drawChart(canvas, yBets);
+      requestAnimationFrame(() => {
+        if (canvas.isConnected && body.classList.contains('open')) drawChart(canvas, yBets);
+      });
       canvas.dataset.drawn = '1';
     }
   }
 }
 
-/* ─── Suppression ───────────────────────────────────────────────────── */
-let pendingDeleteId = null;
-
-function openDeleteModal(id) {
-  const bet = bets.find(b => b.id === id);
-  if (!bet) return;
-  pendingDeleteId = id;
-  const bilan = r2(bet.gain - bet.mise);
-  const sign = bilan >= 0 ? '+' : '−';
-  const bilanAbs = Math.abs(bilan).toLocaleString('fr-FR', { minimumFractionDigits:2, maximumFractionDigits:2 });
-  document.getElementById('del-info').innerHTML =
-    `Mise : <strong>${fmtEurPlain(bet.mise)}</strong>&nbsp;·&nbsp;Bilan : <strong style="color:${bilan>=0?'var(--win)':'var(--loss)'}">${sign}${bilanAbs} €</strong><br><span style="font-size:11px;color:var(--text3)">${fmtDate(bet.date)}</span>`;
-  document.getElementById('del-overlay').classList.add('show');
+/* ─── Suppression immédiate depuis l'historique ─────────────────────── */
+const DELETED_BETS_KEY = 'statbet_deleted_bets_v1';
+function getDeletedBetIds() {
+  try { return new Set(JSON.parse(localStorage.getItem(DELETED_BETS_KEY) || '[]')); }
+  catch (_) { return new Set(); }
 }
-
-function closeDeleteModal() {
-  pendingDeleteId = null;
-  document.getElementById('del-overlay').classList.remove('show');
-}
-
-function handleOverlayClick(e) {
-  if (e.target === document.getElementById('del-overlay')) closeDeleteModal();
-}
-
-function doDelete() {
-  if (!pendingDeleteId) return;
-  bets = bets.filter(b => b.id !== pendingDeleteId);
+function deleteBet(id) {
+  if (!id || !bets.some(b => b.id === id)) return;
+  const deletedIds = getDeletedBetIds();
+  deletedIds.add(id);
+  try { localStorage.setItem(DELETED_BETS_KEY, JSON.stringify([...deletedIds])); } catch (_) {}
+  bets = bets.filter(b => b.id !== id);
   saveBets(bets);
-  closeDeleteModal();
   renderDashboard();
   renderHistory();
   showToast('Pari supprimé', 'loss');
