@@ -2403,6 +2403,10 @@ let pendingResultRefresh = false;
 function closeResultCelebration() {
   const modal = document.getElementById('result-celebration');
   const wasOpen = !!modal && modal.classList.contains('show');
+  // Un pari vient d'être enregistré : le retour en haut doit être exécuté
+  // même si iOS a déjà modifié l'état visuel du modal au moment du message.
+  const shouldReturnToDashboard = wasOpen || pendingResultRefresh;
+
   if (modal) modal.classList.remove('show');
   pendingResultInstance = null;
   pendingResultDisplay = null;
@@ -2413,15 +2417,14 @@ function closeResultCelebration() {
   clearTimeout(resultCelebrationTimer);
   if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
   resultCelebrationPreviousFocus = null;
+
   const demoFrame = document.getElementById('result-demo-frame');
   if (demoFrame) {
     demoFrame.style.visibility = 'hidden';
     demoFrame.src = 'about:blank';
   }
 
-  // Le clavier personnalisé peut avoir déplacé le panneau et ajouté un espace temporaire.
-  // Le fermer explicitement avant de calculer la position finale évite de restaurer l'ancien scroll.
-  if (wasOpen && typeof window.hidePaulyNumericKeyboard === 'function') {
+  if (typeof window.hidePaulyNumericKeyboard === 'function') {
     window.hidePaulyNumericKeyboard();
   }
 
@@ -2431,58 +2434,57 @@ function closeResultCelebration() {
     if (document.getElementById('panel-history')?.classList.contains('active')) renderHistory();
   }
 
-  // Après une animation de résultat, revenir réellement au début du tableau de bord.
-  // Sur iOS, le scroll peut être conservé par le conteneur interne (et pas par le viewport).
-  if (wasOpen) {
-    const returnToTop = () => {
-      const viewport = document.getElementById('pages-viewport');
-      const dashboard = document.getElementById('panel-dashboard');
+  if (!shouldReturnToDashboard) return;
 
-      currentActivePage = 'dashboard';
-      pageOffset = 0;
-      document.querySelectorAll('.tab-btn').forEach(button => {
-        button.classList.toggle('active', button.dataset.tab === 'dashboard');
-      });
-      document.querySelectorAll('#pages-viewport > .panel').forEach(panel => {
-        panel.classList.toggle('active', panel.id === 'panel-dashboard');
-      });
+  const returnToTop = () => {
+    const viewport = document.getElementById('pages-viewport');
+    const dashboard = document.getElementById('panel-dashboard');
+    if (!dashboard) return;
 
-      // Le seul scroll vertical du tableau de bord est .panel-inner.
-      // Le remettre à zéro après fermeture du clavier (et suppression de son spacer).
-      const dashboardContent = dashboard?.querySelector(':scope > .panel-inner');
-      if (dashboardContent) {
-        dashboardContent.scrollTop = 0;
-        dashboardContent.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-      }
-      if (dashboard) dashboard.scrollTop = 0;
-      document.querySelectorAll('#pages-viewport, #pages-viewport .panel').forEach(element => {
-        element.scrollLeft = 0;
-        element.scrollTop = 0;
-      });
-      if (viewport) {
-        viewport.scrollLeft = 0;
-        viewport.scrollTop = 0;
-      }
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-    };
+    currentActivePage = 'dashboard';
+    pageOffset = 0;
 
-    // Fermer d'abord la surcouche, puis appliquer le reset après sa transition CSS.
-    returnToTop();
-    const modalElement = document.getElementById('result-celebration');
-    if (modalElement) {
-      const onClosed = event => {
-        if (event.target !== modalElement || modalElement.classList.contains('show')) return;
-        modalElement.removeEventListener('transitionend', onClosed);
-        returnToTop();
-      };
-      modalElement.addEventListener('transitionend', onClosed);
+    document.querySelectorAll('.tab-btn').forEach(button => {
+      button.classList.toggle('active', button.dataset.tab === 'dashboard');
+    });
+    document.querySelectorAll('#pages-viewport > .panel').forEach(panel => {
+      panel.classList.toggle('active', panel.id === 'panel-dashboard');
+    });
+
+    // Réinitialiser le scroll horizontal du carrousel de pages et le scroll
+    // vertical du contenu, sans dépendre de la position mémorisée par iOS.
+    if (viewport) {
+      viewport.style.scrollSnapType = 'none';
+      viewport.scrollLeft = 0;
+      viewport.scrollTop = 0;
     }
-    requestAnimationFrame(() => requestAnimationFrame(returnToTop));
-    // iOS termine le redimensionnement du viewport après la transition du clavier.
-    setTimeout(returnToTop, 550);
-    setTimeout(returnToTop, 850);
-  }
+    dashboard.scrollLeft = 0;
+    dashboard.scrollTop = 0;
+
+    const content = dashboard.querySelector('.panel-inner');
+    if (content) {
+      content.style.scrollBehavior = 'auto';
+      content.scrollTop = 0;
+      content.scrollTo(0, 0);
+      // Réappliquer après le recalcul de layout déclenché par la fermeture du clavier.
+      requestAnimationFrame(() => {
+        content.scrollTop = 0;
+        content.scrollTo(0, 0);
+        if (viewport) viewport.style.scrollSnapType = '';
+      });
+    } else if (viewport) {
+      viewport.style.scrollSnapType = '';
+    }
+
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  };
+
+  returnToTop();
+  requestAnimationFrame(() => requestAnimationFrame(returnToTop));
+  setTimeout(returnToTop, 250);
+  setTimeout(returnToTop, 600);
+  setTimeout(returnToTop, 1000);
 }
 
 /* ─── Toast ─────────────────────────────────────────────────────────── */
