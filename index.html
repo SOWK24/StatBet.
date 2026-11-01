@@ -2445,100 +2445,107 @@ function closeResultCelebration() {
 }
 
 
-/* Retour haptique iOS : interrupteurs natifs superposés aux boutons.
-   Ils sont placés dans <body> (jamais à l'intérieur d'un <button>, HTML invalide),
-   puis repositionnés sur les boutons visibles. Le clic métier est relayé une fois. */
+/* Haptique natif iOS : même architecture que la démo WebKit validée.
+   Chaque bouton devient un habillage visuel non cliquable, recouvert par
+   un vrai input checkbox switch directement touché par le doigt. */
 (function initAppButtonHaptics() {
-  const overlays = new Map();
-  let scheduled = false;
+  const wrapped = new WeakSet();
+  let scanning = false;
 
   const style = document.createElement('style');
   style.textContent = `
-    .pb-haptic-switch {
-      position:fixed!important; display:block!important; margin:0!important; padding:0!important;
-      opacity:0!important; z-index:2147483000!important; cursor:pointer!important;
-      -webkit-tap-highlight-color:transparent!important; touch-action:manipulation!important;
-      border:0!important; background:transparent!important;
+    .pb-haptic-wrap {
+      position:relative!important;
+      min-width:0;
+      isolation:isolate;
+    }
+    .pb-haptic-wrap > button {
+      pointer-events:none!important;
+      position:relative;
+      width:100%;
+      height:100%;
+      margin:0!important;
+    }
+    .pb-haptic-wrap > .pb-haptic-switch {
+      position:absolute!important;
+      top:0!important;
+      left:0!important;
+      width:100%!important;
+      height:100%!important;
+      margin:0!important;
+      padding:0!important;
+      opacity:0!important;
+      z-index:10!important;
+      cursor:pointer!important;
+      clip-path:inset(0 round var(--pb-haptic-radius, 8px))!important;
+      -webkit-tap-highlight-color:transparent!important;
+      touch-action:manipulation!important;
     }
   `;
   document.head.appendChild(style);
 
-  function updatePositions() {
-    scheduled = false;
-    for (const [button, control] of overlays) {
-      if (!button.isConnected || !control.isConnected) {
-        control.remove();
-        overlays.delete(button);
-        continue;
-      }
-      const rect = button.getBoundingClientRect();
-      const visible = rect.width > 1 && rect.height > 1 &&
-        rect.bottom > 0 && rect.right > 0 &&
-        rect.top < window.innerHeight && rect.left < window.innerWidth &&
-        getComputedStyle(button).visibility !== 'hidden' &&
-        getComputedStyle(button).display !== 'none';
-      control.style.display = visible ? 'block' : 'none';
-      if (visible) {
-        control.style.left = rect.left + 'px';
-        control.style.top = rect.top + 'px';
-        control.style.width = rect.width + 'px';
-        control.style.height = rect.height + 'px';
-        control.style.clipPath = 'inset(0 round ' + (parseFloat(getComputedStyle(button).borderRadius) || 8) + 'px)';
-      }
+  function enhance(button) {
+    if (!(button instanceof HTMLButtonElement) || wrapped.has(button) ||
+        button.closest('#pauly-keyboard,.pb-haptic-wrap') || button.disabled) return;
+
+    const parent = button.parentElement;
+    if (!parent) return;
+    const computed = getComputedStyle(button);
+    const wrapper = document.createElement('span');
+    wrapper.className = 'pb-haptic-wrap';
+    // Reprendre les propriétés qui déterminent la place du bouton dans son parent.
+    for (const prop of [
+      'display','flex','flexGrow','flexShrink','flexBasis','alignSelf','justifySelf',
+      'order','gridColumn','gridRow','width','height','minWidth','minHeight',
+      'maxWidth','maxHeight','marginTop','marginRight','marginBottom','marginLeft'
+    ]) {
+      const value = computed[prop];
+      if (value && value !== 'auto' && value !== 'none') wrapper.style[prop] = value;
     }
-  }
+    wrapper.style.setProperty('--pb-haptic-radius', computed.borderRadius || '8px');
+    button.parentNode.insertBefore(wrapper, button);
+    wrapper.appendChild(button);
 
-  function scheduleUpdate() {
-    if (scheduled) return;
-    scheduled = true;
-    requestAnimationFrame(updatePositions);
-  }
-
-  function addHaptic(button) {
-    if (!(button instanceof HTMLButtonElement) || button.disabled ||
-        button.closest('#pauly-keyboard') || overlays.has(button)) return;
     const control = document.createElement('input');
     control.type = 'checkbox';
     control.setAttribute('switch', '');
     control.className = 'pb-haptic-switch';
-    control.setAttribute('aria-label', 'Activer le bouton');
+    control.setAttribute('aria-label', button.getAttribute('aria-label') || button.textContent.trim() || 'Action');
     control.tabIndex = -1;
     control.addEventListener('change', () => {
-      if (control.checked) {
-        // Le changement provient du toucher physique sur le switch natif iOS.
-        button.click();
-        requestAnimationFrame(() => { control.checked = false; });
-      }
+      if (!control.checked) return;
+      // Le switch a déjà reçu le toucher physique et produit le tick natif.
+      button.click();
+      requestAnimationFrame(() => { control.checked = false; });
     });
-    document.body.appendChild(control);
-    overlays.set(button, control);
+    wrapper.appendChild(control);
+    wrapped.add(button);
   }
 
   function scan(root) {
-    if (root instanceof HTMLButtonElement) addHaptic(root);
-    if (root && root.querySelectorAll) root.querySelectorAll('button').forEach(addHaptic);
-    scheduleUpdate();
+    if (!root || scanning) return;
+    scanning = true;
+    try {
+      if (root instanceof HTMLButtonElement) enhance(root);
+      if (root.querySelectorAll) root.querySelectorAll('button').forEach(enhance);
+    } finally {
+      scanning = false;
+    }
   }
 
   scan(document);
-  window.addEventListener('scroll', scheduleUpdate, true);
-  window.addEventListener('resize', scheduleUpdate);
-  window.addEventListener('orientationchange', scheduleUpdate);
   const observer = new MutationObserver(records => {
     for (const record of records) {
-      if (record.type === 'attributes') {
-        if (record.target instanceof HTMLButtonElement) {
-          const control = overlays.get(record.target);
-          if (control) control.style.display = record.target.disabled ? 'none' : control.style.display;
-        }
-      }
       record.addedNodes.forEach(node => {
         if (node.nodeType === 1) scan(node);
       });
+      if (record.type === 'attributes' && record.target instanceof HTMLButtonElement &&
+          !record.target.disabled && !wrapped.has(record.target)) enhance(record.target);
     }
-    scheduleUpdate();
   });
-  observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled','class','style','hidden'] });
+  observer.observe(document.documentElement, {
+    childList:true, subtree:true, attributes:true, attributeFilter:['disabled']
+  });
 })();
 
 /* ─── Toast ─────────────────────────────────────────────────────────── */
