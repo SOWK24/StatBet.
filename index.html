@@ -2484,6 +2484,7 @@ function closeResultCelebration() {
     .pb-haptic-wrap > .pb-haptic-switch:focus { outline:none!important; }
   `;
   document.head.appendChild(style);
+  style.textContent += "\n/* Contrôles exclus du wrapper haptique : conserver leur géométrie et leurs clics natifs. */\n#record-card .record-edit-btn { position:absolute!important; top:12px!important; right:12px!important; left:auto!important; bottom:auto!important; z-index:6!important; display:flex!important; align-items:center!important; justify-content:center!important; width:30px!important; height:30px!important; pointer-events:auto!important; }\n.year-block > .year-header { position:relative!important; z-index:2!important; pointer-events:auto!important; }\n";
 
   function enhance(button) {
     if (!(button instanceof HTMLButtonElement) || wrapped.has(button) ||
@@ -3027,10 +3028,10 @@ function animateYearBody(body, opening) {
 }
 
 function toggleYear(btn) {
-  // Ces boutons restent hors du wrapper haptique pour préserver
-  // leur structure DOM native : le panneau est leur frère direct.
-  const body = btn.nextElementSibling;
-  if (!body || !body.classList.contains('year-body')) return;
+  // Résolution robuste du panneau, même si un autre script ajoute un wrapper.
+  const block = btn.closest('.year-block');
+  const body = block?.querySelector(':scope > .year-body') || block?.querySelector('.year-body');
+  if (!body) return;
   const opening = !body.classList.contains('open');
   btn.classList.toggle('open', opening);
   animateYearBody(body, opening);
