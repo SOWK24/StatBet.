@@ -2439,11 +2439,13 @@ function closeResultCelebration() {
   const returnToTop = () => {
     const viewport = document.getElementById('pages-viewport');
     const dashboard = document.getElementById('panel-dashboard');
-    if (!dashboard) return;
+    const content = dashboard?.querySelector('.panel-inner');
+    if (!dashboard || !content) return;
 
+    // Réutiliser le vrai mécanisme de navigation de l'application afin que
+    // l'état interne, les onglets et le swipe restent parfaitement synchronisés.
     currentActivePage = 'dashboard';
     pageOffset = 0;
-
     document.querySelectorAll('.tab-btn').forEach(button => {
       button.classList.toggle('active', button.dataset.tab === 'dashboard');
     });
@@ -2451,40 +2453,40 @@ function closeResultCelebration() {
       panel.classList.toggle('active', panel.id === 'panel-dashboard');
     });
 
-    // Réinitialiser le scroll horizontal du carrousel de pages et le scroll
-    // vertical du contenu, sans dépendre de la position mémorisée par iOS.
     if (viewport) {
       viewport.style.scrollSnapType = 'none';
+      viewport.style.scrollBehavior = 'auto';
+      viewport.scrollTo({ left: 0, top: 0, behavior: 'instant' });
       viewport.scrollLeft = 0;
-      viewport.scrollTop = 0;
     }
-    dashboard.scrollLeft = 0;
+
+    // Le seul scroll vertical utile est celui de .panel-inner.
+    content.style.scrollBehavior = 'auto';
+    content.style.overflowY = 'hidden';
+    content.scrollTo({ left: 0, top: 0, behavior: 'instant' });
+    content.scrollTop = 0;
     dashboard.scrollTop = 0;
-
-    const content = dashboard.querySelector('.panel-inner');
-    if (content) {
-      content.style.scrollBehavior = 'auto';
-      content.scrollTop = 0;
-      content.scrollTo(0, 0);
-      // Réappliquer après le recalcul de layout déclenché par la fermeture du clavier.
-      requestAnimationFrame(() => {
-        content.scrollTop = 0;
-        content.scrollTo(0, 0);
-        if (viewport) viewport.style.scrollSnapType = '';
-      });
-    } else if (viewport) {
-      viewport.style.scrollSnapType = '';
-    }
-
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
+
+    requestAnimationFrame(() => {
+      content.scrollTop = 0;
+      content.scrollTo(0, 0);
+      content.style.overflowY = '';
+      if (viewport) {
+        viewport.scrollLeft = 0;
+        viewport.style.scrollSnapType = '';
+        viewport.style.scrollBehavior = '';
+      }
+    });
   };
 
+  // iOS peut recalculer la hauteur du viewport après la fermeture du clavier.
+  // On répète le retour en haut après la fin de cette transition, pas seulement
+  // pendant la première frame où l'ancien scroll peut encore être restauré.
   returnToTop();
   requestAnimationFrame(() => requestAnimationFrame(returnToTop));
-  setTimeout(returnToTop, 250);
-  setTimeout(returnToTop, 600);
-  setTimeout(returnToTop, 1000);
+  [150, 350, 650, 1000, 1500, 2200].forEach(delay => setTimeout(returnToTop, delay));
 }
 
 /* ─── Toast ─────────────────────────────────────────────────────────── */
@@ -2499,8 +2501,11 @@ function showToast(msg, cls) {
 
 /* ─── Canvas chart : bilan mensuel en barres, avec tooltip ──────────── */
 const chartTooltips = new WeakMap(); // canvas -> { bars: [...], el: tooltipDiv }
+const chartDrawTokens = new WeakMap(); // Annule les anciennes animations lors d'un redraw.
 
 function drawChart(canvas, data) {
+  const drawToken = (chartDrawTokens.get(canvas) || 0) + 1;
+  chartDrawTokens.set(canvas, drawToken);
   const wrap = canvas.parentElement;
   // L'historique peut être rendu alors que son onglet est masqué.
   // Attendre une largeur réelle avant de dessiner le graphique.
@@ -2642,6 +2647,9 @@ function drawChart(canvas, data) {
     const barDuration = 820, stagger = 100;
     const startedAt = performance.now();
     function animateBars(timestamp) {
+      // Une suppression ou un nouveau rendu peut relancer le graphique avant
+      // la fin de son animation : une seule génération doit dessiner le canvas.
+      if (chartDrawTokens.get(canvas) !== drawToken || !canvas.isConnected) return;
       const elapsed = timestamp - startedAt;
       bars.forEach((bar, i) => {
         const local = Math.max(0, Math.min(1, (elapsed - i * stagger) / barDuration));
