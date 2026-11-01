@@ -2425,6 +2425,26 @@ function closeResultCelebration() {
     pendingResultRefresh = false;
     renderDashboard();
     if (document.getElementById('panel-history')?.classList.contains('active')) renderHistory();
+
+    // Après fermeture d'une animation de résultat, revenir à l'accueil
+    // et tout en haut pour voir le bilan net se mettre à jour.
+    const viewport = document.getElementById('pages-viewport');
+    currentActivePage = 'dashboard';
+    pageOffset = 0;
+    document.querySelectorAll('.tab-btn').forEach(button => {
+      button.classList.toggle('active', button.dataset.tab === 'dashboard');
+    });
+    document.querySelectorAll('.panel').forEach(panel => {
+      panel.classList.toggle('active', panel.id === 'panel-dashboard');
+    });
+    if (viewport) viewport.scrollLeft = 0;
+    const dashboardInner = document.querySelector('#panel-dashboard .panel-inner');
+    if (dashboardInner) dashboardInner.scrollTop = 0;
+    requestAnimationFrame(() => {
+      if (viewport) viewport.scrollLeft = 0;
+      const topPanel = document.querySelector('#panel-dashboard .panel-inner');
+      if (topPanel) topPanel.scrollTop = 0;
+    });
   }
 }
 
