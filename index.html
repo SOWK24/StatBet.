@@ -2411,9 +2411,6 @@ function closeResultCelebration() {
   if (window.resultVibrationStop) clearTimeout(window.resultVibrationStop);
   if ('vibrate' in navigator) { try { navigator.vibrate(0); } catch(e) {} }
   clearTimeout(resultCelebrationTimer);
-  // Sur iOS, remettre le focus sur le bouton de validation après avoir fermé
-  // une surcouche plein écran peut bloquer le défilement des panneaux.
-  // On libère aussi l'iframe animée : elle n'a aucune raison de continuer en arrière-plan.
   if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
   resultCelebrationPreviousFocus = null;
   const demoFrame = document.getElementById('result-demo-frame');
@@ -2421,30 +2418,53 @@ function closeResultCelebration() {
     demoFrame.style.visibility = 'hidden';
     demoFrame.src = 'about:blank';
   }
+
   if (pendingResultRefresh) {
     pendingResultRefresh = false;
     renderDashboard();
     if (document.getElementById('panel-history')?.classList.contains('active')) renderHistory();
+  }
 
-    // Après fermeture d'une animation de résultat, revenir à l'accueil
-    // et tout en haut pour voir le bilan net se mettre à jour.
-    const viewport = document.getElementById('pages-viewport');
-    currentActivePage = 'dashboard';
-    pageOffset = 0;
-    document.querySelectorAll('.tab-btn').forEach(button => {
-      button.classList.toggle('active', button.dataset.tab === 'dashboard');
-    });
-    document.querySelectorAll('.panel').forEach(panel => {
-      panel.classList.toggle('active', panel.id === 'panel-dashboard');
-    });
-    if (viewport) viewport.scrollLeft = 0;
-    const dashboardInner = document.querySelector('#panel-dashboard .panel-inner');
-    if (dashboardInner) dashboardInner.scrollTop = 0;
+  // iOS peut restaurer la position de défilement après la fermeture
+  // de la surcouche. Réappliquer le retour à l'accueil après le rendu.
+  if (wasOpen) {
+    const returnToTop = () => {
+      const viewport = document.getElementById('pages-viewport');
+      const dashboard = document.getElementById('panel-dashboard');
+      const dashboardInner = dashboard?.querySelector('.panel-inner');
+
+      currentActivePage = 'dashboard';
+      pageOffset = 0;
+      document.querySelectorAll('.tab-btn').forEach(button => {
+        button.classList.toggle('active', button.dataset.tab === 'dashboard');
+      });
+      document.querySelectorAll('.panel').forEach(panel => {
+        panel.classList.toggle('active', panel.id === 'panel-dashboard');
+      });
+
+      if (viewport) {
+        viewport.style.scrollSnapType = 'none';
+        viewport.scrollLeft = 0;
+        viewport.scrollTop = 0;
+      }
+      if (dashboard) dashboard.scrollTop = 0;
+      if (dashboardInner) {
+        dashboardInner.scrollTop = 0;
+        dashboardInner.scrollTo(0, 0);
+      }
+    };
+
+    returnToTop();
     requestAnimationFrame(() => {
-      if (viewport) viewport.scrollLeft = 0;
-      const topPanel = document.querySelector('#panel-dashboard .panel-inner');
-      if (topPanel) topPanel.scrollTop = 0;
+      returnToTop();
+      requestAnimationFrame(returnToTop);
     });
+    setTimeout(returnToTop, 180);
+    setTimeout(() => {
+      returnToTop();
+      const viewport = document.getElementById('pages-viewport');
+      if (viewport) viewport.style.removeProperty('scroll-snap-type');
+    }, 450);
   }
 }
 
