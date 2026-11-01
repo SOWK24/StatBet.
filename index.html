@@ -3156,7 +3156,7 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
   // Chaque touche possède un véritable interrupteur HTML invisible superposé.
   // Sur iOS récent, son activation physique peut déclencher le Taptic Engine.
   const key = (action, label, className = '', ariaLabel = '') => `
-    <div class="pk-key-wrap">
+    <div class="pk-key-wrap ${className.includes('pk-enter') ? 'pk-enter-wrap' : ''}">
       <button type="button" class="${className}" data-pk="${action}" ${ariaLabel ? `aria-label="${ariaLabel}"` : ''}>${label}</button>
       <input class="pk-haptic-switch" type="checkbox" switch tabindex="-1" aria-hidden="true">
     </div>`;
@@ -3522,7 +3522,7 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
 #pauly-keyboard .pk-head .pk-key-wrap { min-height:20px; }
 #pauly-keyboard .pk-grid .pk-enter-wrap { grid-column:span 2; }
 #pauly-keyboard .pk-key-wrap > button {
-  box-sizing:border-box; position:relative; overflow:hidden; min-height:32px; padding:3px 7px;
+  box-sizing:border-box; position:relative; overflow:hidden; display:block; width:100%; height:100%; min-height:32px; padding:3px 7px;
   border:1px solid rgba(255,255,255,.075); border-radius:8px;
   background:linear-gradient(145deg,#20291e,#151c14); color:#f7f8f4;
   font:600 17px 'Inter',sans-serif; box-shadow:0 2px 0 rgba(0,0,0,.24);
