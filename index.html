@@ -2419,6 +2419,12 @@ function closeResultCelebration() {
     demoFrame.src = 'about:blank';
   }
 
+  // Le clavier personnalisé peut avoir déplacé le panneau et ajouté un espace temporaire.
+  // Le fermer explicitement avant de calculer la position finale évite de restaurer l'ancien scroll.
+  if (wasOpen && typeof window.hidePaulyNumericKeyboard === 'function') {
+    window.hidePaulyNumericKeyboard();
+  }
+
   if (pendingResultRefresh) {
     pendingResultRefresh = false;
     renderDashboard();
@@ -2441,20 +2447,18 @@ function closeResultCelebration() {
         panel.classList.toggle('active', panel.id === 'panel-dashboard');
       });
 
-      // Réinitialiser tous les vrais conteneurs verticaux des deux panneaux.
-      document.querySelectorAll('#pages-viewport, #pages-viewport .panel, #pages-viewport .panel-inner').forEach(element => {
-        element.scrollTop = 0;
-        element.scrollLeft = 0;
-        if (typeof element.scrollTo === 'function') element.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-      });
-      if (dashboard) {
-        dashboard.scrollTop = 0;
-        dashboard.querySelectorAll('*').forEach(element => {
-          if (element.scrollTop > 0 && element.scrollHeight > element.clientHeight) {
-            element.scrollTop = 0;
-          }
-        });
+      // Le seul scroll vertical du tableau de bord est .panel-inner.
+      // Le remettre à zéro après fermeture du clavier (et suppression de son spacer).
+      const dashboardContent = dashboard?.querySelector(':scope > .panel-inner');
+      if (dashboardContent) {
+        dashboardContent.scrollTop = 0;
+        dashboardContent.scrollTo({ top: 0, left: 0, behavior: 'auto' });
       }
+      if (dashboard) dashboard.scrollTop = 0;
+      document.querySelectorAll('#pages-viewport, #pages-viewport .panel').forEach(element => {
+        element.scrollLeft = 0;
+        element.scrollTop = 0;
+      });
       if (viewport) {
         viewport.scrollLeft = 0;
         viewport.scrollTop = 0;
@@ -2475,8 +2479,9 @@ function closeResultCelebration() {
       modalElement.addEventListener('transitionend', onClosed);
     }
     requestAnimationFrame(() => requestAnimationFrame(returnToTop));
-    setTimeout(returnToTop, 350);
-    setTimeout(returnToTop, 700);
+    // iOS termine le redimensionnement du viewport après la transition du clavier.
+    setTimeout(returnToTop, 550);
+    setTimeout(returnToTop, 850);
   }
 }
 
@@ -3325,6 +3330,9 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
     scrollRestore = null;
     activeInput = null;
   }
+
+  // Permet au flux d'enregistrement de fermer explicitement le clavier avant le reset de page.
+  window.hidePaulyNumericKeyboard = hide;
 
   function prepare(root = document) {
     root.querySelectorAll('input[data-pauly-numeric]').forEach(input => {
