@@ -1694,8 +1694,9 @@ function queueCloudPush() {
 
 async function pushToCloud(silent) {
   const cfg = getSyncCfg();
+  if (!cfg) return true;
   const client = ensureSupaClient();
-  if (!client) return;
+  if (!client) return false;
   setSyncIndicator('syncing');
   try {
     const { error } = await client
@@ -1704,9 +1705,11 @@ async function pushToCloud(silent) {
     if (error) throw error;
     setSyncIndicator('ok');
     if (!silent) updateSyncStatusLine('ok', 'Synchronisé ✓');
+    return true;
   } catch (e) {
     setSyncIndicator('err');
     if (!silent) updateSyncStatusLine('err', 'Erreur d\'envoi : ' + (e.message || e));
+    return false;
   }
 }
 
@@ -2402,10 +2405,7 @@ let pendingResultRefresh = false;
 
 function closeResultCelebration() {
   const modal = document.getElementById('result-celebration');
-  const wasOpen = !!modal && modal.classList.contains('show');
-  // Un pari vient d'être enregistré : le retour en haut doit être exécuté
-  // même si iOS a déjà modifié l'état visuel du modal au moment du message.
-  const shouldReturnToDashboard = wasOpen || pendingResultRefresh;
+  const shouldRefreshApp = pendingResultRefresh;
 
   if (modal) modal.classList.remove('show');
   pendingResultInstance = null;
@@ -2428,65 +2428,20 @@ function closeResultCelebration() {
     window.hidePaulyNumericKeyboard();
   }
 
-  if (pendingResultRefresh) {
-    pendingResultRefresh = false;
-    renderDashboard();
-    if (document.getElementById('panel-history')?.classList.contains('active')) renderHistory();
-  }
+  if (!shouldRefreshApp) return;
+  pendingResultRefresh = false;
 
-  if (!shouldReturnToDashboard) return;
-
-  const returnToTop = () => {
-    const viewport = document.getElementById('pages-viewport');
-    const dashboard = document.getElementById('panel-dashboard');
-    const content = dashboard?.querySelector('.panel-inner');
-    if (!dashboard || !content) return;
-
-    // Réutiliser le vrai mécanisme de navigation de l'application afin que
-    // l'état interne, les onglets et le swipe restent parfaitement synchronisés.
-    currentActivePage = 'dashboard';
-    pageOffset = 0;
-    document.querySelectorAll('.tab-btn').forEach(button => {
-      button.classList.toggle('active', button.dataset.tab === 'dashboard');
-    });
-    document.querySelectorAll('#pages-viewport > .panel').forEach(panel => {
-      panel.classList.toggle('active', panel.id === 'panel-dashboard');
-    });
-
-    if (viewport) {
-      viewport.style.scrollSnapType = 'none';
-      viewport.style.scrollBehavior = 'auto';
-      viewport.scrollTo({ left: 0, top: 0, behavior: 'instant' });
-      viewport.scrollLeft = 0;
+  // Recharger proprement l'application après l'animation, comme à son ouverture.
+  // Le pari est déjà sauvegardé en local ; on force d'abord son envoi Supabase
+  // pour éviter qu'une récupération cloud au redémarrage ne restaure une ancienne version.
+  (async () => {
+    const cloudSaved = await pushToCloud(true);
+    if (!cloudSaved) {
+      showToast('Pari enregistré sur cet appareil, synchronisation cloud à vérifier.', 'loss');
+      return;
     }
-
-    // Le seul scroll vertical utile est celui de .panel-inner.
-    content.style.scrollBehavior = 'auto';
-    content.style.overflowY = 'hidden';
-    content.scrollTo({ left: 0, top: 0, behavior: 'instant' });
-    content.scrollTop = 0;
-    dashboard.scrollTop = 0;
-    document.documentElement.scrollTop = 0;
-    document.body.scrollTop = 0;
-
-    requestAnimationFrame(() => {
-      content.scrollTop = 0;
-      content.scrollTo(0, 0);
-      content.style.overflowY = '';
-      if (viewport) {
-        viewport.scrollLeft = 0;
-        viewport.style.scrollSnapType = '';
-        viewport.style.scrollBehavior = '';
-      }
-    });
-  };
-
-  // iOS peut recalculer la hauteur du viewport après la fermeture du clavier.
-  // On répète le retour en haut après la fin de cette transition, pas seulement
-  // pendant la première frame où l'ancien scroll peut encore être restauré.
-  returnToTop();
-  requestAnimationFrame(() => requestAnimationFrame(returnToTop));
-  [150, 350, 650, 1000, 1500, 2200].forEach(delay => setTimeout(returnToTop, delay));
+    window.location.reload();
+  })();
 }
 
 /* ─── Toast ─────────────────────────────────────────────────────────── */
