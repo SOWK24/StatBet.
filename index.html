@@ -2467,29 +2467,6 @@ function closeResultCelebration() {
       height:100%;
       margin:0!important;
     }
-    /* Le crayon du record doit rester ancré au coin de la carte,
-       sans que son wrapper ne participe au flux du contenu. */
-    .pb-haptic-wrap.pb-haptic-record-edit {
-      position:absolute!important;
-      top:12px!important;
-      right:12px!important;
-      left:auto!important;
-      bottom:auto!important;
-      display:block!important;
-      width:30px!important;
-      height:30px!important;
-      margin:0!important;
-      z-index:4!important;
-    }
-    .pb-haptic-wrap.pb-haptic-record-edit > button {
-      position:relative!important;
-      top:auto!important;
-      right:auto!important;
-      bottom:auto!important;
-      left:auto!important;
-      width:100%!important;
-      height:100%!important;
-    }
     .pb-haptic-wrap > .pb-haptic-switch {
       position:absolute!important;
       top:0!important;
@@ -2510,13 +2487,16 @@ function closeResultCelebration() {
 
   function enhance(button) {
     if (!(button instanceof HTMLButtonElement) || wrapped.has(button) ||
-        button.closest('#pauly-keyboard,.pb-haptic-wrap') || button.disabled) return;
+        button.closest('#pauly-keyboard,.pb-haptic-wrap') ||
+        button.classList.contains('year-header') ||
+        button.classList.contains('record-edit-btn') ||
+        button.disabled) return;
     const parent = button.parentNode;
     if (!parent) return;
 
     const computed = getComputedStyle(button);
     const wrapper = document.createElement('span');
-    wrapper.className = 'pb-haptic-wrap' + (button.classList.contains('record-edit-btn') ? ' pb-haptic-record-edit' : '');
+    wrapper.className = 'pb-haptic-wrap';
     // Le wrapper reprend les règles de placement du bouton dans flex/grid.
     for (const prop of [
       'flex','flexGrow','flexShrink','flexBasis','alignSelf','order',
@@ -3047,10 +3027,10 @@ function animateYearBody(body, opening) {
 }
 
 function toggleYear(btn) {
-  // Le bouton est enveloppé par le système haptique : ne plus dépendre
-  // de nextElementSibling, qui désigne désormais son wrapper invisible.
-  const body = btn.closest('.year-block')?.querySelector('.year-body');
-  if (!body) return;
+  // Ces boutons restent hors du wrapper haptique pour préserver
+  // leur structure DOM native : le panneau est leur frère direct.
+  const body = btn.nextElementSibling;
+  if (!body || !body.classList.contains('year-body')) return;
   const opening = !body.classList.contains('open');
   btn.classList.toggle('open', opening);
   animateYearBody(body, opening);
