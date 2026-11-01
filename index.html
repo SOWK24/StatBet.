@@ -3112,6 +3112,44 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
   let lastPointerOpenedInput = null;
   let lastPointerOpenedAt = 0;
 
+  // Diagnostic temporaire du mode PWA iOS : aucune donnée de pari n'est collectée.
+  let pkDiagPanel = null;
+  function updatePkDiagnostic(input, scrollArea, stage) {
+    try {
+      if (!pkDiagPanel) {
+        pkDiagPanel = document.createElement('div');
+        pkDiagPanel.id = 'pk-diagnostic';
+        pkDiagPanel.style.cssText = 'position:fixed;top:calc(env(safe-area-inset-top, 0px) + 8px);left:8px;right:8px;z-index:2147483647;background:rgba(8,12,8,.97);color:#eaffd7;border:1px solid #a6ff3b;border-radius:10px;padding:9px 10px;font:10px/1.35 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere;max-height:38vh;overflow:auto;box-shadow:0 4px 20px #000;pointer-events:auto';
+        document.documentElement.appendChild(pkDiagPanel);
+      }
+      const rect = el => {
+        if (!el) return 'absent';
+        const r = el.getBoundingClientRect();
+        return `t:${Math.round(r.top)} b:${Math.round(r.bottom)} h:${Math.round(r.height)}`;
+      };
+      const vv = window.visualViewport;
+      const card = input?.closest('.form-card');
+      const app = document.getElementById('app');
+      const tab = document.getElementById('tabbar');
+      const lines = [
+        'PAULYBET DIAG • BUILD PKDIAG-1101-A • ' + stage,
+        'mode=' + (navigator.standalone ? 'standalone' : (matchMedia('(display-mode: standalone)').matches ? 'display-standalone' : 'browser')),
+        'url=' + location.href,
+        'screen=' + screen.width + 'x' + screen.height + ' dpr=' + devicePixelRatio,
+        'inner=' + innerWidth + 'x' + innerHeight + ' vv=' + (vv ? Math.round(vv.width)+'x'+Math.round(vv.height)+' top='+Math.round(vv.offsetTop)+' scale='+vv.scale : 'n/a'),
+        'app=' + rect(app) + ' tab=' + rect(tab),
+        'keyboard=' + rect(keyboard) + ' bottom=' + getComputedStyle(keyboard).bottom + ' cssH=' + getComputedStyle(keyboard).height,
+        'area=' + (scrollArea?.tagName+'.'+String(scrollArea?.className||'').slice(0,55)) + ' ' + rect(scrollArea),
+        'scroll top=' + (scrollArea?.scrollTop ?? 'n/a') + ' client=' + (scrollArea?.clientHeight ?? 'n/a') + ' height=' + (scrollArea?.scrollHeight ?? 'n/a'),
+        'field=' + rect(input) + ' card=' + rect(card),
+        'pkH=' + getComputedStyle(document.documentElement).getPropertyValue('--pk-height') + ' gap=' + getComputedStyle(document.documentElement).getPropertyValue('--pk-bottom-gap')
+      ];
+      pkDiagPanel.textContent = lines.join('\\n');
+    } catch (err) {
+      if (pkDiagPanel) pkDiagPanel.textContent = 'PAULYBET DIAG • erreur: ' + String(err);
+    }
+  }
+
   function show(input) {
     if (!input || input.disabled) return;
     activeInput = input;
@@ -3148,6 +3186,7 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
     if (!scrollArea) return;
 
     activeScrollArea = scrollArea;
+    updatePkDiagnostic(input, scrollArea, 'OPEN');
     const spacer = document.createElement('div');
     spacer.className = 'pk-scroll-spacer';
     spacer.setAttribute('aria-hidden', 'true');
@@ -3188,6 +3227,8 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
         // Défilement de la carte entière : le champ, le résultat et le bouton
         // d'enregistrement restent au-dessus du clavier personnalisé.
         scrollArea.scrollTo({ top: destination, behavior: 'smooth' });
+        updatePkDiagnostic(input, scrollArea, 'AFTER SCROLL');
+        setTimeout(() => updatePkDiagnostic(input, scrollArea, 'SETTLED 900ms'), 900);
       }));
     }, 580);
   }
@@ -3204,6 +3245,7 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
     activeScrollArea = null;
 
     keyboard.classList.remove('pk-visible');
+    if (pkDiagPanel) { pkDiagPanel.remove(); pkDiagPanel = null; }
     document.body.classList.remove('pk-open');
     document.getElementById('edit-overlay')?.classList.remove('pk-open');
     document.documentElement.style.removeProperty('--pk-height');
