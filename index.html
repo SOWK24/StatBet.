@@ -2444,6 +2444,56 @@ function closeResultCelebration() {
   })();
 }
 
+
+/* Retour haptique natif iOS sur les boutons de l'application.
+   Le switch transparent reçoit le toucher physique puis laisse le clic remonter
+   au bouton parent : les gestionnaires existants restent responsables de l'action. */
+(function initAppButtonHaptics() {
+  const style = document.createElement('style');
+  style.textContent = `
+    .pb-haptic-switch {
+      position:absolute!important; inset:0!important; width:100%!important; height:100%!important;
+      margin:0!important; opacity:0!important; z-index:20!important; cursor:pointer!important;
+      clip-path:inset(0 round 10px)!important; -webkit-tap-highlight-color:transparent!important;
+      touch-action:manipulation!important;
+    }
+    button.pb-haptic-enabled { position:relative; }
+  `;
+  document.head.appendChild(style);
+
+  function addHaptic(button) {
+    if (!(button instanceof HTMLButtonElement) || button.disabled ||
+        button.closest('#pauly-keyboard') || button.dataset.pbHapticReady === '1') return;
+    button.dataset.pbHapticReady = '1';
+    button.classList.add('pb-haptic-enabled');
+    const control = document.createElement('input');
+    control.type = 'checkbox';
+    control.setAttribute('switch', '');
+    control.className = 'pb-haptic-switch';
+    control.setAttribute('aria-hidden', 'true');
+    control.tabIndex = -1;
+    control.addEventListener('change', () => {
+      requestAnimationFrame(() => { control.checked = false; });
+    });
+    button.appendChild(control);
+  }
+
+  function scan(root) {
+    if (root instanceof HTMLButtonElement) addHaptic(root);
+    if (root && root.querySelectorAll) root.querySelectorAll('button').forEach(addHaptic);
+  }
+
+  scan(document);
+  const observer = new MutationObserver(records => {
+    for (const record of records) {
+      record.addedNodes.forEach(node => {
+        if (node.nodeType === 1) scan(node);
+      });
+    }
+  });
+  observer.observe(document.documentElement, { childList: true, subtree: true });
+})();
+
 /* ─── Toast ─────────────────────────────────────────────────────────── */
 let toastTimer;
 function showToast(msg, cls) {
