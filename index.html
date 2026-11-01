@@ -2445,23 +2445,24 @@ function closeResultCelebration() {
 }
 
 
-/* Haptique natif iOS : même architecture que la démo WebKit validée.
-   Chaque bouton devient un habillage visuel non cliquable, recouvert par
-   un vrai input checkbox switch directement touché par le doigt. */
+/* Haptique natif iOS : reprendre le mécanisme exact du clavier numérique.
+   Le switch invisible reçoit le toucher physique ; son événement click remonte
+   au wrapper, qui retrouve et active le bouton visuel correspondant. */
 (function initAppButtonHaptics() {
   const wrapped = new WeakSet();
-  let scanning = false;
 
   const style = document.createElement('style');
   style.textContent = `
     .pb-haptic-wrap {
       position:relative!important;
+      display:inline-flex;
       min-width:0;
+      vertical-align:middle;
       isolation:isolate;
     }
     .pb-haptic-wrap > button {
-      pointer-events:none!important;
-      position:relative;
+      position:relative!important;
+      z-index:1;
       width:100%;
       height:100%;
       margin:0!important;
@@ -2473,37 +2474,37 @@ function closeResultCelebration() {
       width:100%!important;
       height:100%!important;
       margin:0!important;
-      padding:0!important;
       opacity:0!important;
-      z-index:10!important;
+      z-index:5!important;
       cursor:pointer!important;
       clip-path:inset(0 round var(--pb-haptic-radius, 8px))!important;
       -webkit-tap-highlight-color:transparent!important;
       touch-action:manipulation!important;
     }
+    .pb-haptic-wrap > .pb-haptic-switch:focus { outline:none!important; }
   `;
   document.head.appendChild(style);
 
   function enhance(button) {
     if (!(button instanceof HTMLButtonElement) || wrapped.has(button) ||
         button.closest('#pauly-keyboard,.pb-haptic-wrap') || button.disabled) return;
-
-    const parent = button.parentElement;
+    const parent = button.parentNode;
     if (!parent) return;
+
     const computed = getComputedStyle(button);
     const wrapper = document.createElement('span');
     wrapper.className = 'pb-haptic-wrap';
-    // Reprendre les propriétés qui déterminent la place du bouton dans son parent.
+    // Le wrapper reprend les règles de placement du bouton dans flex/grid.
     for (const prop of [
-      'display','flex','flexGrow','flexShrink','flexBasis','alignSelf','justifySelf',
-      'order','gridColumn','gridRow','width','height','minWidth','minHeight',
+      'flex','flexGrow','flexShrink','flexBasis','alignSelf','order',
+      'gridColumn','gridRow','width','height','minWidth','minHeight',
       'maxWidth','maxHeight','marginTop','marginRight','marginBottom','marginLeft'
     ]) {
       const value = computed[prop];
       if (value && value !== 'auto' && value !== 'none') wrapper.style[prop] = value;
     }
     wrapper.style.setProperty('--pb-haptic-radius', computed.borderRadius || '8px');
-    button.parentNode.insertBefore(wrapper, button);
+    parent.insertBefore(wrapper, button);
     wrapper.appendChild(button);
 
     const control = document.createElement('input');
@@ -2512,26 +2513,30 @@ function closeResultCelebration() {
     control.className = 'pb-haptic-switch';
     control.setAttribute('aria-label', button.getAttribute('aria-label') || button.textContent.trim() || 'Action');
     control.tabIndex = -1;
-    control.addEventListener('change', () => {
-      if (!control.checked) return;
-      // Le switch a déjà reçu le toucher physique et produit le tick natif.
-      button.click();
-      requestAnimationFrame(() => { control.checked = false; });
-    });
     wrapper.appendChild(control);
     wrapped.add(button);
   }
 
   function scan(root) {
-    if (!root || scanning) return;
-    scanning = true;
-    try {
-      if (root instanceof HTMLButtonElement) enhance(root);
-      if (root.querySelectorAll) root.querySelectorAll('button').forEach(enhance);
-    } finally {
-      scanning = false;
-    }
+    if (!root) return;
+    if (root instanceof HTMLButtonElement) enhance(root);
+    if (root.querySelectorAll) root.querySelectorAll('button').forEach(enhance);
   }
+
+  // Comme pour le clavier : on écoute le click qui remonte depuis le switch,
+  // puis on retrouve le bouton associé dans le même wrapper.
+  document.addEventListener('click', event => {
+    const target = event.target instanceof Element ? event.target : null;
+    const control = target?.closest('.pb-haptic-switch');
+    if (!control) return;
+    const wrapper = control.closest('.pb-haptic-wrap');
+    const button = wrapper?.querySelector(':scope > button');
+    if (!button || button.disabled) return;
+    event.preventDefault();
+    event.stopPropagation();
+    button.click();
+    requestAnimationFrame(() => { control.checked = false; });
+  }, true);
 
   scan(document);
   const observer = new MutationObserver(records => {
@@ -2547,7 +2552,7 @@ function closeResultCelebration() {
     childList:true, subtree:true, attributes:true, attributeFilter:['disabled']
   });
 })();
-
+ 
 /* ─── Toast ─────────────────────────────────────────────────────────── */
 let toastTimer;
 function showToast(msg, cls) {
