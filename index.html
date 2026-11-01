@@ -40,6 +40,23 @@
 
 </script>
 <style>
+/* Sécurité : masquer et supprimer tout ancien panneau de diagnostic résiduel. */
+#pk-diagnostic { display: none !important; visibility: hidden !important; pointer-events: none !important; }
+</style>
+<script>
+(function removeStalePaulyDiagnostic() {
+  function clean() {
+    document.getElementById('pk-diagnostic')?.remove();
+    document.querySelectorAll('[id="pk-diagnostic"]').forEach(node => node.remove());
+  }
+  clean();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', clean, { once: true });
+  }
+  new MutationObserver(clean).observe(document.documentElement, { childList: true, subtree: true });
+})();
+</script>
+<style>
 @import url("https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@700&display=swap");
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
