@@ -2484,7 +2484,7 @@ function closeResultCelebration() {
     .pb-haptic-wrap > .pb-haptic-switch:focus { outline:none!important; }
   `;
   document.head.appendChild(style);
-  style.textContent += "\n/* Contrôles exclus du wrapper haptique : conserver leur géométrie et leurs clics natifs. */\n#record-card .record-edit-btn { position:absolute!important; top:12px!important; right:12px!important; left:auto!important; bottom:auto!important; z-index:6!important; display:flex!important; align-items:center!important; justify-content:center!important; width:30px!important; height:30px!important; pointer-events:auto!important; }\n.year-block > .year-header { position:relative!important; z-index:2!important; pointer-events:auto!important; }\n";
+  style.textContent += "\n/* Contrôles prioritaires et visibles dans la version installée. */\n#record-card .record-edit-btn { position:absolute!important; top:12px!important; right:12px!important; left:auto!important; bottom:auto!important; z-index:20!important; display:flex!important; visibility:visible!important; opacity:1!important; align-items:center!important; justify-content:center!important; width:30px!important; height:30px!important; pointer-events:auto!important; }\n#record-card .record-manual-btn { position:relative!important; z-index:20!important; pointer-events:auto!important; }\n.year-block > .year-header { position:relative!important; z-index:20!important; pointer-events:auto!important; touch-action:manipulation!important; }\n";
 
   function enhance(button) {
     if (!(button instanceof HTMLButtonElement) || wrapped.has(button) ||
@@ -3047,6 +3047,28 @@ function toggleYear(btn) {
     }
   }
 }
+
+/* Délégation prioritaire des deux commandes : elles restent fonctionnelles
+   même si un autre script intercepte les clics ou modifie leur DOM. */
+document.addEventListener('click', function(event) {
+  const target = event.target instanceof Element ? event.target : null;
+  if (!target) return;
+
+  const editButton = target.closest('#record-card .record-edit-btn, #record-card .record-manual-btn');
+  if (editButton) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    openRecordEdit();
+    return;
+  }
+
+  const yearButton = target.closest('.year-block > .year-header');
+  if (yearButton) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    toggleYear(yearButton);
+  }
+}, true);
 
 /* ─── Suppression immédiate depuis l'historique ─────────────────────── */
 const DELETED_BETS_KEY = 'statbet_deleted_bets_v1';
