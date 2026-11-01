@@ -25,6 +25,15 @@
 @media (prefers-reduced-motion:reduce) {
   #pauly-splash, #pauly-splash img { animation-duration:.01ms; animation-delay:0ms; }
 }
+
+/* Ne jamais peindre le tableau de bord avant la fin de l'écran de démarrage. */
+#app {
+  visibility:hidden !important;
+  animation:paulyAppReveal 0s 2.35s forwards !important;
+}
+@keyframes paulyAppReveal {
+  to { visibility:visible; }
+}
 </style>
 <link rel="apple-touch-icon" sizes="180x180" href="./icon.png?v=paulybet-2">
 <link rel="icon" type="image/png" href="./icon.png?v=paulybet-2">
