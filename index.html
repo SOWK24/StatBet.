@@ -26,18 +26,14 @@
   #pauly-splash, #pauly-splash img { animation-duration:.01ms; animation-delay:0ms; }
 }
 
-/* Ne jamais peindre le tableau de bord avant la fin de l'écran de démarrage. */
-#app {
-  visibility:hidden;
-  animation:paulyAppReveal 0s 2.35s forwards !important;
-}
-@keyframes paulyAppReveal {
-  to { visibility:visible; }
-}
+/* Fond noir immédiat : évite le flash blanc du WebView iOS. */
+html, body { background:#000 !important; }
+#app { visibility:hidden !important; }
+
 </style>
 <link rel="apple-touch-icon" sizes="180x180" href="./icon.png?v=paulybet-2">
-<link rel="apple-touch-startup-image" href="./startup-iphone.svg" media="(min-device-width: 390px) and (max-device-width: 430px) and (orientation: portrait) and (-webkit-device-pixel-ratio: 3)">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="icon" type="image/png" href="./icon.png?v=paulybet-2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
@@ -1167,6 +1163,20 @@ body::-webkit-scrollbar,
 </head>
 <body>
 <div id="pauly-splash" aria-hidden="true"><img src="./icon.png?v=paulybet-2" alt=""></div>
+<script>
+/* Révélation explicite après l'intro : plus fiable que visibility animée sur iOS. */
+(function revealPaulyAfterSplash() {
+  const reveal = () => {
+    const app = document.getElementById('app');
+    const splash = document.getElementById('pauly-splash');
+    if (app) app.style.setProperty('visibility', 'visible', 'important');
+    if (splash) splash.remove();
+  };
+  const splash = document.getElementById('pauly-splash');
+  if (splash) splash.addEventListener('animationend', reveal, { once: true });
+  window.setTimeout(reveal, 2600);
+})();
+</script>
 <div id="app">
 
   <nav id="tabbar">
