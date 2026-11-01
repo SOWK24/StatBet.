@@ -2425,46 +2425,58 @@ function closeResultCelebration() {
     if (document.getElementById('panel-history')?.classList.contains('active')) renderHistory();
   }
 
-  // iOS peut restaurer la position de défilement après la fermeture
-  // de la surcouche. Réappliquer le retour à l'accueil après le rendu.
+  // Après une animation de résultat, revenir réellement au début du tableau de bord.
+  // Sur iOS, le scroll peut être conservé par le conteneur interne (et pas par le viewport).
   if (wasOpen) {
     const returnToTop = () => {
       const viewport = document.getElementById('pages-viewport');
       const dashboard = document.getElementById('panel-dashboard');
-      const dashboardInner = dashboard?.querySelector('.panel-inner');
 
       currentActivePage = 'dashboard';
       pageOffset = 0;
       document.querySelectorAll('.tab-btn').forEach(button => {
         button.classList.toggle('active', button.dataset.tab === 'dashboard');
       });
-      document.querySelectorAll('.panel').forEach(panel => {
+      document.querySelectorAll('#pages-viewport > .panel').forEach(panel => {
         panel.classList.toggle('active', panel.id === 'panel-dashboard');
       });
 
+      // Réinitialiser tous les vrais conteneurs verticaux des deux panneaux.
+      document.querySelectorAll('#pages-viewport, #pages-viewport .panel, #pages-viewport .panel-inner').forEach(element => {
+        element.scrollTop = 0;
+        element.scrollLeft = 0;
+        if (typeof element.scrollTo === 'function') element.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      });
+      if (dashboard) {
+        dashboard.scrollTop = 0;
+        dashboard.querySelectorAll('*').forEach(element => {
+          if (element.scrollTop > 0 && element.scrollHeight > element.clientHeight) {
+            element.scrollTop = 0;
+          }
+        });
+      }
       if (viewport) {
-        viewport.style.scrollSnapType = 'none';
         viewport.scrollLeft = 0;
         viewport.scrollTop = 0;
       }
-      if (dashboard) dashboard.scrollTop = 0;
-      if (dashboardInner) {
-        dashboardInner.scrollTop = 0;
-        dashboardInner.scrollTo(0, 0);
-      }
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
     };
 
+    // Fermer d'abord la surcouche, puis appliquer le reset après sa transition CSS.
     returnToTop();
-    requestAnimationFrame(() => {
-      returnToTop();
-      requestAnimationFrame(returnToTop);
-    });
-    setTimeout(returnToTop, 180);
-    setTimeout(() => {
-      returnToTop();
-      const viewport = document.getElementById('pages-viewport');
-      if (viewport) viewport.style.removeProperty('scroll-snap-type');
-    }, 450);
+    const modalElement = document.getElementById('result-celebration');
+    if (modalElement) {
+      const onClosed = event => {
+        if (event.target !== modalElement || modalElement.classList.contains('show')) return;
+        modalElement.removeEventListener('transitionend', onClosed);
+        returnToTop();
+      };
+      modalElement.addEventListener('transitionend', onClosed);
+    }
+    requestAnimationFrame(() => requestAnimationFrame(returnToTop));
+    setTimeout(returnToTop, 350);
+    setTimeout(returnToTop, 700);
   }
 }
 
