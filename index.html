@@ -3168,16 +3168,25 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
         const visibleTop = areaRect.top + 16;
         const visibleBottom = Math.min(areaRect.bottom, keyboardRect.top) - 24;
 
-        let delta = 0;
-        if (fieldRect.bottom > visibleBottom) delta = fieldRect.bottom - visibleBottom;
-        else if (fieldRect.top < visibleTop) delta = fieldRect.top - visibleTop;
-        if (Math.abs(delta) < 2) return;
+        // Sur le formulaire principal, le champ Mise est souvent déjà visible :
+        // il faut pourtant remonter toute la carte pour dégager Résultat et Valider.
+        // On aligne donc le bas de la carte avec le haut du clavier, pas seulement le champ.
+        const revealTarget = input.closest('.form-card') || input;
+        const targetRect = revealTarget.getBoundingClientRect();
+        let delta = targetRect.bottom - visibleBottom;
+
+        // Ne jamais faire sortir le champ actif par le haut de la zone visible.
+        const maxSafeDelta = Math.max(0, fieldRect.top - visibleTop);
+        delta = Math.min(Math.max(0, delta), maxSafeDelta);
+
+        if (delta < 2) return;
 
         const maxScroll = Math.max(0, scrollArea.scrollHeight - scrollArea.clientHeight);
         const destination = Math.max(0, Math.min(maxScroll, scrollArea.scrollTop + delta));
         if (Math.abs(destination - scrollArea.scrollTop) < 2) return;
 
-        // Laisser WebKit gérer le défilement animé, sans boucles concurrentes.
+        // Défilement de la carte entière : le champ, le résultat et le bouton
+        // d'enregistrement restent au-dessus du clavier personnalisé.
         scrollArea.scrollTo({ top: destination, behavior: 'smooth' });
       }));
     }, 580);
