@@ -1969,13 +1969,50 @@ function animateCurrencyValue(element, target) {
   currencyAnimations.set(element, requestAnimationFrame(tick));
 }
 
+/* Compteur animé du grand bilan net : démarre à zéro à l'ouverture,
+   puis repart de la valeur précédente après chaque mise à jour. */
+const bilanAnimations = new WeakMap();
+function animateBilanValue(element, target) {
+  if (!element) return;
+  const previousFrame = bilanAnimations.get(element);
+  if (previousFrame) cancelAnimationFrame(previousFrame);
+
+  const raw = String(element.textContent || '').trim();
+  const parsed = Number(raw.replace(/[^0-9,.-]/g, '').replace(/\s/g, '').replace(',', '.'));
+  const start = raw && raw !== '—' && Number.isFinite(parsed) ? parsed : 0;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduced || Math.abs(start - target) < 0.005) {
+    element.textContent = fmtEur(target, true);
+    return;
+  }
+
+  // Retour haptique facultatif sur les appareils qui exposent réellement l'API.
+  // iOS Safari/PWA ne donne pas accès au Taptic Engine via navigator.vibrate.
+  haptique(target >= start ? 'victoire' : 'defaite');
+
+  const began = performance.now();
+  const duration = 1150;
+  const tick = now => {
+    const progress = Math.min(1, (now - began) / duration);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const value = start + (target - start) * eased;
+    element.textContent = fmtEur(value, true);
+    if (progress < 1) bilanAnimations.set(element, requestAnimationFrame(tick));
+    else {
+      element.textContent = fmtEur(target, true);
+      bilanAnimations.delete(element);
+    }
+  };
+  bilanAnimations.set(element, requestAnimationFrame(tick));
+}
+
 /* ─── Dashboard ─────────────────────────────────────────────────────── */
 function renderDashboard() {
   const gs = calcStats(bets);
 
   const bilanEl = document.getElementById('sb-bilan');
   const previousBilan = bilanEl.textContent;
-  bilanEl.textContent = fmtEur(gs.bilanNet, true);
+  animateBilanValue(bilanEl, gs.bilanNet);
   bilanEl.className = 'scoreboard-value ' + (gs.bilanNet > 0 ? 'pos' : gs.bilanNet < 0 ? 'neg' : 'neu');
   if (previousBilan !== bilanEl.textContent) {
     bilanEl.classList.remove('number-pop');
