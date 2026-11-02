@@ -2820,7 +2820,7 @@ function drawChart(canvas, data) {
     bar.hitbox = isPos && progress >= 1
       ? { left: barLeft, right: barLeft + barW, top, bottom: top + h }
       : null;
-    const color = isPos ? 'var(--wina)' : '#FF6B75';
+    const color = isPos ? (getComputedStyle(document.documentElement).getPropertyValue('--wina').trim() || '#A6FF3B') : '#FF6B75';
     const x = cx - barW / 2;
     const r = Math.min(4, barW / 2, h);
     if (progress > 0) {
