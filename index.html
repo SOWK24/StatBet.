@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
+<meta name="color-scheme" content="dark">
 <style id="pauly-splash-critical">
 /* CSS critique chargé dans le head : le splash doit couvrir l'app dès le premier paint. */
 #pauly-splash {
@@ -27,7 +28,9 @@
 }
 
 /* Fond noir immédiat : évite le flash blanc du WebView iOS. */
-html, body { background:#000 !important; }
+:root { color-scheme:dark; background-color:#000 !important; }
+html, body { background-color:#000 !important; color-scheme:dark; }
+body { min-height:100vh; }
 #app { visibility:hidden !important; }
 
 </style>
