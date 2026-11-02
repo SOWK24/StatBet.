@@ -1198,7 +1198,9 @@ body::-webkit-scrollbar,
  */
 (function managePaulyLaunchAndSnapshot() {
   let introFinished = false;
-  const app = document.getElementById('app');
+  // Le script est placé avant #app dans le HTML : récupérer #app au moment
+  // de l'affichage, après que le navigateur a construit le contenu.
+  const getApp = () => document.getElementById('app');
   const splash = document.getElementById('pauly-splash');
 
   const hideCover = () => {
@@ -1224,6 +1226,7 @@ body::-webkit-scrollbar,
   const reveal = () => {
     introFinished = true;
     document.body.classList.add('pauly-ready');
+    const app = getApp();
     if (app) app.style.setProperty('visibility', 'visible', 'important');
     hideCover();
   };
