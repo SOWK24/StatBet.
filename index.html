@@ -2744,7 +2744,7 @@ function closeResultCelebration() {
 
   function enhance(button) {
     if (!(button instanceof HTMLButtonElement) || wrapped.has(button) ||
-        button.closest('#pauly-keyboard,.pb-haptic-wrap') ||
+        button.closest('#pauly-keyboard,.pb-haptic-wrap,#result-celebration') ||
         button.classList.contains('year-header') ||
         button.classList.contains('record-edit-btn') ||
         button.disabled) return;
