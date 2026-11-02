@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1188" height="1188" viewBox="0 0 1188 1188">
+  <defs>
+    <filter id="remove-black" x="0" y="0" width="1188" height="1188" color-interpolation-filters="sRGB">
+      <feColorMatrix type="matrix" values="
+        1 0 0 0 0
+        0 1 0 0 0
+        0 0 1 0 0
+        1 1 1 0 0"/>
+    </filter>
+  </defs>
+  <image x="0" y="0" width="1188" height="1188" xlink:href="./icon.png" filter="url(#remove-black)"/>
+</svg>
