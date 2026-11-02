@@ -8,7 +8,7 @@
 #pauly-splash {
   position:fixed; inset:0; z-index:2147483647; display:flex; align-items:center; justify-content:center;
   background:#000; opacity:1; visibility:visible; pointer-events:auto;
-  animation:paulySplashFade 4.3s linear forwards;
+  animation:paulySplashFade 2.5s linear forwards;
 }
 #pauly-splash img {
   display:block; width:min(76vw, 340px); height:auto; max-height:42vh; object-fit:contain;
@@ -1185,9 +1185,9 @@ body::-webkit-scrollbar,
     if (app) app.style.setProperty('visibility', 'visible', 'important');
     if (splash) splash.remove();
   };
-  // Durée indépendante de l'animation du logo : 4,3 secondes garanties.
+  // Durée indépendante de l'animation du logo : 2,5 secondes garanties.
   // Ne pas utiliser animationend : l'animation de l'image se termine avant le splash.
-  window.setTimeout(reveal, 4300);
+  window.setTimeout(reveal, 2500);
 })();
 </script>
 <div id="app">
