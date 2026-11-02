@@ -34,6 +34,13 @@ body { background:#000 !important; }
 body { min-height:100vh; }
 #app { visibility:hidden !important; }
 
+/* Aucun contrôle de la carte « Plus gros gain » ne doit apparaître
+   pendant l'écran de démarrage, même si iOS révèle l'app trop tôt. */
+#app .record-edit-btn,
+#app .record-manual-btn { visibility:hidden !important; }
+body.pauly-ready #app .record-edit-btn,
+body.pauly-ready #app .record-manual-btn { visibility:visible !important; }
+
 </style>
 <link rel="apple-touch-icon" sizes="180x180" href="./icon.png?v=paulybet-2">
 <link rel="apple-touch-startup-image" href="./startup-iphone17.png" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
@@ -1174,15 +1181,13 @@ body::-webkit-scrollbar,
   const reveal = () => {
     const app = document.getElementById('app');
     const splash = document.getElementById('pauly-splash');
+    document.body.classList.add('pauly-ready');
     if (app) app.style.setProperty('visibility', 'visible', 'important');
     if (splash) splash.remove();
   };
-  // Ne pas écouter animationend sur le conteneur : l'événement de fin
-  // du fondu du logo (enfant img, ~0,87 s) remonte aussi au parent
-  // et coupait prématurément l'écran de démarrage.
-  // Le timer reste indépendant des animations pour éviter toute fermeture prématurée.
-  // Durée totale réduite à environ 2,8 s, fondu compris.
-  window.setTimeout(reveal, 2800);
+  // Le minuteur et l'animation utilisent la même durée : 2,6 secondes
+  // au total, fondu compris. Aucun animationend (qui peut remonter de l'image).
+  window.setTimeout(reveal, 2600);
 })();
 </script>
 <div id="app">
