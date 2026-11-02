@@ -1979,6 +1979,7 @@ let syncPushTimer = null;
 let isPulling = false;
 let authLoadedUserId = null;
 let authLoadingUserId = null;
+let isPaulyLegacyOwner = false;
 
 function ensureSupaClient() {
   if (!window.supabase) return null;
@@ -1995,9 +1996,13 @@ function readStoredBets(key) {
 function loadBets() { return readStoredBets(STORAGE_KEY); }
 function loadBetsForUser(userId) {
   const scopedKey=userStorageKey(userId);
-  if(localStorage.getItem(scopedKey)!==null)return readStoredBets(scopedKey);
+  if(localStorage.getItem(scopedKey)!==null) {
+    isPaulyLegacyOwner=localStorage.getItem(LEGACY_CLAIM_KEY)===userId;
+    return readStoredBets(scopedKey);
+  }
   const claimedBy=localStorage.getItem(LEGACY_CLAIM_KEY),legacyRaw=localStorage.getItem(STORAGE_KEY);
   if(!claimedBy&&legacyRaw) {
+    isPaulyLegacyOwner=true;
     const legacy=readStoredBets(STORAGE_KEY);
     try { localStorage.setItem(scopedKey,JSON.stringify(legacy));localStorage.setItem(LEGACY_CLAIM_KEY,userId); } catch (_) {}
     return legacy;
@@ -2078,7 +2083,7 @@ async function submitPaulyAuth(event) {
   const submit=document.getElementById('pauth-submit');submit.disabled=true;submit.textContent=authMode==='signup'?'Création…':'Connexion…';updatePaulyAuthMessage('',false);
   try {
     if(authMode==='signup') {
-      const {data,error}=await client.auth.signUp({email,password});if(error)throw error;
+      const {data,error}=await client.auth.signUp({email,password,options:{emailRedirectTo:window.location.origin+window.location.pathname}});if(error)throw error;
       if(data.session) {updatePaulyAuthMessage('Compte créé. Préparation de ton espace…',false);await activatePaulyUser(data.session.user);}
       else updatePaulyAuthMessage('Compte créé. Vérifie ta boîte mail pour confirmer ton adresse, puis connecte-toi.',false);
     } else {
@@ -2099,7 +2104,7 @@ async function activatePaulyUser(user) {
 }
 async function signOutPaulyAccount() {
   const client=ensureSupaClient();if(!client)return;closeSyncModal();await pushToCloud(true);await client.auth.signOut();
-  currentAuthUser=null;authLoadedUserId=null;authLoadingUserId=null;bets=[];
+  currentAuthUser=null;authLoadedUserId=null;authLoadingUserId=null;isPaulyLegacyOwner=false;bets=[];
   document.body.classList.add('pauly-auth-gated');document.getElementById('pauly-auth-screen').style.display='flex';
   document.getElementById('pauth-password').value='';authMode='login';
   document.getElementById('pauth-title').textContent='Bienvenue sur Pauly’Bet';
@@ -3207,16 +3212,17 @@ function applyHistoryVisibility(container) {
 }
 function renderHistory() {
   const container = document.getElementById('history-container');
-  // Garde-fou : réinjecter les deux paris restaurés au moment même où l'historique s'affiche,
-  // même si une récupération cloud a remplacé le tableau en mémoire après le chargement.
-  const recoveryBets = normalizeJuly2026Amounts([...JULY_RECOVERY_BETS, ...OCTOBER_2026_RECOVERY_BETS, ...NOVEMBER_2026_RECOVERY_BETS,
+  // Les paris de récupération appartiennent uniquement à l'historique historique du propriétaire.
+  // Ils ne doivent jamais être injectés dans les comptes nouvellement créés.
+  if (!Array.isArray(bets)) bets = [];
+  const deletedIds = getDeletedBetIds();
+  if (isPaulyLegacyOwner) {
+    const recoveryBets = normalizeJuly2026Amounts([...JULY_RECOVERY_BETS, ...OCTOBER_2026_RECOVERY_BETS, ...NOVEMBER_2026_RECOVERY_BETS,
       { id: 'recovery-2026-08-14', mise: 10, gain: 20.5, date: '2026-08-14T16:00:00Z', year: 2026 },
       { id: 'recovery-2026-09-17', mise: 10, gain: 20.5, date: '2026-09-17T16:00:00Z', year: 2026 }
     ]).bets;
-  if (!Array.isArray(bets)) bets = [];
-  const deletedIds = getDeletedBetIds();
-  const activeRecoveryBets = recoveryBets.filter(b => !deletedIds.has(b.id));
-  bets = mergeRecoveryBets(bets, activeRecoveryBets);
+    bets = mergeRecoveryBets(bets, recoveryBets.filter(b => !deletedIds.has(b.id)));
+  }
   // Retirer totalement les anciens paris annulés, y compris ceux déjà synchronisés.
   const beforeCancelledCleanup = bets.length;
   bets = bets.filter(b => b.status !== 'cancelled');
@@ -3445,8 +3451,11 @@ document.addEventListener('click', function(event) {
 /* ─── Suppression immédiate depuis l'historique ─────────────────────── */
 const DELETED_BETS_KEY = 'statbet_deleted_bets_v1';
 function getDeletedBetIds() {
-  try { return new Set(JSON.parse(localStorage.getItem(DELETED_BETS_KEY) || '[]')); }
-  catch (_) { return new Set(); }
+  try {
+    const key=currentAuthUser?.id ? DELETED_BETS_KEY+'_'+currentAuthUser.id : DELETED_BETS_KEY;
+    const value=localStorage.getItem(key) ?? (isPaulyLegacyOwner ? localStorage.getItem(DELETED_BETS_KEY) : '[]');
+    return new Set(JSON.parse(value || '[]'));
+  } catch (_) { return new Set(); }
 }
 
 // Le panneau d'historique est désormais l'unique conteneur de scroll.
@@ -3480,7 +3489,10 @@ function deleteBet(id) {
   const year = Number(bet.year || new Date(bet.date).getFullYear());
   const deletedIds = getDeletedBetIds();
   deletedIds.add(id);
-  try { localStorage.setItem(DELETED_BETS_KEY, JSON.stringify([...deletedIds])); } catch (_) {}
+  try {
+    const key=currentAuthUser?.id ? DELETED_BETS_KEY+'_'+currentAuthUser.id : DELETED_BETS_KEY;
+    localStorage.setItem(key, JSON.stringify([...deletedIds]));
+  } catch (_) {}
 
   bets = bets.filter(item => item.id !== id);
   saveBets(bets);
