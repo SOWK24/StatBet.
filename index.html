@@ -2024,6 +2024,13 @@ function applyAppSettings() {
 function setAppColor(color) {
   if (!['green','red','blue'].includes(color)) return;
   const settings = getAppSettings(); settings.color = color; saveAppSettings(settings); applyAppSettings(); refreshSettingsUI();
+  /* Les canvas mémorisent leur couleur au moment du dessin : contrairement au CSS,
+     ils ne réagissent pas seuls au changement de variables personnalisées. */
+  document.querySelectorAll('#history-container canvas[data-year]').forEach(canvas => {
+    const year = Number(canvas.dataset.year);
+    const yearBets = bets.filter(b => Number(b.year || new Date(b.date).getFullYear()) === year);
+    if (canvas.parentElement && canvas.parentElement.clientWidth >= 100) drawChart(canvas, yearBets);
+  });
   haptique('leger');
 }
 function setAppAppearance(appearance) {
