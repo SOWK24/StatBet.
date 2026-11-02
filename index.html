@@ -1316,6 +1316,11 @@ body::-webkit-scrollbar,
     </div>
   </div>
   </div>
+<nav id="tabbar" aria-label="Navigation principale">
+    <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9M9 20v-6h6v6"/></svg><span>Accueil</span></button>
+    <button class="tab-btn" data-tab="history" onclick="switchTab('history')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Historique</span></button>
+    <button class="tab-btn" data-tab="settings" onclick="switchTab('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19 13a7 7 0 0 0 0-2l2-1.5-2-3.5-2.3.8a7 7 0 0 0-1.7-1L14.5 3h-4L10 5.8a7 7 0 0 0-1.7 1L6 6 4 9.5 6 11a7 7 0 0 0 0 2l-2 1.5L6 18l2.3-.8a7 7 0 0 0 1.7 1l.5 2.8h4l.5-2.8a7 7 0 0 0 1.7-1L19 18l2-3.5z"/></svg><span>Paramètres</span></button>
+  </nav>
 </div>
 
 <div id="edit-overlay" onclick="handleEditOverlayClick(event)">
@@ -1392,11 +1397,7 @@ body::-webkit-scrollbar,
     </div>
     <button class="btn-danger-text" id="sync-disconnect-btn" onclick="disconnectSync()" style="display:none;">Déconnecter cet appareil (les données restent en local)</button>
   </div>
-<nav id="tabbar" aria-label="Navigation principale">
-    <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9M9 20v-6h6v6"/></svg><span>Accueil</span></button>
-    <button class="tab-btn" data-tab="history" onclick="switchTab('history')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Historique</span></button>
-    <button class="tab-btn" data-tab="settings" onclick="switchTab('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19 13a7 7 0 0 0 0-2l2-1.5-2-3.5-2.3.8a7 7 0 0 0-1.7-1L14.5 3h-4L10 5.8a7 7 0 0 0-1.7 1L6 6 4 9.5 6 11a7 7 0 0 0 0 2l-2 1.5L6 18l2.3-.8a7 7 0 0 0 1.7 1l.5 2.8h4l.5-2.8a7 7 0 0 0 1.7-1L19 18l2-3.5z"/></svg><span>Paramètres</span></button>
-  </nav>
+
 </div>
 
 <script>
