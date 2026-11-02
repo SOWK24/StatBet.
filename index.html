@@ -2083,40 +2083,48 @@ const PAGE_ORDER=['dashboard','history','settings'];let currentActivePage='dashb
  applyPageOffset(false);
  const clamp=i=>Math.max(0,Math.min(PAGE_ORDER.length-1,i));
  const width=()=>Math.max(1,v.clientWidth);
- let gestureActive=false;
+ let fingerDown=false;
  let settleTimer=0;
- const finishSwipe=()=>{
+ let lastScrollLeft=v.scrollLeft;
+ const commitPage=()=>{
    clearTimeout(settleTimer);
    if(pageScrollFromTab)return;
-   const settled=clamp(Math.round(v.scrollLeft/width()));
-   activatePage(PAGE_ORDER[settled]);
+   const index=clamp(Math.round(v.scrollLeft/width()));
+   const name=PAGE_ORDER[index];
+   /* Ne réapplique pas l'état si la page active n'a pas réellement changé. */
+   if(name!==currentActivePage)activatePage(name);
  };
- const scheduleFinish=()=>{
-   if(gestureActive||pageScrollFromTab)return;
+ const scheduleFallback=()=>{
    clearTimeout(settleTimer);
-   /* Attend la fin du défilement inertiel iOS avant de changer l'onglet actif. */
-   settleTimer=setTimeout(finishSwipe,260);
+   if(fingerDown||pageScrollFromTab)return;
+   /* Long délai de secours : laisse finir toute l'inertie et le snap iOS. */
+   settleTimer=setTimeout(commitPage,850);
+ };
+ const onScroll=()=>{
+   lastScrollLeft=v.scrollLeft;
+   /* Aucun changement d'onglet pendant le scroll. Le scrollend natif est prioritaire. */
+   scheduleFallback();
  };
  const onStart=e=>{
    if(!e.touches||e.touches.length!==1)return;
+   fingerDown=true;
    clearTimeout(settleTimer);
-   gestureActive=true;
  };
  const onEnd=()=>{
-   gestureActive=false;
-   scheduleFinish();
+   fingerDown=false;
+   scheduleFallback();
  };
- /* Pendant le geste, le scroll ne touche jamais à la couleur : il ne fait que
-    repousser la validation jusqu'à la fin du mouvement et de l'inertie. */
- v.addEventListener('scroll',scheduleFinish,{passive:true});
+ v.addEventListener('scroll',onScroll,{passive:true});
+ if('onscrollend' in v)v.addEventListener('scrollend',commitPage,{passive:true});
  document.addEventListener('touchstart',onStart,{passive:true,capture:true});
  document.addEventListener('touchend',onEnd,{passive:true,capture:true});
  document.addEventListener('touchcancel',onEnd,{passive:true,capture:true});
  window.addEventListener('resize',()=>{
    clearTimeout(settleTimer);
-   const settled=clamp(Math.round(v.scrollLeft/width()));
+   const index=clamp(Math.round(v.scrollLeft/width()));
    applyPageOffset(false);
-   activatePage(PAGE_ORDER[settled]);
+   const name=PAGE_ORDER[index];
+   if(name!==currentActivePage)activatePage(name);
  });
 }
 
