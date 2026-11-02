@@ -3115,6 +3115,11 @@ function renderHistory() {
   const deletedIds = getDeletedBetIds();
   const activeRecoveryBets = recoveryBets.filter(b => !deletedIds.has(b.id));
   bets = mergeRecoveryBets(bets, activeRecoveryBets);
+  /* Signature des données : un simple retour sur Historique ne doit pas reconstruire
+     les canvas ni relancer leurs animations si aucun pari n'a changé. */
+  const historyRenderSignature = JSON.stringify(bets);
+  if (container.dataset.renderSignature === historyRenderSignature && container.childElementCount > 0) return;
+  container.dataset.renderSignature = historyRenderSignature;
   saveLocalOnly(bets);
   // Mettre aussi à jour les totaux globaux et le record après la réinjection des paris restaurés.
   renderDashboard();
