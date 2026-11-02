@@ -1301,8 +1301,27 @@ body.pauly-startup-ready #app{visibility:visible!important}
   #pauly-splash.pauly-splash-exit{animation:none;opacity:0;visibility:hidden}
 }
 </style>
+<style id="pauly-auth-styles">
+body.pauly-auth-gated #app{visibility:hidden!important;pointer-events:none!important}
+#pauly-auth-screen{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:28px 22px calc(28px + env(safe-area-inset-bottom));background:#080A08;color:#F7F8F4;overflow:auto;font-family:Archivo,sans-serif}
+.pauth-card{width:100%;max-width:390px;margin:auto;text-align:center}
+.pauth-logo{display:block;width:76px;height:76px;object-fit:contain;margin:0 auto 13px}
+.pauth-brand{font:900 25px Archivo,sans-serif;letter-spacing:2px;margin-bottom:30px}.pauth-brand span{color:#A6FF3B}
+.pauth-card h1{font:800 25px Archivo,sans-serif;letter-spacing:-.5px;margin-bottom:8px}
+.pauth-card>p{font-size:13px;line-height:1.55;color:#AEB8AA;margin:0 auto 25px;max-width:310px}
+#pauth-form{text-align:left}#pauth-form label{display:block;color:#D5DDD1;font-size:12px;font-weight:700;margin:0 0 7px}
+#pauth-form input{display:block;width:100%;height:51px;margin:0 0 16px;padding:0 14px;border-radius:12px;border:1px solid #303B2F;background:#121812;color:#F7F8F4;font:500 16px Archivo,sans-serif;outline:none}
+#pauth-form input:focus{border-color:#A6FF3B;box-shadow:0 0 0 3px rgba(166,255,59,.1)}
+.pauth-primary{display:block;width:100%;height:51px;margin-top:8px;border:0;border-radius:12px;background:#A6FF3B;color:#10170A;font:800 14px Archivo,sans-serif;letter-spacing:.3px}
+.pauth-primary:disabled{opacity:.55}
+.pauth-switch{display:block;width:100%;margin-top:14px;padding:13px;border:1px solid #34412F;border-radius:12px;background:#111711;color:#A6FF3B;font:700 13px Archivo,sans-serif}
+.pauth-message{min-height:20px;margin-top:15px;color:#A6FF3B;font-size:12px;line-height:1.5;text-align:center}.pauth-message.error{color:#FF858B}
+.pauth-privacy{margin-top:20px!important;margin-bottom:0!important;font-size:11px!important;color:#778276!important}
+#sync-overlay .modal-sub{margin-bottom:12px}#sync-overlay .account-email{padding:13px;border-radius:10px;background:var(--surface2);color:var(--text);font-size:13px;word-break:break-word}
+@media(max-height:650px){#pauly-auth-screen{align-items:flex-start;padding-top:18px}.pauth-logo{width:58px;height:58px}.pauth-brand{margin-bottom:18px}}
+</style>
 </head>
-<body style="margin:0;padding:0;min-height:100vh;background:#000!important;color-scheme:dark">
+<body class="pauly-auth-gated" style="margin:0;padding:0;min-height:100vh;background:#000!important;color-scheme:dark">
 <div id="pauly-splash" aria-hidden="true"><img src="./icon.png" alt=""></div>
 <script>
 (function(){
@@ -1323,6 +1342,24 @@ body.pauly-startup-ready #app{visibility:visible!important}
   setTimeout(function(){hide();reveal();},2800);
 })();
 </script>
+<div id="pauly-auth-screen" aria-live="polite">
+  <div class="pauth-card">
+    <img src="./icon.png" alt="" class="pauth-logo">
+    <div class="pauth-brand">PAULY<span>’BET</span></div>
+    <h1 id="pauth-title">Bienvenue sur Pauly’Bet</h1>
+    <p id="pauth-subtitle">Connecte-toi pour retrouver ton suivi de paris sportifs.</p>
+    <form id="pauth-form" onsubmit="submitPaulyAuth(event)">
+      <label for="pauth-email">Adresse e-mail</label>
+      <input id="pauth-email" type="email" autocomplete="email" inputmode="email" placeholder="ton@email.com" required>
+      <label for="pauth-password">Mot de passe</label>
+      <input id="pauth-password" type="password" autocomplete="current-password" placeholder="8 caractères minimum" minlength="8" required>
+      <button class="pauth-primary" id="pauth-submit" type="submit">Se connecter</button>
+    </form>
+    <button type="button" class="pauth-switch" id="pauth-switch" onclick="togglePaulyAuthMode()">Créer un compte</button>
+    <div id="pauth-message" class="pauth-message" role="status"></div>
+    <p class="pauth-privacy">Tes paris et tes statistiques restent privés et séparés de ceux des autres membres.</p>
+  </div>
+</div>
 <div id="app">
 
   <div id="pages-viewport">
@@ -1492,36 +1529,15 @@ body.pauly-startup-ready #app{visibility:visible!important}
 
 <div class="modal-overlay" id="sync-overlay" onclick="handleSyncOverlayClick(event)">
   <div class="modal-sheet" onclick="event.stopPropagation()">
-    <h2>Synchronisation cloud</h2>
-    <div class="modal-sub">
-      Connecte un projet <strong>Supabase</strong> (gratuit) pour retrouver tes données sur tous tes appareils.
-      <br>1. Crée un projet sur <a href="https://supabase.com" target="_blank">supabase.com</a>.
-      <br>2. Dans l'éditeur SQL, exécute le script fourni pour créer la table.
-      <br>3. Renseigne ci-dessous l'URL du projet, la clé "anon public" et un code perso (mot de passe simple qui identifie tes données — choisis-en un unique et garde-le secret).
-    </div>
-
-    <div class="form-row">
-      <label class="form-label" for="sync-url">URL du projet Supabase</label>
-      <input class="form-input sync-input" id="sync-url" style="font-size:16px;" placeholder="https://xxxx.supabase.co" autocomplete="off" autocapitalize="off" spellcheck="false">
-    </div>
-    <div class="form-row">
-      <label class="form-label" for="sync-key">Clé anon public</label>
-      <input class="form-input sync-input" id="sync-key" style="font-size:16px;" placeholder="eyJhbGciOi..." autocomplete="off" autocapitalize="off" spellcheck="false">
-    </div>
-    <div class="form-row">
-      <label class="form-label" for="sync-code">Code perso (identifiant de tes données)</label>
-      <input class="form-input sync-input" id="sync-code" style="font-size:16px;" placeholder="ex: m0nC0deSecret42" autocomplete="off" autocapitalize="off" spellcheck="false">
-    </div>
-
-    <div class="sync-status-line" id="sync-status-line">Non connecté.</div>
-
+    <h2>Mon compte Pauly’Bet</h2>
+    <div class="modal-sub">Ton compte est connecté. Tes données sont enregistrées dans ton espace personnel.</div>
+    <div class="account-email" id="pauly-account-email">—</div>
+    <div class="sync-status-line" id="sync-status-line">Synchronisation sécurisée.</div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeSyncModal()">Fermer</button>
-      <button class="btn-submit" style="flex:1;" onclick="connectAndSync()">Connecter &amp; synchroniser</button>
+      <button class="btn-submit" style="flex:1;" onclick="signOutPaulyAccount()">Se déconnecter</button>
     </div>
-    <button class="btn-danger-text" id="sync-disconnect-btn" onclick="disconnectSync()" style="display:none;">Déconnecter cet appareil (les données restent en local)</button>
   </div>
-
 </div>
 
 <script>
@@ -1949,259 +1965,162 @@ function mergeRecoveryBets(existing, recoveryBets) {
   });
 }
 
-/* ─── Stockage ─────────────────────────────────────────────────────── */
-function loadBets() {
-  try {
-    let loaded;
-    if (!localStorage.getItem(SEEDED_KEY)) {
-      loaded = generateSeedBets();
-      localStorage.setItem(SEEDED_KEY, '1');
-    } else {
-      loaded = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    }
-    if (!Array.isArray(loaded)) loaded = [];
-    loaded = normalizeJuly2026Amounts(loaded).bets;
-    const recoveryBets = normalizeJuly2026Amounts([...JULY_RECOVERY_BETS, ...OCTOBER_2026_RECOVERY_BETS, ...NOVEMBER_2026_RECOVERY_BETS,
-      { id: 'recovery-2026-08-14', mise: 10, gain: 20.5, date: '2026-08-14T16:00:00Z', year: 2026 },
-      { id: 'recovery-2026-09-17', mise: 10, gain: 20.5, date: '2026-09-17T16:00:00Z', year: 2026 }
-    ]).bets;
-    loaded = mergeRecoveryBets(loaded, recoveryBets);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(loaded));
-    return loaded;
-  } catch(e) { return []; }
-}
-function saveBets(bets) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(bets)); } catch(e) {}
-  queueCloudPush();
-}
-
-/* ─── Sync cloud (Supabase) ───────────────────────────────────────── */
-const SYNC_CFG_KEY = 'statbet_sync_cfg_v1'; // { url, key, code }
+/* ─── Stockage privé par compte ───────────────────────────────────── */
+const PAULYBET_SUPABASE = {
+  url: 'https://dzyolkssdkqubbipekyb.supabase.co',
+  key: 'sb_publishable_IOGlya4rUiERviuMGPNoeA_NPmH89np'
+};
+const STORAGE_KEY = 'statbet_bets_v3';
+const SEEDED_KEY = 'statbet_seeded_v4';
+const LEGACY_CLAIM_KEY = 'paulybet_legacy_claimed_v1';
+const USER_STORAGE_PREFIX = STORAGE_KEY + '_user_';
 let supaClient = null;
+let currentAuthUser = null;
+let authMode = 'login';
 let syncPushTimer = null;
 let isPulling = false;
-
-function getSyncCfg() {
-  try { return JSON.parse(localStorage.getItem(SYNC_CFG_KEY) || 'null'); } catch(e) { return null; }
-}
-function setSyncCfg(cfg) {
-  try { localStorage.setItem(SYNC_CFG_KEY, JSON.stringify(cfg)); } catch(e) {}
-}
-function clearSyncCfg() {
-  try { localStorage.removeItem(SYNC_CFG_KEY); } catch(e) {}
-  supaClient = null;
-}
-
-function setSyncIndicator(state) {
-  const btn = document.getElementById('sync-btn');
-  const dot = document.getElementById('sync-dot');
-  if (!btn || !dot) return;
-  btn.classList.remove('syncing', 'ok', 'err');
-  dot.classList.remove('on', 'off', 'err');
-  if (state === 'syncing') { btn.classList.add('syncing'); dot.classList.add('on'); }
-  else if (state === 'ok') { btn.classList.add('ok'); dot.classList.add('on'); }
-  else if (state === 'err') { btn.classList.add('err'); dot.classList.add('err'); }
-  else { dot.classList.add('off'); }
-}
+let authLoadedUserId = null;
+let authLoadingUserId = null;
 
 function ensureSupaClient() {
-  const cfg = getSyncCfg();
-  if (!cfg || !cfg.url || !cfg.key || !cfg.code) return null;
   if (!window.supabase) return null;
-  if (!supaClient) supaClient = window.supabase.createClient(cfg.url, cfg.key);
+  if (!supaClient) supaClient = window.supabase.createClient(PAULYBET_SUPABASE.url, PAULYBET_SUPABASE.key, {
+    auth: { persistSession:true, autoRefreshToken:true, detectSessionInUrl:true }
+  });
   return supaClient;
 }
-
+function userStorageKey(userId) { return USER_STORAGE_PREFIX + String(userId || ''); }
+function readStoredBets(key) {
+  try { const value=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(value)?normalizeJuly2026Amounts(value).bets:[]; }
+  catch (_) { return []; }
+}
+function loadBets() { return readStoredBets(STORAGE_KEY); }
+function loadBetsForUser(userId) {
+  const scopedKey=userStorageKey(userId);
+  if(localStorage.getItem(scopedKey)!==null)return readStoredBets(scopedKey);
+  const claimedBy=localStorage.getItem(LEGACY_CLAIM_KEY),legacyRaw=localStorage.getItem(STORAGE_KEY);
+  if(!claimedBy&&legacyRaw) {
+    const legacy=readStoredBets(STORAGE_KEY);
+    try { localStorage.setItem(scopedKey,JSON.stringify(legacy));localStorage.setItem(LEGACY_CLAIM_KEY,userId); } catch (_) {}
+    return legacy;
+  }
+  return [];
+}
+function saveLocalOnly(value) { try { if(currentAuthUser?.id)localStorage.setItem(userStorageKey(currentAuthUser.id),JSON.stringify(value)); } catch (_) {} }
+function saveBets(value) {
+  try { if(currentAuthUser?.id)localStorage.setItem(userStorageKey(currentAuthUser.id),JSON.stringify(value)); } catch (_) {}
+  queueCloudPush();
+}
+function setSyncIndicator(state) {
+  const btn=document.getElementById('sync-btn'),dot=document.getElementById('sync-dot');if(!btn||!dot)return;
+  btn.classList.remove('syncing','ok','err');dot.classList.remove('on','off','err');
+  if(state==='syncing'){btn.classList.add('syncing');dot.classList.add('on')}
+  else if(state==='ok'){btn.classList.add('ok');dot.classList.add('on')}
+  else if(state==='err'){btn.classList.add('err');dot.classList.add('err')}
+  else dot.classList.add('off');
+}
 function queueCloudPush() {
-  const cfg = getSyncCfg();
-  if (!cfg) return;
-  clearTimeout(syncPushTimer);
-  syncPushTimer = setTimeout(pushToCloud, 700);
+  if(!currentAuthUser?.id||isPulling)return;
+  clearTimeout(syncPushTimer);syncPushTimer=setTimeout(()=>pushToCloud(true),700);
 }
-
 async function pushToCloud(silent) {
-  const cfg = getSyncCfg();
-  if (!cfg) return true;
-  const client = ensureSupaClient();
-  if (!client) return false;
-  setSyncIndicator('syncing');
+  if(!currentAuthUser?.id)return false;
+  const client=ensureSupaClient();if(!client)return false;setSyncIndicator('syncing');
   try {
-    const { error } = await client
-      .from('statbet_sync')
-      .upsert({ sync_code: cfg.code, data: bets, updated_at: new Date().toISOString() }, { onConflict: 'sync_code' });
-    if (error) throw error;
-    setSyncIndicator('ok');
-    if (!silent) updateSyncStatusLine('ok', 'Synchronisé ✓');
-    return true;
-  } catch (e) {
-    setSyncIndicator('err');
-    if (!silent) updateSyncStatusLine('err', 'Erreur d\'envoi : ' + (e.message || e));
-    return false;
-  }
+    const {error}=await client.from('paulybet_user_data').upsert({user_id:currentAuthUser.id,data:bets,updated_at:new Date().toISOString()},{onConflict:'user_id'});
+    if(error)throw error;setSyncIndicator('ok');
+    if(!silent)updateSyncStatusLine('ok','Sauvegarde sécurisée effectuée ✓');return true;
+  } catch(e) {setSyncIndicator('err');if(!silent)updateSyncStatusLine('err','Erreur de sauvegarde : '+(e.message||e));return false;}
 }
-
 async function pullFromCloud(silent) {
-  const cfg = getSyncCfg();
-  const client = ensureSupaClient();
-  if (!client) return false;
-  isPulling = true;
-  setSyncIndicator('syncing');
+  if(!currentAuthUser?.id)return false;
+  const client=ensureSupaClient();if(!client)return false;
+  isPulling=true;setSyncIndicator('syncing');
   try {
-    const { data, error } = await client
-      .from('statbet_sync')
-      .select('data, updated_at')
-      .eq('sync_code', cfg.code)
-      .maybeSingle();
-    if (error) throw error;
-    if (data && Array.isArray(data.data)) {
-      bets = data.data;
-      const julyCorrection = normalizeJuly2026Amounts(bets);
-      bets = julyCorrection.bets;
-      // Reconstitution idempotente des paris restaurés.
-      const recoveryBets = normalizeJuly2026Amounts([...JULY_RECOVERY_BETS, ...OCTOBER_2026_RECOVERY_BETS, ...NOVEMBER_2026_RECOVERY_BETS,
-        { id: 'recovery-2026-08-14', mise: 10, gain: 20.5, date: '2026-08-14T16:00:00Z', year: 2026 },
-        { id: 'recovery-2026-09-17', mise: 10, gain: 20.5, date: '2026-09-17T16:00:00Z', year: 2026 }
-      ]).bets;
-      let addedRecoveryBets = false;
-      const beforeRecoveryCount = bets.length;
-      bets = mergeRecoveryBets(bets, recoveryBets);
-      addedRecoveryBets = bets.length !== beforeRecoveryCount;
-      saveLocalOnly(bets);
-      renderDashboard();
-      if (document.getElementById('panel-history').classList.contains('active')) renderHistory();
-      if (addedRecoveryBets || julyCorrection.changed) {
-        try {
-          const { error: saveError } = await client
-            .from('statbet_sync')
-            .upsert({ sync_code: cfg.code, data: bets, updated_at: new Date().toISOString() }, { onConflict: 'sync_code' });
-          if (saveError) throw saveError;
-          if (!silent) updateSyncStatusLine('ok', julyCorrection.changed ? 'Montants de juillet corrigés et synchronisés ✓' : 'Historique complété et synchronisé ✓');
-        } catch (saveError) {
-          console.error('StatBet recovery cloud save failed', saveError);
-          if (!silent) updateSyncStatusLine('err', 'Paris ajoutés localement, sauvegarde cloud impossible : ' + (saveError.message || saveError));
-        }
-      }
+    const {data,error}=await client.from('paulybet_user_data').select('data,updated_at').eq('user_id',currentAuthUser.id).maybeSingle();
+    if(error)throw error;
+    if(data&&Array.isArray(data.data)) {bets=data.data;saveLocalOnly(bets);}
+    else {
+      const {error:saveError}=await client.from('paulybet_user_data').upsert({user_id:currentAuthUser.id,data:bets,updated_at:new Date().toISOString()},{onConflict:'user_id'});
+      if(saveError)throw saveError;
     }
-    initialCloudLoadPending = false;
-    if (document.getElementById('panel-history')?.classList.contains('active')) renderHistory();
-    setSyncIndicator('ok');
-    if (!silent) updateSyncStatusLine('ok', 'Données récupérées depuis le cloud ✓');
-    isPulling = false;
-    return true;
-  } catch (e) {
-    initialCloudLoadPending = false;
-    if (document.getElementById('panel-history')?.classList.contains('active')) renderHistory();
-    setSyncIndicator('err');
-    if (!silent) updateSyncStatusLine('err', 'Erreur de récupération : ' + (e.message || e));
-    isPulling = false;
+    renderDashboard();if(document.getElementById('panel-history')?.classList.contains('active'))renderHistory();
+    setSyncIndicator('ok');if(!silent)updateSyncStatusLine('ok','Données personnelles synchronisées ✓');
+    initialCloudLoadPending=false;isPulling=false;return true;
+  } catch(e) {
+    initialCloudLoadPending=false;isPulling=false;setSyncIndicator('err');
+    updatePaulyAuthMessage('Stockage non configuré ou inaccessible. Vérifie le script SQL Pauly’Bet dans Supabase. ('+(e.message||e)+')',true);
     return false;
   }
 }
-
-function saveLocalOnly(b) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(b)); } catch(e) {}
-}
-
-function updateSyncStatusLine(state, text) {
-  const el = document.getElementById('sync-status-line');
-  if (!el) return;
-  el.className = 'sync-status-line ' + (state || '');
-  el.textContent = text;
-}
-
-const DEFAULT_SYNC_CFG = {
-  url: 'https://dzyolkssdkqubbipekyb.supabase.co',
-  key: 'sb_publishable_IOGlya4rUiERviuMGPNoeA_NPmH89np',
-  code: '1234'
-};
-
+function updateSyncStatusLine(state,text) {const el=document.getElementById('sync-status-line');if(el){el.className='sync-status-line '+(state||'');el.textContent=text;}}
 function openSyncModal() {
-  const cfg = getSyncCfg();
-  const values = cfg || DEFAULT_SYNC_CFG;
-  document.getElementById('sync-url').value = values.url;
-  document.getElementById('sync-key').value = values.key;
-  document.getElementById('sync-code').value = values.code;
-  document.getElementById('sync-disconnect-btn').style.display = cfg ? 'block' : 'none';
-  updateSyncStatusLine('', cfg
-    ? 'Configuration enregistrée pour cet appareil (code "' + cfg.code + '").'
-    : 'Paramètres préremplis. Tu peux les modifier puis appuyer sur « Connecter ».');
+  const email=document.getElementById('pauly-account-email');if(email)email.textContent=currentAuthUser?.email||'Compte connecté';
+  updateSyncStatusLine('ok','Tes données sont isolées dans ton espace personnel.');
   document.getElementById('sync-overlay').classList.add('show');
 }
-function closeSyncModal() {
-  document.getElementById('sync-overlay').classList.remove('show');
+function closeSyncModal(){document.getElementById('sync-overlay').classList.remove('show')}
+function handleSyncOverlayClick(e){if(e.target.id==='sync-overlay')closeSyncModal()}
+function updatePaulyAuthMessage(message,isError) {
+  const el=document.getElementById('pauth-message');if(!el)return;el.textContent=message||'';el.classList.toggle('error',!!isError);
 }
-function handleSyncOverlayClick(e) {
-  if (e.target.id === 'sync-overlay') closeSyncModal();
+function togglePaulyAuthMode() {
+  authMode=authMode==='login'?'signup':'login';const signup=authMode==='signup';
+  document.getElementById('pauth-title').textContent=signup?'Créer ton compte':'Bienvenue sur Pauly’Bet';
+  document.getElementById('pauth-subtitle').textContent=signup?'Crée ton espace personnel pour suivre tes paris.':'Connecte-toi pour retrouver ton suivi de paris sportifs.';
+  document.getElementById('pauth-submit').textContent=signup?'Créer mon compte':'Se connecter';
+  document.getElementById('pauth-switch').textContent=signup?'J’ai déjà un compte':'Créer un compte';
+  document.getElementById('pauth-password').setAttribute('autocomplete',signup?'new-password':'current-password');
+  updatePaulyAuthMessage('',false);
 }
-
-async function connectAndSync() {
-  const url = document.getElementById('sync-url').value.trim();
-  const key = document.getElementById('sync-key').value.trim();
-  const code = document.getElementById('sync-code').value.trim();
-  if (!url || !key || !code) { updateSyncStatusLine('err', 'Remplis les 3 champs.'); return; }
-  if (!window.supabase) { updateSyncStatusLine('err', 'Librairie Supabase non chargée (vérifie ta connexion internet).'); return; }
-  setSyncCfg({ url, key, code });
-  supaClient = null;
-  updateSyncStatusLine('', 'Connexion en cours...');
-
-  const client = ensureSupaClient();
-  if (!client) { updateSyncStatusLine('err', 'Configuration invalide.'); return; }
-
-  // On regarde s'il existe déjà des données dans le cloud pour ce code
+async function submitPaulyAuth(event) {
+  event.preventDefault();const client=ensureSupaClient();
+  if(!client){updatePaulyAuthMessage('Service de connexion indisponible. Vérifie ta connexion internet.',true);return;}
+  const email=document.getElementById('pauth-email').value.trim(),password=document.getElementById('pauth-password').value;
+  const submit=document.getElementById('pauth-submit');submit.disabled=true;submit.textContent=authMode==='signup'?'Création…':'Connexion…';updatePaulyAuthMessage('',false);
   try {
-    const { data, error } = await client
-      .from('statbet_sync')
-      .select('data, updated_at')
-      .eq('sync_code', code)
-      .maybeSingle();
-    if (error) throw error;
-
-    if (data && Array.isArray(data.data) && data.data.length > 0) {
-      // Les données cloud restent la base ; ajout idempotent des paris reconstitués.
-      bets = data.data;
-      const julyCorrection = normalizeJuly2026Amounts(bets);
-      bets = julyCorrection.bets;
-      const recoveryBets = normalizeJuly2026Amounts([...JULY_RECOVERY_BETS, ...OCTOBER_2026_RECOVERY_BETS, ...NOVEMBER_2026_RECOVERY_BETS,
-        { id: 'recovery-2026-08-14', mise: 10, gain: 20.5, date: '2026-08-14T16:00:00Z', year: 2026 },
-        { id: 'recovery-2026-09-17', mise: 10, gain: 20.5, date: '2026-09-17T16:00:00Z', year: 2026 }
-      ]).bets;
-      let addedRecoveryBets = false;
-      const beforeRecoveryCount = bets.length;
-      bets = mergeRecoveryBets(bets, recoveryBets);
-      addedRecoveryBets = bets.length !== beforeRecoveryCount;
-      saveLocalOnly(bets);
-      if (addedRecoveryBets || julyCorrection.changed) {
-        const { error: saveError } = await client
-          .from('statbet_sync')
-          .upsert({ sync_code: code, data: bets, updated_at: new Date().toISOString() }, { onConflict: 'sync_code' });
-        if (saveError) throw saveError;
-      }
-      renderDashboard();
-      if (document.getElementById('panel-history').classList.contains('active')) renderHistory();
-      updateSyncStatusLine('ok', julyCorrection.changed ? 'Montants de juillet corrigés et synchronisés ✓' : (addedRecoveryBets ? 'Historique complété et synchronisé ✓' : 'Données existantes récupérées depuis le cloud ✓'));
+    if(authMode==='signup') {
+      const {data,error}=await client.auth.signUp({email,password});if(error)throw error;
+      if(data.session) {updatePaulyAuthMessage('Compte créé. Préparation de ton espace…',false);await activatePaulyUser(data.session.user);}
+      else updatePaulyAuthMessage('Compte créé. Vérifie ta boîte mail pour confirmer ton adresse, puis connecte-toi.',false);
     } else {
-      // Rien en ligne encore → on envoie les données locales actuelles
-      await pushToCloud(true);
-      updateSyncStatusLine('ok', 'Connecté. Données locales envoyées vers le cloud ✓');
+      const {data,error}=await client.auth.signInWithPassword({email,password});if(error)throw error;
+      if(data.session)await activatePaulyUser(data.session.user);
     }
-    setSyncIndicator('ok');
-    document.getElementById('sync-disconnect-btn').style.display = 'block';
-  } catch (e) {
-    setSyncIndicator('err');
-    updateSyncStatusLine('err', 'Erreur : ' + (e.message || e) + ' — vérifie l\'URL, la clé et que la table existe.');
-  }
+  } catch(e) {updatePaulyAuthMessage(e.message||'Impossible de continuer. Vérifie tes identifiants.',true);}
+  finally {submit.disabled=false;submit.textContent=authMode==='signup'?'Créer mon compte':'Se connecter';}
 }
-
-function disconnectSync() {
-  clearSyncCfg();
-  setSyncIndicator('');
-  updateSyncStatusLine('', 'Déconnecté. Tes données restent en local sur cet appareil.');
-  document.getElementById('sync-disconnect-btn').style.display = 'none';
+async function activatePaulyUser(user) {
+  if(!user?.id||authLoadedUserId===user.id||authLoadingUserId===user.id)return;
+  authLoadingUserId=user.id;currentAuthUser=user;initialCloudLoadPending=true;
+  bets=loadBetsForUser(user.id);saveLocalOnly(bets);
+  const ok=await pullFromCloud(true);authLoadingUserId=null;if(!ok)return;
+  authLoadedUserId=user.id;document.body.classList.remove('pauly-auth-gated');
+  document.getElementById('pauly-auth-screen').style.display='none';
+  document.getElementById('sync-btn')?.setAttribute('aria-label','Mon compte');
 }
-
-let bets = loadBets();
-// Tant que la première récupération cloud n'est pas terminée, ne pas afficher un faux état vide.
-let initialCloudLoadPending = !!getSyncCfg();
+async function signOutPaulyAccount() {
+  const client=ensureSupaClient();if(!client)return;closeSyncModal();await pushToCloud(true);await client.auth.signOut();
+  currentAuthUser=null;authLoadedUserId=null;authLoadingUserId=null;bets=[];
+  document.body.classList.add('pauly-auth-gated');document.getElementById('pauly-auth-screen').style.display='flex';
+  document.getElementById('pauth-password').value='';authMode='login';
+  document.getElementById('pauth-title').textContent='Bienvenue sur Pauly’Bet';
+  document.getElementById('pauth-subtitle').textContent='Connecte-toi pour retrouver ton suivi de paris sportifs.';
+  document.getElementById('pauth-submit').textContent='Se connecter';document.getElementById('pauth-switch').textContent='Créer un compte';
+  updatePaulyAuthMessage('Tu es déconnecté.',false);
+}
+async function initPaulyAuth() {
+  const client=ensureSupaClient();if(!client){updatePaulyAuthMessage('Impossible de charger le service de connexion. Vérifie ta connexion internet.',true);return;}
+  client.auth.onAuthStateChange((event,session)=>{
+    if(session?.user)setTimeout(()=>activatePaulyUser(session.user),0);
+    else if(event==='SIGNED_OUT'){currentAuthUser=null;authLoadedUserId=null;authLoadingUserId=null;document.body.classList.add('pauly-auth-gated');const screen=document.getElementById('pauly-auth-screen');if(screen)screen.style.display='flex';}
+  });
+  const {data,error}=await client.auth.getSession();if(error){updatePaulyAuthMessage(error.message,true);return;}
+  if(data.session?.user)await activatePaulyUser(data.session.user);
+  else updatePaulyAuthMessage('Connecte-toi ou crée ton compte pour commencer.',false);
+}
+let bets=loadBets();
+let initialCloudLoadPending=true;
 
 /* Préférences locales Polybet : indépendantes des paris et de Supabase. */
 const APP_SETTINGS_KEY = 'paulybet_app_settings_v1';
@@ -3707,12 +3626,10 @@ document.addEventListener('keydown', e => {
 });
 inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.getElementById('result-celebration')?.classList.contains('show')) addBet(); });
 
-(function initSync() {
-  setSyncIndicator(getSyncCfg() ? 'ok' : '');
-  if (getSyncCfg()) {
-    // Petite latence pour laisser le script Supabase finir de charger
-    setTimeout(() => pullFromCloud(true), 300);
-  }
+(function initPaulyAuthWhenReady() {
+  const startAuth=()=>initPaulyAuth();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',startAuth,{once:true});
+  else startAuth();
 })();
 /* Retour haptique global et animation d'appui */
 (function initGlobalTapFeedback() {
