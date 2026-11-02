@@ -2018,7 +2018,7 @@ function exportBetsBackup() {
 }
 applyAppSettings();
 
-refreshSettingsUI()}function setAppAppearance(v){if(!['dark','light','auto'].includes(v))return;const x=getAppSettings();x.appearance=v;saveAppSettings(x);applyAppSettings();refreshSettingsUI()}function setAppSetting(k,v){if(!['haptics','animations','confirmDelete'].includes(k))return;const x=getAppSettings();x[k]=!!v;saveAppSettings(x);applyAppSettings()}function exportBetsBackup(){const data={app:'Polybet',version:1,exportedAt:new Date().toISOString(),bets:Array.isArray(bets)?bets:[]};const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='polybet-sauvegarde-'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500)}applyAppSettings();
+
 /* ─── Navigation ────────────────────────────────────────────────────── */
 /* Retours haptiques centralisés : discrets, facultatifs et sans effet sur les navigateurs incompatibles. */
 function haptique(niveau = 'leger') {
