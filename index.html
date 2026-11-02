@@ -183,6 +183,15 @@ body.pk-open #app { top:0 !important; bottom:auto !important; height:calc(100% -
 .scoreboard-value { transition: color .25s, transform .25s; }
 .scoreboard-value.number-pop { animation:numberPop .38s ease-out; }
 @keyframes numberPop { 0%{transform:scale(1)} 45%{transform:scale(1.07)} 100%{transform:scale(1)} }
+.history-loading{margin-top:8px;padding:18px 15px 16px;border:1px solid var(--border);border-radius:16px;background:var(--surface);min-height:300px;overflow:hidden}
+.history-loading-year,.history-loading-stats span,.history-loading-line{background:var(--surface2);border-radius:8px}
+.history-loading-year{width:34%;height:24px;margin-bottom:18px}
+.history-loading-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:22px}
+.history-loading-stats span{height:58px}
+.history-loading-chart{height:155px;display:flex;align-items:flex-end;justify-content:space-around;gap:10px;padding:16px 18px 0;background:var(--surface2);border-radius:8px}
+.history-loading-chart div{width:9%;border-radius:5px 5px 0 0;background:var(--border);height:var(--bar-height)}
+.history-loading-chart div:nth-child(1){--bar-height:34%}.history-loading-chart div:nth-child(2){--bar-height:58%}.history-loading-chart div:nth-child(3){--bar-height:46%}.history-loading-chart div:nth-child(4){--bar-height:78%}.history-loading-chart div:nth-child(5){--bar-height:62%}.history-loading-chart div:nth-child(6){--bar-height:90%}.history-loading-chart div:nth-child(7){--bar-height:72%}
+.history-loading-line{height:38px;margin-top:18px}
 .chart-wrap { animation: chartEnter .5s ease-out both; }
 @keyframes chartEnter { from {opacity:0;transform:translateY(10px)} to {opacity:1;transform:translateY(0)} }
  .bet-list {
@@ -3168,7 +3177,14 @@ function renderHistory() {
   const groups = groupByYear(bets);
   if (groups.length === 0) {
     if (initialCloudLoadPending) {
-      container.innerHTML = '';
+      // Garder une surface de contenu pendant la récupération cloud, plutôt qu'un panneau vide.
+      container.innerHTML = `
+        <div class="history-loading" aria-label="Chargement de l’historique">
+          <div class="history-loading-year"></div>
+          <div class="history-loading-stats"><span></span><span></span><span></span></div>
+          <div class="history-loading-chart"><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+          <div class="history-loading-line"></div>
+        </div>`;
       return;
     }
     container.innerHTML = `<div class="empty-state"><p>Aucun pari</p><p>Saisis ton premier pari dans Mon Activité.</p></div>`;
