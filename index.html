@@ -1231,7 +1231,7 @@ body::-webkit-scrollbar,
 :root { --font-d:'Archivo',sans-serif; --font-b:'Archivo',sans-serif; }
 *,*::before,*::after { font-family:'Archivo',sans-serif !important; }
 .app-brand { display:flex; align-items:center; gap:10px; min-width:0; }
-.app-brand-icon { display:block; width:39px; height:39px; flex:0 0 39px; object-fit:contain; border-radius:10px; }
+.app-brand-icon { display:block; width:39px; height:39px; flex:0 0 39px; object-fit:contain; border-radius:0; background:transparent; mix-blend-mode:screen; }
 .logo-row .app-brand .app-logo { margin:0; padding:0; font-family:'Archivo',sans-serif; font-size:27px; line-height:1; font-weight:900; letter-spacing:1.2px; white-space:nowrap; }
 </style>
 <style id="polybet-settings-brand">
@@ -1305,7 +1305,7 @@ input[type="number"] {
   <div id="panel-dashboard" class="panel active">
     <div class="panel-inner">
       <div class="logo-row">
-        <div class="app-brand"><img class="app-brand-icon" src="./logo-paulybet.svg" alt="" width="39" height="39"><div class="app-logo">PAULY<span>’BET</span></div></div>
+        <div class="app-brand"><img class="app-brand-icon" src="./icon.png" alt="" width="39" height="39"><div class="app-logo">PAULY<span>’BET</span></div></div>
         <button class="sync-btn" id="sync-btn" onclick="openSyncModal()" aria-label="Synchronisation">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.36-2.64L3 16"/><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.36 2.64L21 8"/><polyline points="21 3 21 8 16 8"/><polyline points="3 21 3 16 8 16"/></svg>
           <span class="sync-dot off" id="sync-dot"></span>
@@ -1393,7 +1393,7 @@ input[type="number"] {
     <div class="panel-inner settings-inner">
       <div class="settings-header">
         <div class="app-brand">
-          <img class="app-brand-icon" src="./logo-paulybet.svg" alt="" width="39" height="39">
+          <img class="app-brand-icon" src="./icon.png" alt="" width="39" height="39">
           <div class="history-title">PARAMÈTRES</div>
         </div>
       </div>
