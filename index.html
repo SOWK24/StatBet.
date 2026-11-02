@@ -2084,29 +2084,28 @@ const PAGE_ORDER=['dashboard','history','settings'];let currentActivePage='dashb
  let settleTimer=0;
  const clamp=i=>Math.max(0,Math.min(PAGE_ORDER.length-1,i));
  const width=()=>Math.max(1,v.clientWidth);
+ let scrollOrigin=clamp(PAGE_ORDER.indexOf(currentActivePage));
  const setHighlight=i=>{
    const name=PAGE_ORDER[clamp(i)];
    if(!name)return;
-   if(currentActivePage!==name){
-     currentActivePage=name;
-     updateTabHighlight(name);
-   }else{
-     updateTabHighlight(name);
-   }
+   currentActivePage=name;
+   updateTabHighlight(name);
  };
- /* Le surlignage suit le scroll réel dès les premiers pixels, sans attendre le snap final. */
+ /* Seuils avec hystérésis autour de la page de départ : empêche l'indicateur d'osciller. */
  const trackScroll=()=>{
    if(pageScrollFromTab)return;
    const position=v.scrollLeft/width();
-   const current=PAGE_ORDER.indexOf(currentActivePage);
-   let next=current;
-   if(position>current+0.10)next=current+1;
-   else if(position<current-0.10)next=current-1;
+   const progress=position-scrollOrigin;
+   let next=scrollOrigin;
+   if(progress>0.08)next=scrollOrigin+1;
+   else if(progress< -0.08)next=scrollOrigin-1;
+   else if(Math.abs(progress)<0.035)next=scrollOrigin;
    setHighlight(clamp(next));
    clearTimeout(settleTimer);
    settleTimer=setTimeout(()=>{
      const settled=clamp(Math.round(v.scrollLeft/width()));
      activatePage(PAGE_ORDER[settled]);
+     scrollOrigin=settled;
    },140);
  };
  v.addEventListener('scroll',trackScroll,{passive:true});
@@ -2116,7 +2115,7 @@ const PAGE_ORDER=['dashboard','history','settings'];let currentActivePage='dashb
  const onStart=e=>{
    if(!e.touches||e.touches.length!==1)return;
    startX=e.touches[0].clientX;startY=e.touches[0].clientY;
-   startIndex=clamp(Math.round(v.scrollLeft/width()));tracking=false;
+   startIndex=clamp(Math.round(v.scrollLeft/width()));scrollOrigin=startIndex;tracking=false;
  };
  const onMove=e=>{
    if(!e.touches||!e.touches.length)return;
