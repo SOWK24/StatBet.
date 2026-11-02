@@ -1404,7 +1404,7 @@ body::-webkit-scrollbar,
 <div id="toast"></div>
 <div id="result-celebration" class="result-celebration" role="dialog" aria-modal="true" aria-live="polite" aria-label="Résultat du pari">
   <iframe id="result-demo-frame" title="Animation du résultat Pauly’Bet" src="about:blank" style="position:absolute;inset:0;width:100%;height:100%;border:0;background:#070908;z-index:10;pointer-events:none;visibility:hidden"></iframe>
-  <div id="result-demo-dismiss-layer" onclick="closeResultCelebration()" aria-label="Fermer le résultat" style="position:absolute;inset:0;z-index:20;cursor:pointer"></div>
+  <button id="result-demo-dismiss-layer" type="button" onclick="closeResultCelebration()" ontouchend="closeResultCelebration()" aria-label="Fermer le résultat" style="position:absolute;inset:0;z-index:20;display:block;width:100%;height:100%;padding:0;border:0;background:transparent;cursor:pointer;touch-action:manipulation;-webkit-appearance:none"></button>
   <button type="button" aria-label="Fermer le résultat" onclick="closeResultCelebration()" style="position:absolute;z-index:30;top:max(12px,env(safe-area-inset-top));right:14px;width:38px;height:38px;border:1px solid rgba(255,255,255,.2);border-radius:50%;background:rgba(10,14,10,.7);color:#fff;font-size:22px">×</button>
 </div>
 
@@ -2619,10 +2619,16 @@ window.addEventListener('message', function(event) {
   }
 });
 let resultCelebrationPreviousFocus = null;
+let resultCelebrationClosing = false;
 function showResultCelebration(isWin, amount) {
   const modal = document.getElementById('result-celebration');
   const demoFrame = document.getElementById('result-demo-frame');
+  if (!modal) return;
 
+  resultCelebrationClosing = false;
+  modal.style.pointerEvents = 'auto';
+  modal.setAttribute('aria-hidden', 'false');
+  modal.setAttribute('aria-modal', 'true');
   resultCelebrationPreviousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   modal.setAttribute('tabindex', '-1');
 
@@ -2654,9 +2660,17 @@ let pendingResultRefresh = false;
 
 function closeResultCelebration() {
   const modal = document.getElementById('result-celebration');
+  if (resultCelebrationClosing || !modal) return;
+  resultCelebrationClosing = true;
   const shouldRefreshApp = pendingResultRefresh;
+  pendingResultRefresh = false;
 
-  if (modal) modal.classList.remove('show');
+  /* Libérer immédiatement toute l'interface : aucun appel réseau ni rechargement
+     ne doit maintenir l'écran de résultat au-dessus de l'application. */
+  modal.classList.remove('show');
+  modal.style.pointerEvents = 'none';
+  modal.setAttribute('aria-hidden', 'true');
+  modal.setAttribute('aria-modal', 'false');
   pendingResultInstance = null;
   pendingResultDisplay = null;
   if (window.resultCountFrame) cancelAnimationFrame(window.resultCountFrame);
@@ -2672,25 +2686,18 @@ function closeResultCelebration() {
     demoFrame.style.visibility = 'hidden';
     demoFrame.src = 'about:blank';
   }
-
-  if (typeof window.hidePaulyNumericKeyboard === 'function') {
-    window.hidePaulyNumericKeyboard();
-  }
+  if (typeof window.hidePaulyNumericKeyboard === 'function') window.hidePaulyNumericKeyboard();
 
   if (!shouldRefreshApp) return;
-  pendingResultRefresh = false;
-
-  // Recharger proprement l'application après l'animation, comme à son ouverture.
-  // Le pari est déjà sauvegardé en local ; on force d'abord son envoi Supabase
-  // pour éviter qu'une récupération cloud au redémarrage ne restaure une ancienne version.
-  (async () => {
-    const cloudSaved = await pushToCloud(true);
-    if (!cloudSaved) {
-      showToast('Pari enregistré sur cet appareil, synchronisation cloud à vérifier.', 'loss');
-      return;
-    }
-    window.location.reload();
-  })();
+  /* Les données sont déjà sauvegardées localement : actualiser les vues sans
+     recharger toute la PWA, puis synchroniser le cloud en arrière-plan. */
+  renderDashboard();
+  if (document.getElementById('panel-history')?.classList.contains('active')) renderHistory();
+  Promise.resolve().then(() => pushToCloud(true)).then(cloudSaved => {
+    if (!cloudSaved) showToast('Pari enregistré sur cet appareil, synchronisation cloud à vérifier.', 'loss');
+  }).catch(() => {
+    showToast('Pari enregistré sur cet appareil, synchronisation cloud à vérifier.', 'loss');
+  });
 }
 
 
