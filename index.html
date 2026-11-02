@@ -546,6 +546,9 @@ canvas { display:block; width:100%; cursor:pointer; touch-action:pan-y; }
 .bet-row { display:flex; align-items:center; padding:14px 12px; border-radius:8px; border-left:3px solid; gap:10px; min-height:76px; }
 .bet-row.win  { background:var(--win-bg);  border-color:var(--win-border); }
 .bet-row.loss { background:var(--loss-bg); border-color:var(--loss-border); }
+.bet-row.pending { background:rgba(197,182,255,.07); border-color:rgba(197,182,255,.28); }
+.pending .bet-badge { color:var(--number); background:rgba(197,182,255,.14); }
+.pending .bet-bilan { color:var(--number); }
 
 .bet-badge { font-size:10px; font-weight:800; letter-spacing:.6px; padding:3px 7px; border-radius:5px; flex-shrink:0; }
 .win  .bet-badge { color:var(--win);  background:rgba(var(--wina-rgb),.18); }
@@ -3276,6 +3279,10 @@ function renderHistory() {
   const deletedIds = getDeletedBetIds();
   const activeRecoveryBets = recoveryBets.filter(b => !deletedIds.has(b.id));
   bets = mergeRecoveryBets(bets, activeRecoveryBets);
+  // Retirer totalement les anciens paris annulés, y compris ceux déjà synchronisés.
+  const beforeCancelledCleanup = bets.length;
+  bets = bets.filter(b => b.status !== 'cancelled');
+  if (bets.length !== beforeCancelledCleanup) queueCloudPush();
   /* Signature des données : un simple retour sur Historique ne doit pas reconstruire
      les canvas ni relancer leurs animations si aucun pari n'a changé. */
   const historyRenderSignature = JSON.stringify(bets);
@@ -3337,17 +3344,18 @@ function renderHistory() {
         <button class="history-toggle" type="button" onclick="toggleBetList(this)">Afficher tout l’historique (${yBets.length})</button>
         <div class="bet-list">
           ${yBets.map(b => {
-            const isWin = b.gain > b.mise;
+            const isPending = b.status === 'pending';
+            const isWin = !isPending && b.gain > b.mise;
             const bilan = r2(b.gain - b.mise);
-            return `<div class="bet-row ${isWin ? 'win' : 'loss'}" id="bet-row-${b.id}">
-              <span class="bet-badge">${isWin ? 'GAIN' : 'PERTE'}</span>
+            return `<div class="bet-row ${isPending ? 'pending' : isWin ? 'win' : 'loss'}" id="bet-row-${b.id}">
+              <span class="bet-badge">${isPending ? 'EN COURS' : isWin ? 'GAIN' : 'PERTE'}</span>
               <div class="bet-info">
                 <div class="bet-date">${fmtDate(b.date)}</div>
                 <div class="bet-amounts">Mise : <strong>${fmtEurPlain(b.mise)}</strong>
-                  ${isWin ? `→ Gain : <strong>${fmtEurPlain(b.gain)}</strong>` : '→ <strong>Perdu</strong>'}
+                  ${isPending ? '→ <strong>En cours</strong>' : isWin ? `→ Gain : <strong>${fmtEurPlain(b.gain)}</strong>` : '→ <strong>Perdu</strong>'}
                 </div>
               </div>
-              <span class="bet-bilan">${fmtEur(bilan, true)}</span>
+              <span class="bet-bilan">${isPending ? '—' : fmtEur(bilan, true)}</span>
               <button class="bet-edit" onclick="openEditModal('${b.id}')" title="Modifier ce pari">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
