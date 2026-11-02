@@ -8,7 +8,7 @@
 #pauly-splash {
   position:fixed; inset:0; z-index:2147483647; display:flex; align-items:center; justify-content:center;
   background:#000; opacity:1; visibility:visible; pointer-events:auto;
-  animation:paulySplashFade 2.6s ease forwards;
+  animation:paulySplashFade 1.5s ease forwards;
 }
 #pauly-splash img {
   display:block; width:min(76vw, 340px); height:auto; max-height:42vh; object-fit:contain;
@@ -1187,7 +1187,7 @@ body::-webkit-scrollbar,
   };
   // Le minuteur et l'animation utilisent la même durée : 2,6 secondes
   // au total, fondu compris. Aucun animationend (qui peut remonter de l'image).
-  window.setTimeout(reveal, 2600);
+  window.setTimeout(reveal, 1500);
 })();
 </script>
 <div id="app">
@@ -2544,7 +2544,7 @@ function closeResultCelebration() {
     .pb-haptic-wrap > .pb-haptic-switch:focus { outline:none!important; }
   `;
   document.head.appendChild(style);
-  style.textContent += "\n/* Contrôles prioritaires et visibles dans la version installée. */\n#record-card .record-edit-btn { position:absolute!important; top:12px!important; right:12px!important; left:auto!important; bottom:auto!important; z-index:20!important; display:flex!important; visibility:visible!important; opacity:1!important; align-items:center!important; justify-content:center!important; width:30px!important; height:30px!important; pointer-events:auto!important; }\n#record-card .record-manual-btn { position:relative!important; z-index:20!important; pointer-events:auto!important; }\n.year-block > .year-header { position:relative!important; z-index:20!important; pointer-events:auto!important; touch-action:manipulation!important; }\n";
+  style.textContent += "\n/* Contrôles prioritaires : le crayon reste caché pendant le splash. */\n#record-card .record-edit-btn { position:absolute!important; top:12px!important; right:12px!important; left:auto!important; bottom:auto!important; z-index:20!important; display:flex!important; align-items:center!important; justify-content:center!important; width:30px!important; height:30px!important; pointer-events:auto!important; }\nbody:not(.pauly-ready) #record-card .record-edit-btn, body:not(.pauly-ready) #record-card .record-manual-btn { visibility:hidden!important; opacity:0!important; pointer-events:none!important; }\nbody.pauly-ready #record-card .record-edit-btn, body.pauly-ready #record-card .record-manual-btn { visibility:visible!important; opacity:1!important; pointer-events:auto!important; }\n#record-card .record-manual-btn { position:relative!important; z-index:20!important; pointer-events:auto!important; }\n.year-block > .year-header { position:relative!important; z-index:20!important; pointer-events:auto!important; touch-action:manipulation!important; }\n";
 
   function enhance(button) {
     if (!(button instanceof HTMLButtonElement) || wrapped.has(button) ||
