@@ -1234,6 +1234,44 @@ body::-webkit-scrollbar,
 .app-brand-icon { display:block; width:36px; height:36px; flex:0 0 36px; object-fit:contain; border-radius:10px; }
 .logo-row .app-brand .app-logo { margin:0; padding:0; font-family:'Archivo',sans-serif; font-size:27px; line-height:1; font-weight:900; letter-spacing:1.2px; white-space:nowrap; }
 </style>
+<style id="polybet-pdf-print">
+#pdf-export-report{display:none}
+@media print{
+ @page{size:A4;margin:12mm}
+ html,body{position:static!important;inset:auto!important;width:auto!important;height:auto!important;min-height:0!important;overflow:visible!important;margin:0!important;padding:0!important;background:#fff!important;color:#172017!important}
+ body>*:not(#pdf-export-report){display:none!important}
+ #pdf-export-report{display:block!important;position:static!important;width:100%!important;background:#fff!important;color:#172017!important;font:9pt/1.4 'Archivo',sans-serif!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ #pdf-export-report *{box-sizing:border-box;font-family:'Archivo',sans-serif!important}
+ #pdf-export-report .pdf-header{display:flex;justify-content:space-between;align-items:center;gap:16px;padding-bottom:14px;border-bottom:2px solid #A6FF3B}
+ #pdf-export-report .pdf-brand{display:flex;align-items:center;gap:10px}
+ #pdf-export-report .pdf-brand img{width:42px;height:42px;object-fit:contain}
+ #pdf-export-report .pdf-brand strong{display:block;font-size:20pt;line-height:1;font-weight:900}
+ #pdf-export-report .pdf-brand strong span{color:#579b18}
+ #pdf-export-report .pdf-brand small,#pdf-export-report .pdf-date{display:block;color:#647064;font-size:7pt;font-weight:700;letter-spacing:.6px}
+ #pdf-export-report .pdf-date{text-align:right;letter-spacing:0}
+ #pdf-export-report .pdf-date b{display:inline-block;margin-top:3px;color:#172017;font-size:8pt}
+ #pdf-export-report h1{margin:20px 0 3px;font-size:23pt;font-weight:900;letter-spacing:-.5px}
+ #pdf-export-report .pdf-intro{margin:0 0 16px;color:#647064;font-size:9pt}
+ #pdf-export-report .pdf-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:22px}
+ #pdf-export-report .pdf-stats>div{min-width:0;padding:10px;border:1px solid #dce3d9;border-radius:7px;background:#f5f8f3!important;break-inside:avoid}
+ #pdf-export-report .pdf-stats small{display:block;margin-bottom:4px;color:#687466;font-size:6.5pt;font-weight:800;letter-spacing:.5px}
+ #pdf-export-report .pdf-stats strong{display:block;color:#172017;font-size:13pt;font-weight:800;overflow-wrap:anywhere}
+ #pdf-export-report .positive{color:#27833f!important}
+ #pdf-export-report .negative{color:#c33d4c!important}
+ #pdf-export-report .pdf-table-heading{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 8px}
+ #pdf-export-report h2{margin:0;font-size:13pt;font-weight:800}
+ #pdf-export-report .pdf-table-heading span{color:#647064;font-size:8pt}
+ #pdf-export-report .pdf-table{width:100%;border-collapse:collapse;table-layout:auto;font-size:7.5pt}
+ #pdf-export-report .pdf-table th{padding:7px 5px;color:#344034;background:#edf2e9!important;text-align:left;font-size:6.5pt;font-weight:800}
+ #pdf-export-report .pdf-table td{padding:6px 5px;border-bottom:1px solid #e2e7df;vertical-align:middle}
+ #pdf-export-report .pdf-table tbody tr{break-inside:avoid;page-break-inside:avoid}
+ #pdf-export-report .pdf-table .num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+ #pdf-export-report .pdf-status{font-size:6.5pt;font-weight:800}
+ #pdf-export-report .pdf-status.won{color:#27833f}
+ #pdf-export-report .pdf-status.lost{color:#c33d4c}
+ #pdf-export-report .pdf-empty{padding:18px!important;text-align:center;color:#647064}
+ #pdf-export-report .pdf-footer{margin-top:16px;padding-top:8px;border-top:1px solid #dce3d9;color:#7a8577;font-size:7pt}
+}
 </head>
 <body style="margin:0;padding:0;min-height:100vh;background:#000!important;color-scheme:dark">
 <div id="pauly-splash" aria-hidden="true"><img src="./icon.png?v=paulybet-2" alt=""></div>
@@ -1357,7 +1395,7 @@ body::-webkit-scrollbar,
         <div class="settings-card settings-toggle-row"><div><div class="settings-label">Retours haptiques</div><div class="settings-sub">Vibrations lors des interactions.</div></div><label class="settings-switch"><input id="setting-haptics" type="checkbox" onchange="setAppSetting('haptics',this.checked)"><span></span></label></div>
       </div>
       <div class="settings-section"><div class="settings-heading">DONNÉES</div>
-        <div class="settings-card"><div class="settings-label">Sauvegarder mes paris</div><div class="settings-sub">Télécharger une copie de tes paris au format JSON.</div><button class="settings-action" onclick="exportBetsBackup()">↓　Exporter une sauvegarde</button></div>
+        <div class="settings-card"><div class="settings-label">Exporter mes paris</div><div class="settings-sub">Créer un rapport PDF avec ton bilan et le détail de tous tes paris. Sur iPhone, utilise le menu d’impression pour enregistrer le PDF dans Fichiers.</div><button class="settings-action" onclick="exportBetsPDF()">↓　Exporter en PDF</button></div>
         <div class="settings-card settings-toggle-row"><div><div class="settings-label">Confirmation avant suppression</div><div class="settings-sub">Éviter les suppressions accidentelles.</div></div><label class="settings-switch"><input id="setting-delete" type="checkbox" onchange="setAppSetting('confirmDelete',this.checked)"><span></span></label></div>
       </div>
       <div class="settings-section"><div class="settings-heading">SYNCHRONISATION</div><div class="settings-card"><div class="settings-label">Compte cloud</div><div class="settings-sub">Gérer la connexion et la synchronisation de tes données.</div><button class="settings-action" onclick="openSyncModal()">Gérer la synchronisation</button></div></div>
@@ -2058,18 +2096,39 @@ function refreshSettingsUI() {
   if (haptics) haptics.checked = settings.haptics;
   if (confirmDelete) confirmDelete.checked = settings.confirmDelete;
 }
-function exportBetsBackup() {
+function exportBetsPDF() {
   try {
-    const payload = { app:'Polybet', formatVersion:1, exportedAt:new Date().toISOString(), bets:Array.isArray(bets) ? bets : [] };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type:'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'polybet-sauvegarde-' + new Date().toISOString().slice(0,10) + '.json';
-    document.body.appendChild(link); link.click(); link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1500);
-    if (typeof showToast === 'function') showToast('Sauvegarde téléchargée', 'win');
-  } catch (_) { if (typeof showToast === 'function') showToast('Impossible de créer la sauvegarde', 'loss'); }
+    const items = (Array.isArray(bets) ? bets : []).slice().sort((a,b) => new Date(b.date) - new Date(a.date));
+    const stats = calcStats(items);
+    const dateLabel = new Date().toLocaleString('fr-FR', { dateStyle:'long', timeStyle:'short' });
+    const safe = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    const rows = items.map(b => {
+      const won = Number(b.gain) > Number(b.mise);
+      const net = r2(Number(b.gain || 0) - Number(b.mise || 0));
+      const year = b.year || (b.date ? new Date(b.date).getFullYear() : '—');
+      return '<tr><td>' + safe(fmtDate(b.date)) + '</td><td>' + safe(year) + '</td><td class="num">' + safe(fmtEurPlain(Number(b.mise || 0))) + '</td><td class="num">' + safe(fmtEurPlain(Number(b.gain || 0))) + '</td><td class="num ' + (net >= 0 ? 'positive' : 'negative') + '">' + safe(fmtEur(net, true)) + '</td><td><b class="pdf-status ' + (won ? 'won' : 'lost') + '">' + (won ? 'GAGNÉ' : 'PERDU') + '</b></td></tr>';
+    }).join('');
+    let report = document.getElementById('pdf-export-report');
+    if (!report) {
+      report = document.createElement('section');
+      report.id = 'pdf-export-report';
+      document.body.appendChild(report);
+    }
+    report.innerHTML = '<header class="pdf-header"><div class="pdf-brand"><img src="./icon.png?v=paulybet-2" alt=""><div><strong>PAULY<span>’BET</span></strong><small>RAPPORT DE PERFORMANCE</small></div></div><div class="pdf-date">Généré le<br><b>' + safe(dateLabel) + '</b></div></header>' +
+      '<h1>Bilan de tes paris</h1><p class="pdf-intro">Récapitulatif complet de l’activité enregistrée dans Polybet.</p>' +
+      '<section class="pdf-stats"><div><small>BILAN NET</small><strong class="' + (stats.bilanNet >= 0 ? 'positive' : 'negative') + '">' + safe(fmtEur(stats.bilanNet, true)) + '</strong></div><div><small>TAUX DE RÉUSSITE</small><strong>' + stats.tauxReussite.toLocaleString('fr-FR',{minimumFractionDigits:1,maximumFractionDigits:1}) + ' %</strong></div><div><small>PARIS ENREGISTRÉS</small><strong>' + stats.nbParis + '</strong></div><div><small>TOTAL DES MISES</small><strong>' + safe(fmtEurPlain(stats.totalMises)) + '</strong></div><div><small>TOTAL DES GAINS</small><strong>' + safe(fmtEurPlain(stats.totalGains)) + '</strong></div><div><small>GAGNÉS / PERDUS</small><strong>' + stats.nbGains + ' / ' + (stats.nbParis - stats.nbGains) + '</strong></div></section>' +
+      '<div class="pdf-table-heading"><h2>Détail des paris</h2><span>' + stats.nbParis + ' entrée(s)</span></div>' +
+      '<table class="pdf-table"><thead><tr><th>Date</th><th>Année</th><th class="num">Mise</th><th class="num">Gain</th><th class="num">Bilan</th><th>Résultat</th></tr></thead><tbody>' + (rows || '<tr><td colspan="6" class="pdf-empty">Aucun pari enregistré.</td></tr>') + '</tbody></table>' +
+      '<footer class="pdf-footer">Document généré depuis Polybet · Montants issus des données enregistrées dans l’application.</footer>';
+    if (typeof window.print !== 'function') {
+      if (typeof showToast === 'function') showToast('Export PDF indisponible sur ce navigateur', 'loss');
+      return;
+    }
+    window.print();
+  } catch (error) {
+    console.error('Export PDF Polybet :', error);
+    if (typeof showToast === 'function') showToast('Impossible de préparer le rapport PDF', 'loss');
+  }
 }
 applyAppSettings();
 
