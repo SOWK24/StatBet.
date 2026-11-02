@@ -1189,17 +1189,56 @@ body::-webkit-scrollbar,
 <body style="margin:0;padding:0;min-height:100vh;background:#000!important;color-scheme:dark">
 <div id="pauly-splash" aria-hidden="true" style="position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;background:#000;opacity:1;visibility:visible;pointer-events:auto"><img src="./icon.png?v=paulybet-2" alt=""></div>
 <script>
-/* Révélation explicite après l'intro : plus fiable que visibility animée sur iOS. */
-(function revealPaulyAfterSplash() {
+/*
+ * Démarrage iOS : conserver le calque noir dans le DOM.
+ * iOS peut afficher une capture de la dernière vue lors des lancements suivants.
+ * On force donc une vue noire au passage en arrière-plan, avant la capture système.
+ */
+(function managePaulyLaunchAndSnapshot() {
+  let introFinished = false;
+  const app = document.getElementById('app');
+  const splash = document.getElementById('pauly-splash');
+
+  const hideCover = () => {
+    if (!splash) return;
+    splash.style.setProperty('display', 'none', 'important');
+    splash.style.setProperty('opacity', '0', 'important');
+    splash.style.setProperty('visibility', 'hidden', 'important');
+  };
+
+  const showBlackCover = () => {
+    if (!splash) return;
+    splash.style.setProperty('display', 'flex', 'important');
+    splash.style.setProperty('position', 'fixed', 'important');
+    splash.style.setProperty('inset', '0', 'important');
+    splash.style.setProperty('z-index', '2147483647', 'important');
+    splash.style.setProperty('background', '#000', 'important');
+    splash.style.setProperty('opacity', '1', 'important');
+    splash.style.setProperty('visibility', 'visible', 'important');
+    splash.style.setProperty('pointer-events', 'auto', 'important');
+    splash.style.setProperty('animation', 'none', 'important');
+  };
+
   const reveal = () => {
-    const app = document.getElementById('app');
-    const splash = document.getElementById('pauly-splash');
+    introFinished = true;
     document.body.classList.add('pauly-ready');
     if (app) app.style.setProperty('visibility', 'visible', 'important');
-    if (splash) splash.remove();
+    hideCover();
   };
-  // Durée indépendante de l'animation du logo : 2,5 secondes garanties.
-  // Ne pas utiliser animationend : l'animation de l'image se termine avant le splash.
+
+  // iOS prend généralement sa capture après le passage en arrière-plan.
+  const handleBackground = () => {
+    if (document.visibilityState === 'hidden') showBlackCover();
+  };
+  const handleForeground = () => {
+    if (document.visibilityState === 'visible' && introFinished) hideCover();
+  };
+
+  document.addEventListener('visibilitychange', handleBackground, {passive:true});
+  window.addEventListener('pagehide', showBlackCover, {passive:true});
+  window.addEventListener('pageshow', handleForeground, {passive:true});
+
+  // L'introduction initiale reste exactement à 2,5 secondes.
   window.setTimeout(reveal, 2500);
 })();
 </script>
