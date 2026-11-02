@@ -1235,8 +1235,9 @@ body::-webkit-scrollbar,
 .logo-row .app-brand .app-logo { margin:0; padding:0; font-family:'Archivo',sans-serif; font-size:27px; line-height:1; font-weight:900; letter-spacing:1.2px; white-space:nowrap; }
 </style>
 <style id="polybet-settings-brand">
-.settings-header { display:flex; align-items:center; gap:10px; margin:0 0 20px; }
-.settings-header .history-title { margin:0; padding:0; font-family:'Archivo',sans-serif; font-size:27px; line-height:1; font-weight:800; letter-spacing:2px; }
+.settings-header { display:flex; align-items:center; margin:0 0 20px; }
+.settings-header .app-brand { display:flex; align-items:center; gap:10px; }
+.settings-header .history-title { margin:0; padding:4px 0 0; font-family:var(--font-d); font-size:32px; line-height:1; font-weight:800; letter-spacing:2px; }
 </style>
 
 <style id="polybet-numeric-font">
@@ -1391,8 +1392,10 @@ input[type="number"] {
   <div id="panel-settings" class="panel">
     <div class="panel-inner settings-inner">
       <div class="settings-header">
-        <img class="app-brand-icon" src="./logo-paulybet.svg" alt="" width="39" height="39">
-        <div class="history-title">PARAMÈTRES</div>
+        <div class="app-brand">
+          <img class="app-brand-icon" src="./logo-paulybet.svg" alt="" width="39" height="39">
+          <div class="history-title">PARAMÈTRES</div>
+        </div>
       </div>
       <div class="settings-section"><div class="settings-heading">PERSONNALISATION</div>
         <div class="settings-card"><div class="settings-label">Couleur de l’application</div><div class="settings-sub">Choisis la couleur principale de Polybet.</div>
