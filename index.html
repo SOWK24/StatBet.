@@ -2083,12 +2083,19 @@ const PAGE_ORDER=['dashboard','history','settings'];let currentActivePage='dashb
  const name=PAGE_ORDER[index];
  if(name!==currentActivePage)activatePage(name);
 }
-function schedulePageCommit(delay=220){
+function scheduleSwipeCommit(delay=320){
  clearTimeout(pageScrollReleaseTimer);
+ if(pageScrollFromTab||fingerDownForPageSwipe)return;
  pageScrollReleaseTimer=setTimeout(()=>{
-   pageScrollFromTab=false;
+   if(pageScrollFromTab||fingerDownForPageSwipe)return;
    commitVisiblePage();
  },delay);
+}
+function finishTabScroll(){
+ if(!pageScrollFromTab)return;
+ clearTimeout(pageScrollReleaseTimer);
+ pageScrollFromTab=false;
+ commitVisiblePage();
 }
 function switchTab(name){
  if(!PAGE_ORDER.includes(name))return;
@@ -2097,39 +2104,49 @@ function switchTab(name){
  activatePage(name);
  haptique('leger');
  applyPageOffset(true);
- /* Le délai est relancé à chaque mouvement : pas de validation à 750 ms fixe. */
- schedulePageCommit(220);
+ /* Le scroll programmatique est isolé des événements de swipe. */
+ pageScrollReleaseTimer=setTimeout(finishTabScroll,1400);
 }
+let fingerDownForPageSwipe=false;
 function initSwipePageNavigation(){
  const v=document.getElementById('pages-viewport');
  if(!v||v.dataset.swipeReady==='true')return;
  v.dataset.swipeReady='true';
  applyPageOffset(false);
- let fingerDown=false;
  const onScroll=()=>{
-   /* La sélection visuelle reste stable pendant le geste et l'inertie iOS. */
-   if(fingerDown)return;
-   schedulePageCommit(220);
+   if(pageScrollFromTab||fingerDownForPageSwipe)return;
+   scheduleSwipeCommit(320);
  };
  const onStart=e=>{
+   if(!v.contains(e.target))return;
    if(!e.touches||e.touches.length!==1)return;
-   fingerDown=true;
+   fingerDownForPageSwipe=true;
    clearTimeout(pageScrollReleaseTimer);
  };
- const onEnd=()=>{
-   fingerDown=false;
-   schedulePageCommit(220);
+ const onEnd=e=>{
+   if(!fingerDownForPageSwipe)return;
+   fingerDownForPageSwipe=false;
+   scheduleSwipeCommit(320);
+ };
+ const onScrollEnd=()=>{
+   if(pageScrollFromTab){finishTabScroll();return;}
+   if(!fingerDownForPageSwipe)scheduleSwipeCommit(0);
  };
  v.addEventListener('scroll',onScroll,{passive:true});
+ if('onscrollend' in v)v.addEventListener('scrollend',onScrollEnd,{passive:true});
  document.addEventListener('touchstart',onStart,{passive:true,capture:true});
  document.addEventListener('touchend',onEnd,{passive:true,capture:true});
  document.addEventListener('touchcancel',onEnd,{passive:true,capture:true});
  window.addEventListener('resize',()=>{
    clearTimeout(pageScrollReleaseTimer);
+   pageScrollFromTab=false;
+   fingerDownForPageSwipe=false;
    const index=Math.max(0,Math.min(PAGE_ORDER.length-1,Math.round(v.scrollLeft/Math.max(1,v.clientWidth))));
-   applyPageOffset(false);
    const name=PAGE_ORDER[index];
-   if(name!==currentActivePage)activatePage(name);
+   currentActivePage=name;
+   updateTabHighlight(name);
+   document.querySelectorAll('.panel').forEach(panel=>panel.classList.toggle('active',panel.id==='panel-'+name));
+   applyPageOffset(false);
  });
 }
 
