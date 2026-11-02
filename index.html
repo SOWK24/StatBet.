@@ -1392,6 +1392,11 @@ body::-webkit-scrollbar,
     </div>
     <button class="btn-danger-text" id="sync-disconnect-btn" onclick="disconnectSync()" style="display:none;">Déconnecter cet appareil (les données restent en local)</button>
   </div>
+<nav id="tabbar" aria-label="Navigation principale">
+    <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9M9 20v-6h6v6"/></svg><span>Accueil</span></button>
+    <button class="tab-btn" data-tab="history" onclick="switchTab('history')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Historique</span></button>
+    <button class="tab-btn" data-tab="settings" onclick="switchTab('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19 13a7 7 0 0 0 0-2l2-1.5-2-3.5-2.3.8a7 7 0 0 0-1.7-1L14.5 3h-4L10 5.8a7 7 0 0 0-1.7 1L6 6 4 9.5 6 11a7 7 0 0 0 0 2l-2 1.5L6 18l2.3-.8a7 7 0 0 0 1.7 1l.5 2.8h4l.5-2.8a7 7 0 0 0 1.7-1L19 18l2-3.5z"/></svg><span>Paramètres</span></button>
+  </nav>
 </div>
 
 <script>
@@ -2013,7 +2018,7 @@ function exportBetsBackup() {
 }
 applyAppSettings();
 
-const APP_SETTINGS_KEY='paulybet_app_settings_v1';const DEFAULT_APP_SETTINGS={color:'green',appearance:'dark',haptics:true,animations:true,confirmDelete:true};function getAppSettings(){try{return{...DEFAULT_APP_SETTINGS,...(JSON.parse(localStorage.getItem(APP_SETTINGS_KEY)||'{}')||{})}}catch(_){return{...DEFAULT_APP_SETTINGS}}}function saveAppSettings(x){try{localStorage.setItem(APP_SETTINGS_KEY,JSON.stringify(x))}catch(_){}}function applyAppSettings(){const x=getAppSettings(),r=document.documentElement;r.dataset.appColor=x.color;r.dataset.appAppearance=x.appearance;document.body.classList.toggle('reduce-animations',!x.animations)}function refreshSettingsUI(){const x=getAppSettings();document.querySelectorAll('.color-choice').forEach(b=>b.classList.toggle('selected',b.dataset.color===x.color));document.querySelectorAll('.settings-segment button').forEach(b=>b.classList.toggle('selected',b.dataset.appearance===x.appearance));[['haptics','setting-haptics'],['animations','setting-animations'],['confirmDelete','setting-delete']].forEach(([k,id])=>{const e=document.getElementById(id);if(e)e.checked=x[k]})}function setAppColor(v){if(!['green','red','blue'].includes(v))return;const x=getAppSettings();x.color=v;saveAppSettings(x);applyAppSettings();refreshSettingsUI()}function setAppAppearance(v){if(!['dark','light','auto'].includes(v))return;const x=getAppSettings();x.appearance=v;saveAppSettings(x);applyAppSettings();refreshSettingsUI()}function setAppSetting(k,v){if(!['haptics','animations','confirmDelete'].includes(k))return;const x=getAppSettings();x[k]=!!v;saveAppSettings(x);applyAppSettings()}function exportBetsBackup(){const data={app:'Polybet',version:1,exportedAt:new Date().toISOString(),bets:Array.isArray(bets)?bets:[]};const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='polybet-sauvegarde-'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500)}applyAppSettings();
+refreshSettingsUI()}function setAppAppearance(v){if(!['dark','light','auto'].includes(v))return;const x=getAppSettings();x.appearance=v;saveAppSettings(x);applyAppSettings();refreshSettingsUI()}function setAppSetting(k,v){if(!['haptics','animations','confirmDelete'].includes(k))return;const x=getAppSettings();x[k]=!!v;saveAppSettings(x);applyAppSettings()}function exportBetsBackup(){const data={app:'Polybet',version:1,exportedAt:new Date().toISOString(),bets:Array.isArray(bets)?bets:[]};const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='polybet-sauvegarde-'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500)}applyAppSettings();
 /* ─── Navigation ────────────────────────────────────────────────────── */
 /* Retours haptiques centralisés : discrets, facultatifs et sans effet sur les navigateurs incompatibles. */
 function haptique(niveau = 'leger') {
@@ -3403,11 +3408,7 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
       ${key('clear', 'AC', 'pk-action')}${key('0', '0')}${key('back', '⌫', 'pk-action pk-delete', 'Effacer le dernier chiffre')}
       ${key('decimal', ',', 'pk-decimal')}
       ${key('done', 'Valider <span>✓</span>', 'pk-enter', 'Valider la saisie')}
-      <nav id="tabbar" aria-label="Navigation principale">
-    <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9M9 20v-6h6v6"/></svg><span>Accueil</span></button>
-    <button class="tab-btn" data-tab="history" onclick="switchTab('history')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Historique</span></button>
-    <button class="tab-btn" data-tab="settings" onclick="switchTab('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19 13a7 7 0 0 0 0-2l2-1.5-2-3.5-2.3.8a7 7 0 0 0-1.7-1L14.5 3h-4L10 5.8a7 7 0 0 0-1.7 1L6 6 4 9.5 6 11a7 7 0 0 0 0 2l-2 1.5L6 18l2.3-.8a7 7 0 0 0 1.7 1l.5 2.8h4l.5-2.8a7 7 0 0 0 1.7-1L19 18l2-3.5z"/></svg><span>Paramètres</span></button>
-  </nav>
+      
 </div>`;
   // Placer le clavier directement sous <html> évite le clipping causé par le body fixe/overflow:hidden sur iOS.
   document.documentElement.appendChild(keyboard);
