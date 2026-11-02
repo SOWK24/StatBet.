@@ -1254,6 +1254,23 @@ input[type="number"] {
 }
 </style>
 
+
+<style id="polybet-all-numeric-glyphs">
+/* Tous les chiffres visibles retrouvent Barlow Condensed ; les lettres restent en Archivo. */
+.pb-numeric-glyph {
+  font-family:'Barlow Condensed',sans-serif!important;
+  font-variant-numeric:tabular-nums;
+}
+input[data-pauly-numeric],
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"],
+input[type="number"] {
+  font-family:'Barlow Condensed',sans-serif!important;
+  font-variant-numeric:tabular-nums;
+}
+</style>
+
 </head>
 <body style="margin:0;padding:0;min-height:100vh;background:#000!important;color-scheme:dark">
 <div id="pauly-splash" aria-hidden="true"><img src="./icon.png?v=paulybet-2" alt=""></div>
@@ -4017,6 +4034,58 @@ body.pk-open #app {
 /* Écran de démarrage déplacé dans le head pour éviter tout flash avant le premier rendu. */
 
 </style>
+
+<script id="polybet-all-numeric-glyphs-script">
+(function(){
+  const numericPattern = /\\d+(?:[.,:/-]\\d+)*/g;
+  function formatNumericText(root){
+    if(!root) return;
+    const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+    const nodes=[];
+    while(walker.nextNode()){
+      const node=walker.currentNode;
+      const parent=node.parentElement;
+      if(!parent || parent.closest('script,style,svg,textarea,input,.pb-numeric-glyph')) continue;
+      if(!/\\d/.test(node.nodeValue)) continue;
+      nodes.push(node);
+    }
+    nodes.forEach(node=>{
+      const value=node.nodeValue;
+      numericPattern.lastIndex=0;
+      if(!numericPattern.test(value)) return;
+      numericPattern.lastIndex=0;
+      const fragment=document.createDocumentFragment();
+      let last=0,match;
+      while((match=numericPattern.exec(value))){
+        if(match.index>last) fragment.appendChild(document.createTextNode(value.slice(last,match.index)));
+        const span=document.createElement('span');
+        span.className='pb-numeric-glyph';
+        span.textContent=match[0];
+        fragment.appendChild(span);
+        last=match.index+match[0].length;
+      }
+      if(last<value.length) fragment.appendChild(document.createTextNode(value.slice(last)));
+      node.parentNode.replaceChild(fragment,node);
+    });
+  }
+  function start(){
+    formatNumericText(document.body);
+    const observer=new MutationObserver(records=>{
+      records.forEach(record=>{
+        if(record.type==='characterData') formatNumericText(record.target.parentNode);
+        else record.addedNodes.forEach(node=>{
+          if(node.nodeType===Node.TEXT_NODE) formatNumericText(node.parentNode);
+          else if(node.nodeType===Node.ELEMENT_NODE) formatNumericText(node);
+        });
+      });
+    });
+    observer.observe(document.body,{subtree:true,childList:true,characterData:true});
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start,{once:true});
+  else start();
+})();
+</script>
+
 </body>
 </html>
 
