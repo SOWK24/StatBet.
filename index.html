@@ -2077,26 +2077,16 @@ function haptique(niveau = 'leger') {
 }
 
 const PAGE_ORDER=['dashboard','history','settings'];let currentActivePage='dashboard';function applyPageOffset(animate=false){const v=document.getElementById('pages-viewport');if(!v)return;const x=PAGE_ORDER.indexOf(currentActivePage)*v.clientWidth;if(animate)v.scrollTo({left:x,behavior:'smooth'});else v.scrollLeft=x}let pageScrollFromTab=false;let pageScrollReleaseTimer=0;function updateTabHighlight(name){document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===name))}function activatePage(name){currentActivePage=name;updateTabHighlight(name);document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+name));/* Ne jamais bloquer le rendu de la navigation avec la génération lourde des pages. */requestAnimationFrame(()=>{if(currentActivePage!==name)return;requestAnimationFrame(()=>{if(currentActivePage!==name)return;if(name==='history')renderHistory();if(name==='settings')refreshSettingsUI()})})}
-function updateSwipeHighlightFromScroll(v){
- const position=v.scrollLeft/Math.max(1,v.clientWidth);
- const index=Math.max(0,Math.min(PAGE_ORDER.length-1,Math.round(position)));
- const name=PAGE_ORDER[index];
- if(name!==currentActivePage){
-   currentActivePage=name;
-   updateTabHighlight(name);
- }
-}
 function commitVisiblePage(){
  const v=document.getElementById('pages-viewport');
- if(!v)return;
- const index=Math.max(0,Math.min(PAGE_ORDER.length-1,Math.round(v.scrollLeft/Math.max(1,v.clientWidth))));
+ if(!v||!v.clientWidth)return;
+ const index=Math.max(0,Math.min(PAGE_ORDER.length-1,Math.round(v.scrollLeft/v.clientWidth)));
  const name=PAGE_ORDER[index];
  const activePanel=document.getElementById('panel-'+name);
  if(name!==currentActivePage||!activePanel?.classList.contains('active'))activatePage(name);
- /* Une fois la position finale connue, la barre peut reprendre le suivi normal. */
- swipeHighlightApplied=false;
+ updateTabHighlight(name);
 }
-function scheduleSwipeCommit(delay=320){
+function scheduleSwipeCommit(delay=480){
  clearTimeout(pageScrollReleaseTimer);
  if(pageScrollFromTab||fingerDownForPageSwipe)return;
  pageScrollReleaseTimer=setTimeout(()=>{
@@ -2120,53 +2110,29 @@ function switchTab(name){
  pageScrollReleaseTimer=setTimeout(finishTabScroll,1400);
 }
 let fingerDownForPageSwipe=false;
-let swipeStartX=0,swipeStartY=0,swipeStartPageIndex=0,swipeDirectionLocked=false,swipeHighlightApplied=false;
+let swipeStartScrollLeft=0;
 function initSwipePageNavigation(){
  const v=document.getElementById('pages-viewport');
  if(!v||v.dataset.swipeReady==='true')return;
  v.dataset.swipeReady='true';
  applyPageOffset(false);
  const onScroll=()=>{
-   if(pageScrollFromTab)return;
-   /* Après le basculement tactile, ne pas laisser une position intermédiaire d'inertie faire clignoter la barre en arrière. */
-   if(!fingerDownForPageSwipe&&!swipeHighlightApplied)updateSwipeHighlightFromScroll(v);
-   if(!fingerDownForPageSwipe)scheduleSwipeCommit(320);
+   if(pageScrollFromTab||fingerDownForPageSwipe)return;
+   /* La barre ne suit que la position réelle du viewport, après la fin du geste
+      et de l'inertie iOS. Aucun changement optimiste basé sur le doigt. */
+   scheduleSwipeCommit(480);
  };
  const onStart=e=>{
    if(!v.contains(e.target)||!e.touches||e.touches.length!==1)return;
    fingerDownForPageSwipe=true;
-   const touch=e.touches[0];
-   swipeStartX=touch.clientX;
-   swipeStartY=touch.clientY;
-   swipeStartPageIndex=Math.max(0,Math.min(PAGE_ORDER.length-1,Math.round(v.scrollLeft/Math.max(1,v.clientWidth))));
-   swipeDirectionLocked=false;
-   swipeHighlightApplied=false;
+   swipeStartScrollLeft=v.scrollLeft;
    clearTimeout(pageScrollReleaseTimer);
- };
- const onMove=e=>{
-   if(!fingerDownForPageSwipe||!e.touches||e.touches.length!==1||pageScrollFromTab)return;
-   const touch=e.touches[0];
-   const dx=touch.clientX-swipeStartX;
-   const dy=touch.clientY-swipeStartY;
-   if(!swipeDirectionLocked){
-     if(Math.abs(dx)<8&&Math.abs(dy)<8)return;
-     if(Math.abs(dy)>Math.abs(dx)*1.15)return;
-     swipeDirectionLocked=true;
-   }
-   if(Math.abs(dx)<32||swipeHighlightApplied)return;
-   const direction=dx<0?1:-1;
-   const targetIndex=Math.max(0,Math.min(PAGE_ORDER.length-1,swipeStartPageIndex+direction));
-   if(targetIndex!==swipeStartPageIndex){
-     const name=PAGE_ORDER[targetIndex];
-     currentActivePage=name;
-     updateTabHighlight(name);
-     swipeHighlightApplied=true;
-   }
  };
  const onEnd=()=>{
    if(!fingerDownForPageSwipe)return;
    fingerDownForPageSwipe=false;
-   scheduleSwipeCommit(320);
+   /* Un tap ou un swipe refusé ne doit jamais changer l'onglet actif. */
+   if(Math.abs(v.scrollLeft-swipeStartScrollLeft)>2)scheduleSwipeCommit(480);
  };
  const onScrollEnd=()=>{
    if(pageScrollFromTab){finishTabScroll();return;}
@@ -2175,7 +2141,6 @@ function initSwipePageNavigation(){
  v.addEventListener('scroll',onScroll,{passive:true});
  if('onscrollend' in v)v.addEventListener('scrollend',onScrollEnd,{passive:true});
  document.addEventListener('touchstart',onStart,{passive:true,capture:true});
- document.addEventListener('touchmove',onMove,{passive:true,capture:true});
  document.addEventListener('touchend',onEnd,{passive:true,capture:true});
  document.addEventListener('touchcancel',onEnd,{passive:true,capture:true});
  window.addEventListener('resize',()=>{
@@ -2184,12 +2149,11 @@ function initSwipePageNavigation(){
    fingerDownForPageSwipe=false;
    const index=Math.max(0,Math.min(PAGE_ORDER.length-1,Math.round(v.scrollLeft/Math.max(1,v.clientWidth))));
    const name=PAGE_ORDER[index];
-   currentActivePage=name;
-   updateTabHighlight(name);
-   document.querySelectorAll('.panel').forEach(panel=>panel.classList.toggle('active',panel.id==='panel-'+name));
+   activatePage(name);
    applyPageOffset(false);
  });
 }
+
 /* Compteurs fluides : l'animation ne modifie que l'affichage, jamais les données stockées. */
 const currencyAnimations = new WeakMap();
 function animateCurrencyValue(element, target) {
