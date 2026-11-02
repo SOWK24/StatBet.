@@ -2076,52 +2076,57 @@ function haptique(niveau = 'leger') {
   try { navigator.vibrate(motifs[niveau] || motifs.leger); } catch (e) {}
 }
 
-const PAGE_ORDER=['dashboard','history','settings'];let currentActivePage='dashboard';function applyPageOffset(animate=false){const v=document.getElementById('pages-viewport');if(!v)return;const x=PAGE_ORDER.indexOf(currentActivePage)*v.clientWidth;if(animate)v.scrollTo({left:x,behavior:'smooth'});else v.scrollLeft=x}let pageScrollFromTab=false;let pageScrollReleaseTimer=0;function updateTabHighlight(name){document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===name))}function activatePage(name){currentActivePage=name;updateTabHighlight(name);document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+name));/* Ne jamais bloquer le rendu de la navigation avec la génération lourde des pages. */requestAnimationFrame(()=>{if(currentActivePage!==name)return;requestAnimationFrame(()=>{if(currentActivePage!==name)return;if(name==='history')renderHistory();if(name==='settings')refreshSettingsUI()})})}function switchTab(name){if(!PAGE_ORDER.includes(name))return;pageScrollFromTab=true;clearTimeout(pageScrollReleaseTimer);activatePage(name);haptique('leger');applyPageOffset(true);pageScrollReleaseTimer=setTimeout(()=>{pageScrollFromTab=false;const v=document.getElementById('pages-viewport');if(v){const i=Math.max(0,Math.min(2,Math.round(v.scrollLeft/Math.max(1,v.clientWidth))));activatePage(PAGE_ORDER[i])}},750)}function initSwipePageNavigation(){
+const PAGE_ORDER=['dashboard','history','settings'];let currentActivePage='dashboard';function applyPageOffset(animate=false){const v=document.getElementById('pages-viewport');if(!v)return;const x=PAGE_ORDER.indexOf(currentActivePage)*v.clientWidth;if(animate)v.scrollTo({left:x,behavior:'smooth'});else v.scrollLeft=x}let pageScrollFromTab=false;let pageScrollReleaseTimer=0;function updateTabHighlight(name){document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===name))}function activatePage(name){currentActivePage=name;updateTabHighlight(name);document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+name));/* Ne jamais bloquer le rendu de la navigation avec la génération lourde des pages. */requestAnimationFrame(()=>{if(currentActivePage!==name)return;requestAnimationFrame(()=>{if(currentActivePage!==name)return;if(name==='history')renderHistory();if(name==='settings')refreshSettingsUI()})})}function commitVisiblePage(){
+ const v=document.getElementById('pages-viewport');
+ if(!v)return;
+ const index=Math.max(0,Math.min(PAGE_ORDER.length-1,Math.round(v.scrollLeft/Math.max(1,v.clientWidth))));
+ const name=PAGE_ORDER[index];
+ if(name!==currentActivePage)activatePage(name);
+}
+function schedulePageCommit(delay=220){
+ clearTimeout(pageScrollReleaseTimer);
+ pageScrollReleaseTimer=setTimeout(()=>{
+   pageScrollFromTab=false;
+   commitVisiblePage();
+ },delay);
+}
+function switchTab(name){
+ if(!PAGE_ORDER.includes(name))return;
+ clearTimeout(pageScrollReleaseTimer);
+ pageScrollFromTab=true;
+ activatePage(name);
+ haptique('leger');
+ applyPageOffset(true);
+ /* Le délai est relancé à chaque mouvement : pas de validation à 750 ms fixe. */
+ schedulePageCommit(220);
+}
+function initSwipePageNavigation(){
  const v=document.getElementById('pages-viewport');
  if(!v||v.dataset.swipeReady==='true')return;
  v.dataset.swipeReady='true';
  applyPageOffset(false);
- const clamp=i=>Math.max(0,Math.min(PAGE_ORDER.length-1,i));
- const width=()=>Math.max(1,v.clientWidth);
  let fingerDown=false;
- let settleTimer=0;
- let lastScrollLeft=v.scrollLeft;
- const commitPage=()=>{
-   clearTimeout(settleTimer);
-   if(pageScrollFromTab)return;
-   const index=clamp(Math.round(v.scrollLeft/width()));
-   const name=PAGE_ORDER[index];
-   /* Ne réapplique pas l'état si la page active n'a pas réellement changé. */
-   if(name!==currentActivePage)activatePage(name);
- };
- const scheduleFallback=()=>{
-   clearTimeout(settleTimer);
-   if(fingerDown||pageScrollFromTab)return;
-   /* Long délai de secours : laisse finir toute l'inertie et le snap iOS. */
-   settleTimer=setTimeout(commitPage,850);
- };
  const onScroll=()=>{
-   lastScrollLeft=v.scrollLeft;
-   /* Aucun changement d'onglet pendant le scroll. Le scrollend natif est prioritaire. */
-   scheduleFallback();
+   /* La sélection visuelle reste stable pendant le geste et l'inertie iOS. */
+   if(fingerDown)return;
+   schedulePageCommit(220);
  };
  const onStart=e=>{
    if(!e.touches||e.touches.length!==1)return;
    fingerDown=true;
-   clearTimeout(settleTimer);
+   clearTimeout(pageScrollReleaseTimer);
  };
  const onEnd=()=>{
    fingerDown=false;
-   scheduleFallback();
+   schedulePageCommit(220);
  };
  v.addEventListener('scroll',onScroll,{passive:true});
- if('onscrollend' in v)v.addEventListener('scrollend',commitPage,{passive:true});
  document.addEventListener('touchstart',onStart,{passive:true,capture:true});
  document.addEventListener('touchend',onEnd,{passive:true,capture:true});
  document.addEventListener('touchcancel',onEnd,{passive:true,capture:true});
  window.addEventListener('resize',()=>{
-   clearTimeout(settleTimer);
-   const index=clamp(Math.round(v.scrollLeft/width()));
+   clearTimeout(pageScrollReleaseTimer);
+   const index=Math.max(0,Math.min(PAGE_ORDER.length-1,Math.round(v.scrollLeft/Math.max(1,v.clientWidth))));
    applyPageOffset(false);
    const name=PAGE_ORDER[index];
    if(name!==currentActivePage)activatePage(name);
