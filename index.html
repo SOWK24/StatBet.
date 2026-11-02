@@ -1302,7 +1302,7 @@ body.pauly-startup-ready #app{visibility:visible!important}
 }
 </style>
 <style id="pauly-auth-styles">
-body.pauly-auth-gated #app{visibility:hidden!important;pointer-events:none!important}
+body.pauly-auth-gated.pauly-startup-ready #app,body.pauly-auth-gated #app{visibility:hidden!important;pointer-events:none!important}
 #pauly-auth-screen{position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:28px 22px calc(28px + env(safe-area-inset-bottom));background:#080A08;color:#F7F8F4;overflow:auto;font-family:Archivo,sans-serif}
 .pauth-card{width:100%;max-width:390px;margin:auto;text-align:center}
 .pauth-logo{display:block;width:76px;height:76px;object-fit:contain;margin:0 auto 13px}
@@ -1970,8 +1970,6 @@ const PAULYBET_SUPABASE = {
   url: 'https://dzyolkssdkqubbipekyb.supabase.co',
   key: 'sb_publishable_IOGlya4rUiERviuMGPNoeA_NPmH89np'
 };
-const STORAGE_KEY = 'statbet_bets_v3';
-const SEEDED_KEY = 'statbet_seeded_v4';
 const LEGACY_CLAIM_KEY = 'paulybet_legacy_claimed_v1';
 const USER_STORAGE_PREFIX = STORAGE_KEY + '_user_';
 let supaClient = null;
