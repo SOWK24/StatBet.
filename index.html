@@ -2087,6 +2087,7 @@ const PAGE_ORDER=['dashboard','history','settings'];let currentActivePage='dashb
  let settleTimer=0;
  const finishSwipe=()=>{
    clearTimeout(settleTimer);
+   if(pageScrollFromTab)return;
    const settled=clamp(Math.round(v.scrollLeft/width()));
    activatePage(PAGE_ORDER[settled]);
  };
