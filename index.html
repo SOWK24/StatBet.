@@ -1193,6 +1193,16 @@ body::-webkit-scrollbar,
   100% { opacity:0; visibility:hidden; pointer-events:none; }
 }
 </style>
+
+<style id="polybet-bottom-nav-final">
+/* Barre de navigation au niveau du document, hors du conteneur qui masque les débordements iOS. */
+#tabbar{position:fixed!important;display:flex!important;left:50%!important;right:auto!important;top:auto!important;bottom:0!important;transform:translateX(-50%)!important;width:min(100%,480px)!important;height:auto!important;min-height:68px!important;max-height:none!important;visibility:visible!important;opacity:1!important;z-index:2147483000!important;flex:none!important;margin:0!important;padding:8px 10px calc(8px + env(safe-area-inset-bottom))!important;background:#111611!important;border-top:1px solid rgba(166,255,59,.22)!important;box-shadow:0 -8px 24px rgba(0,0,0,.35)!important}
+#tabbar .tab-btn{display:flex!important;visibility:visible!important;opacity:1!important;min-height:52px!important;flex:1 1 0!important;color:#aab3a5!important}
+#tabbar .tab-btn.active{color:#a6ff3b!important;background:rgba(166,255,59,.10)!important}
+#tabbar .tab-btn span{display:block!important;color:inherit!important;font-size:11px!important}
+#tabbar .tab-btn svg{display:block!important;width:22px!important;height:22px!important}
+#pages-viewport{max-height:calc(100% - 78px - env(safe-area-inset-bottom))!important}
+</style>
 </head>
 <body style="margin:0;padding:0;min-height:100vh;background:#000!important;color-scheme:dark">
 <div id="pauly-splash" aria-hidden="true"><img src="./icon.png?v=paulybet-2" alt=""></div>
@@ -1324,12 +1334,14 @@ body::-webkit-scrollbar,
     </div>
   </div>
   </div>
+
+</div>
+
 <nav id="tabbar" aria-label="Navigation principale">
     <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7"/><path d="M5 9v11h14V9M9 20v-6h6v6"/></svg><span>Accueil</span></button>
     <button class="tab-btn" data-tab="history" onclick="switchTab('history')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>Historique</span></button>
     <button class="tab-btn" data-tab="settings" onclick="switchTab('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19 13a7 7 0 0 0 0-2l2-1.5-2-3.5-2.3.8a7 7 0 0 0-1.7-1L14.5 3h-4L10 5.8a7 7 0 0 0-1.7 1L6 6 4 9.5 6 11a7 7 0 0 0 0 2l-2 1.5L6 18l2.3-.8a7 7 0 0 0 1.7 1l.5 2.8h4l.5-2.8a7 7 0 0 0 1.7-1L19 18l2-3.5z"/></svg><span>Paramètres</span></button>
   </nav>
-</div>
 
 <div id="edit-overlay" onclick="handleEditOverlayClick(event)">
   <div id="edit-sheet">
