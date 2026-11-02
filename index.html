@@ -1937,6 +1937,65 @@ function disconnectSync() {
 
 let bets = loadBets();
 
+/* Préférences locales Polybet : indépendantes des paris et de Supabase. */
+const APP_SETTINGS_KEY = 'paulybet_app_settings_v1';
+const DEFAULT_APP_SETTINGS = { color:'green', appearance:'dark', haptics:true, animations:true, confirmDelete:true };
+function getAppSettings() {
+  try { return { ...DEFAULT_APP_SETTINGS, ...(JSON.parse(localStorage.getItem(APP_SETTINGS_KEY) || '{}') || {}) }; }
+  catch (_) { return { ...DEFAULT_APP_SETTINGS }; }
+}
+function saveAppSettings(settings) {
+  try { localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(settings)); } catch (_) {}
+}
+function applyAppSettings() {
+  const settings = getAppSettings();
+  const root = document.documentElement;
+  root.dataset.appColor = settings.color;
+  root.dataset.appAppearance = settings.appearance;
+  document.body.classList.toggle('reduce-animations', !settings.animations);
+  const metaTheme = document.querySelector('meta[name="theme-color"]');
+  if (metaTheme) metaTheme.content = settings.appearance === 'light' ? '#F2F4F1' : '#000000';
+}
+function setAppColor(color) {
+  if (!['green','red','blue'].includes(color)) return;
+  const settings = getAppSettings(); settings.color = color; saveAppSettings(settings); applyAppSettings(); refreshSettingsUI();
+  haptique('leger');
+}
+function setAppAppearance(appearance) {
+  if (!['dark','light','auto'].includes(appearance)) return;
+  const settings = getAppSettings(); settings.appearance = appearance; saveAppSettings(settings); applyAppSettings(); refreshSettingsUI();
+  haptique('leger');
+}
+function setAppSetting(key, value) {
+  if (!['haptics','animations','confirmDelete'].includes(key)) return;
+  const settings = getAppSettings(); settings[key] = !!value; saveAppSettings(settings); applyAppSettings();
+}
+function refreshSettingsUI() {
+  const settings = getAppSettings();
+  document.querySelectorAll('.color-choice').forEach(button => button.classList.toggle('selected', button.dataset.color === settings.color));
+  document.querySelectorAll('.settings-segment button').forEach(button => button.classList.toggle('selected', button.dataset.appearance === settings.appearance));
+  const haptics = document.getElementById('setting-haptics');
+  const animations = document.getElementById('setting-animations');
+  const confirmDelete = document.getElementById('setting-delete');
+  if (haptics) haptics.checked = settings.haptics;
+  if (animations) animations.checked = settings.animations;
+  if (confirmDelete) confirmDelete.checked = settings.confirmDelete;
+}
+function exportBetsBackup() {
+  try {
+    const payload = { app:'Polybet', formatVersion:1, exportedAt:new Date().toISOString(), bets:Array.isArray(bets) ? bets : [] };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type:'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'polybet-sauvegarde-' + new Date().toISOString().slice(0,10) + '.json';
+    document.body.appendChild(link); link.click(); link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+    if (typeof showToast === 'function') showToast('Sauvegarde téléchargée', 'win');
+  } catch (_) { if (typeof showToast === 'function') showToast('Impossible de créer la sauvegarde', 'loss'); }
+}
+applyAppSettings();
+
 /* ─── Navigation ────────────────────────────────────────────────────── */
 /* Retours haptiques centralisés : discrets, facultatifs et sans effet sur les navigateurs incompatibles. */
 function haptique(niveau = 'leger') {
@@ -3159,6 +3218,10 @@ document.addEventListener('pointerdown', event => {
 function deleteBet(id) {
   const bet = bets.find(b => b.id === id);
   if (!bet) return;
+  if (getAppSettings().confirmDelete && !window.confirm('Supprimer définitivement ce pari ?')) {
+    pendingBetDeleteScrollTop = null;
+    return;
+  }
 
   const savedHistoryScrollTop = pendingBetDeleteScrollTop;
   pendingBetDeleteScrollTop = null;
@@ -3341,7 +3404,7 @@ inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.
     const now = Date.now();
     if (now - lastBuzz < 45) return;
     lastBuzz = now;
-    try { if (typeof navigator.vibrate === 'function') navigator.vibrate(12); } catch (_) {}
+    try { if (getAppSettings().haptics && typeof navigator.vibrate === 'function') navigator.vibrate(12); } catch (_) {}
   }, { passive: true });
 })();
 
