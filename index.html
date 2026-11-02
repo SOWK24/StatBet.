@@ -2083,61 +2083,39 @@ const PAGE_ORDER=['dashboard','history','settings'];let currentActivePage='dashb
  applyPageOffset(false);
  const clamp=i=>Math.max(0,Math.min(PAGE_ORDER.length-1,i));
  const width=()=>Math.max(1,v.clientWidth);
- let scrollOrigin=clamp(PAGE_ORDER.indexOf(currentActivePage));
  let gestureActive=false;
  let settleTimer=0;
- const setHighlight=i=>{
-   const name=PAGE_ORDER[clamp(i)];
-   if(!name)return;
-   if(currentActivePage===name)return;
-   currentActivePage=name;
-   updateTabHighlight(name);
- };
- const syncFromScroll=()=>{
-   if(pageScrollFromTab)return;
-   const progress=v.scrollLeft/width()-scrollOrigin;
-   const highlighted=clamp(PAGE_ORDER.indexOf(currentActivePage));
-   let next=highlighted;
-   /* Un seul pilote : le scroll réel. Seuil à 50 %, retour avec marge pour éviter le clignotement. */
-   if(progress>=0.50)next=clamp(scrollOrigin+1);
-   else if(progress<=-0.50)next=clamp(scrollOrigin-1);
-   else if(progress<0.42&&progress> -0.42)next=scrollOrigin;
-   setHighlight(next);
+ const finishSwipe=()=>{
    clearTimeout(settleTimer);
-   if(!gestureActive){
-     settleTimer=setTimeout(()=>{
-       const settled=clamp(Math.round(v.scrollLeft/width()));
-       activatePage(PAGE_ORDER[settled]);
-       scrollOrigin=settled;
-     },180);
-   }
+   const settled=clamp(Math.round(v.scrollLeft/width()));
+   activatePage(PAGE_ORDER[settled]);
+ };
+ const scheduleFinish=()=>{
+   if(gestureActive||pageScrollFromTab)return;
+   clearTimeout(settleTimer);
+   /* Attend la fin du défilement inertiel iOS avant de changer l'onglet actif. */
+   settleTimer=setTimeout(finishSwipe,260);
  };
  const onStart=e=>{
    if(!e.touches||e.touches.length!==1)return;
    clearTimeout(settleTimer);
    gestureActive=true;
-   scrollOrigin=clamp(Math.round(v.scrollLeft/width()));
  };
  const onEnd=()=>{
    gestureActive=false;
-   clearTimeout(settleTimer);
-   settleTimer=setTimeout(()=>{
-     const settled=clamp(Math.round(v.scrollLeft/width()));
-     activatePage(PAGE_ORDER[settled]);
-     scrollOrigin=settled;
-   },220);
+   scheduleFinish();
  };
- v.addEventListener('scroll',syncFromScroll,{passive:true});
- v.addEventListener('scrollend',syncFromScroll,{passive:true});
- /* Aucun setHighlight sur touchmove : il ne doit jamais concurrencer le scroll natif iOS. */
+ /* Pendant le geste, le scroll ne touche jamais à la couleur : il ne fait que
+    repousser la validation jusqu'à la fin du mouvement et de l'inertie. */
+ v.addEventListener('scroll',scheduleFinish,{passive:true});
  document.addEventListener('touchstart',onStart,{passive:true,capture:true});
  document.addEventListener('touchend',onEnd,{passive:true,capture:true});
  document.addEventListener('touchcancel',onEnd,{passive:true,capture:true});
  window.addEventListener('resize',()=>{
    clearTimeout(settleTimer);
-   scrollOrigin=clamp(Math.round(v.scrollLeft/width()));
+   const settled=clamp(Math.round(v.scrollLeft/width()));
    applyPageOffset(false);
-   setHighlight(scrollOrigin);
+   activatePage(PAGE_ORDER[settled]);
  });
 }
 
