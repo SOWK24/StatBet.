@@ -2076,16 +2076,14 @@ function haptique(niveau = 'leger') {
   try { navigator.vibrate(motifs[niveau] || motifs.leger); } catch (e) {}
 }
 
-const PAGE_ORDER=['dashboard','history','settings'];let currentActivePage='dashboard';function applyPageOffset(animate=false){const v=document.getElementById('pages-viewport');if(!v)return;const x=PAGE_ORDER.indexOf(currentActivePage)*v.clientWidth;if(animate)v.scrollTo({left:x,behavior:'smooth'});else v.scrollLeft=x}let pageScrollFromTab=false;let pageScrollReleaseTimer=0;function updateTabHighlight(name){document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===name))}function activatePage(name){currentActivePage=name;updateTabHighlight(name);document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+name));/* Ne jamais bloquer le rendu de la navigation avec la génération lourde des pages. */requestAnimationFrame(()=>{if(currentActivePage!==name)return;requestAnimationFrame(()=>{if(currentActivePage!==name)return;if(name==='history')renderHistory();if(name==='settings')refreshSettingsUI()})})}function updateSwipeHighlightFromScroll(v){
+const PAGE_ORDER=['dashboard','history','settings'];let currentActivePage='dashboard';function applyPageOffset(animate=false){const v=document.getElementById('pages-viewport');if(!v)return;const x=PAGE_ORDER.indexOf(currentActivePage)*v.clientWidth;if(animate)v.scrollTo({left:x,behavior:'smooth'});else v.scrollLeft=x}let pageScrollFromTab=false;let pageScrollReleaseTimer=0;function updateTabHighlight(name){document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===name))}function activatePage(name){currentActivePage=name;updateTabHighlight(name);document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+name));/* Ne jamais bloquer le rendu de la navigation avec la génération lourde des pages. */requestAnimationFrame(()=>{if(currentActivePage!==name)return;requestAnimationFrame(()=>{if(currentActivePage!==name)return;if(name==='history')renderHistory();if(name==='settings')refreshSettingsUI()})})}
+function updateSwipeHighlightFromScroll(v){
  const position=v.scrollLeft/Math.max(1,v.clientWidth);
- const activeIndex=Math.max(0,PAGE_ORDER.indexOf(currentActivePage));
- let nextIndex=activeIndex;
- /* Hystérésis : 58 % pour avancer, 42 % pour revenir. */
- if(position>=activeIndex+0.58)nextIndex=Math.min(PAGE_ORDER.length-1,Math.round(position));
- else if(position<=activeIndex-0.58)nextIndex=Math.max(0,Math.round(position));
- if(nextIndex!==activeIndex){
-   currentActivePage=PAGE_ORDER[nextIndex];
-   updateTabHighlight(currentActivePage);
+ const index=Math.max(0,Math.min(PAGE_ORDER.length-1,Math.round(position)));
+ const name=PAGE_ORDER[index];
+ if(name!==currentActivePage){
+   currentActivePage=name;
+   updateTabHighlight(name);
  }
 }
 function commitVisiblePage(){
@@ -2094,7 +2092,6 @@ function commitVisiblePage(){
  const index=Math.max(0,Math.min(PAGE_ORDER.length-1,Math.round(v.scrollLeft/Math.max(1,v.clientWidth))));
  const name=PAGE_ORDER[index];
  const activePanel=document.getElementById('panel-'+name);
- /* Le surlignage peut avoir changé pendant le geste : on finalise aussi le panneau. */
  if(name!==currentActivePage||!activePanel?.classList.contains('active'))activatePage(name);
 }
 function scheduleSwipeCommit(delay=320){
@@ -2118,26 +2115,51 @@ function switchTab(name){
  activatePage(name);
  haptique('leger');
  applyPageOffset(true);
- /* L'appui sur un onglet garde son activation immédiate. */
  pageScrollReleaseTimer=setTimeout(finishTabScroll,1400);
 }
 let fingerDownForPageSwipe=false;
+let swipeStartX=0,swipeStartY=0,swipeStartPageIndex=0,swipeDirectionLocked=false,swipeHighlightApplied=false;
 function initSwipePageNavigation(){
  const v=document.getElementById('pages-viewport');
  if(!v||v.dataset.swipeReady==='true')return;
  v.dataset.swipeReady='true';
  applyPageOffset(false);
  const onScroll=()=>{
-   /* La couleur suit le franchissement du milieu de page, sans attendre l'inertie. */
    if(pageScrollFromTab)return;
-   updateSwipeHighlightFromScroll(v);
+   /* Pendant le doigt, touchmove pilote directement la barre ; le scroll prend le relais après. */
+   if(!fingerDownForPageSwipe)updateSwipeHighlightFromScroll(v);
    if(!fingerDownForPageSwipe)scheduleSwipeCommit(320);
  };
  const onStart=e=>{
-   if(!v.contains(e.target))return;
-   if(!e.touches||e.touches.length!==1)return;
+   if(!v.contains(e.target)||!e.touches||e.touches.length!==1)return;
    fingerDownForPageSwipe=true;
+   const touch=e.touches[0];
+   swipeStartX=touch.clientX;
+   swipeStartY=touch.clientY;
+   swipeStartPageIndex=Math.max(0,Math.min(PAGE_ORDER.length-1,Math.round(v.scrollLeft/Math.max(1,v.clientWidth))));
+   swipeDirectionLocked=false;
+   swipeHighlightApplied=false;
    clearTimeout(pageScrollReleaseTimer);
+ };
+ const onMove=e=>{
+   if(!fingerDownForPageSwipe||!e.touches||e.touches.length!==1||pageScrollFromTab)return;
+   const touch=e.touches[0];
+   const dx=touch.clientX-swipeStartX;
+   const dy=touch.clientY-swipeStartY;
+   if(!swipeDirectionLocked){
+     if(Math.abs(dx)<8&&Math.abs(dy)<8)return;
+     if(Math.abs(dy)>Math.abs(dx)*1.15)return;
+     swipeDirectionLocked=true;
+   }
+   if(Math.abs(dx)<32||swipeHighlightApplied)return;
+   const direction=dx<0?1:-1;
+   const targetIndex=Math.max(0,Math.min(PAGE_ORDER.length-1,swipeStartPageIndex+direction));
+   if(targetIndex!==swipeStartPageIndex){
+     const name=PAGE_ORDER[targetIndex];
+     currentActivePage=name;
+     updateTabHighlight(name);
+     swipeHighlightApplied=true;
+   }
  };
  const onEnd=()=>{
    if(!fingerDownForPageSwipe)return;
@@ -2151,6 +2173,7 @@ function initSwipePageNavigation(){
  v.addEventListener('scroll',onScroll,{passive:true});
  if('onscrollend' in v)v.addEventListener('scrollend',onScrollEnd,{passive:true});
  document.addEventListener('touchstart',onStart,{passive:true,capture:true});
+ document.addEventListener('touchmove',onMove,{passive:true,capture:true});
  document.addEventListener('touchend',onEnd,{passive:true,capture:true});
  document.addEventListener('touchcancel',onEnd,{passive:true,capture:true});
  window.addEventListener('resize',()=>{
@@ -2165,7 +2188,6 @@ function initSwipePageNavigation(){
    applyPageOffset(false);
  });
 }
-
 /* Compteurs fluides : l'animation ne modifie que l'affichage, jamais les données stockées. */
 const currencyAnimations = new WeakMap();
 function animateCurrencyValue(element, target) {
