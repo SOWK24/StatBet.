@@ -2,7 +2,16 @@
 <html lang="fr" style="background-color:#000;color-scheme:dark">
 <head>
 <meta charset="UTF-8">
+<!-- Couleurs natives définies avant toute feuille de style ou ressource externe. -->
+<meta name="theme-color" content="#000000">
 <meta name="color-scheme" content="dark">
+<meta name="supported-color-schemes" content="dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<!-- Écran de lancement iOS : image noire plein écran, sans media query fragile. -->
+<link rel="apple-touch-startup-image" href="./startup-iphone17.png">
+<link rel="preload" as="image" href="./startup-iphone17.png" fetchpriority="high">
+<link rel="preload" as="image" href="./icon.png?v=paulybet-2" fetchpriority="high">
 <style id="pauly-splash-critical">
 /* CSS critique chargé dans le head : le splash doit couvrir l'app dès le premier paint. */
 #pauly-splash {
@@ -43,10 +52,7 @@ body.pauly-ready #app .record-manual-btn { visibility:visible !important; }
 
 </style>
 <link rel="apple-touch-icon" sizes="180x180" href="./icon.png?v=paulybet-2">
-<link rel="apple-touch-startup-image" href="./startup-iphone17.png" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#000000">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- Les métadonnées de lancement sont volontairement regroupées en tête du document. -->
 <link rel="icon" type="image/png" href="./icon.png?v=paulybet-2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
