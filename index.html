@@ -2093,6 +2093,8 @@ function commitVisiblePage(){
  const name=PAGE_ORDER[index];
  const activePanel=document.getElementById('panel-'+name);
  if(name!==currentActivePage||!activePanel?.classList.contains('active'))activatePage(name);
+ /* Une fois la position finale connue, la barre peut reprendre le suivi normal. */
+ swipeHighlightApplied=false;
 }
 function scheduleSwipeCommit(delay=320){
  clearTimeout(pageScrollReleaseTimer);
@@ -2126,8 +2128,8 @@ function initSwipePageNavigation(){
  applyPageOffset(false);
  const onScroll=()=>{
    if(pageScrollFromTab)return;
-   /* Pendant le doigt, touchmove pilote directement la barre ; le scroll prend le relais après. */
-   if(!fingerDownForPageSwipe)updateSwipeHighlightFromScroll(v);
+   /* Après le basculement tactile, ne pas laisser une position intermédiaire d'inertie faire clignoter la barre en arrière. */
+   if(!fingerDownForPageSwipe&&!swipeHighlightApplied)updateSwipeHighlightFromScroll(v);
    if(!fingerDownForPageSwipe)scheduleSwipeCommit(320);
  };
  const onStart=e=>{
