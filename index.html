@@ -1173,8 +1173,10 @@ body::-webkit-scrollbar,
     if (app) app.style.setProperty('visibility', 'visible', 'important');
     if (splash) splash.remove();
   };
-  const splash = document.getElementById('pauly-splash');
-  if (splash) splash.addEventListener('animationend', reveal, { once: true });
+  // Ne pas écouter animationend sur le conteneur : l'événement de fin
+  // du fondu du logo (enfant img, ~0,87 s) remonte aussi au parent
+  // et coupait prématurément l'écran de démarrage.
+  // Le timer indépendant garantit au moins 3,8 s d'affichage du splash.
   window.setTimeout(reveal, 4300);
 })();
 </script>
