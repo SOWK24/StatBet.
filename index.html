@@ -38,9 +38,16 @@
 
 /* Fond noir immédiat : évite le flash blanc du WebView iOS. */
 :root { color-scheme:dark; background-color:#000 !important; }
-html, body { background-color:#000 !important; color-scheme:dark; }
-body { background:#000 !important; }
-body { min-height:100vh; }
+html, body {
+  margin:0 !important; padding:0 !important; width:100%;
+  min-height:100%; background:#000 !important; color-scheme:dark;
+}
+html { min-height:100%; }
+body {
+  min-height:100vh; min-height:100dvh;
+  background:#000 !important; overflow-x:hidden;
+}
+#app { background:#080A08; }
 #app { visibility:hidden !important; }
 
 /* Aucun contrôle de la carte « Plus gros gain » ne doit apparaître
@@ -1179,8 +1186,8 @@ body::-webkit-scrollbar,
 </style>
 
 </head>
-<body style="background-color:#000;color-scheme:dark">
-<div id="pauly-splash" aria-hidden="true"><img src="./icon.png?v=paulybet-2" alt=""></div>
+<body style="margin:0;padding:0;min-height:100vh;background:#000!important;color-scheme:dark">
+<div id="pauly-splash" aria-hidden="true" style="position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;background:#000;opacity:1;visibility:visible;pointer-events:auto"><img src="./icon.png?v=paulybet-2" alt=""></div>
 <script>
 /* Révélation explicite après l'intro : plus fiable que visibility animée sur iOS. */
 (function revealPaulyAfterSplash() {
