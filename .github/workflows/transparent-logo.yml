@@ -5,6 +5,7 @@ on:
     paths:
       - 'index.html'
       - '.github/workflows/transparent-logo.yml'
+      - 'icon.png'
   workflow_dispatch:
 permissions:
   contents: read
@@ -44,8 +45,10 @@ jobs:
           out.save("icon-transparent.png", optimize=True)
           check = Image.open("icon-transparent.png")
           assert check.mode == "RGBA"
-          assert check.getpixel((0, 0))[3] == 0, "Le fond du coin supérieur gauche n'est pas transparent"
-          print("PNG transparent créé :", check.size, check.mode)
+          alpha = check.getchannel("A")
+          assert alpha.getextrema()[0] == 0, "Aucun pixel totalement transparent détecté"
+          assert alpha.getextrema()[1] == 255, "Le logo ne contient aucun pixel opaque"
+          print("PNG transparent créé :", check.size, check.mode, "alpha:", alpha.getextrema())
           PY
       - name: Configure Pages
         uses: actions/configure-pages@v5
