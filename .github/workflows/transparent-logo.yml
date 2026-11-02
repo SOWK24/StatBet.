@@ -41,8 +41,8 @@ jobs:
               else:
                   pixels.append((min(255, round(r * 255 / a)), min(255, round(g * 255 / a)), min(255, round(b * 255 / a)), a))
           out.putdata(pixels)
-          out.save("icon-transparent.png", optimize=True)
-          check = Image.open("icon-transparent.png")
+          out.save("icon.png", optimize=True)
+          check = Image.open("icon.png")
           assert check.mode == "RGBA"
           assert check.getpixel((0, 0))[3] == 0, "Le fond du coin supérieur gauche n'est pas transparent"
           print("PNG transparent créé :", check.size, check.mode)
