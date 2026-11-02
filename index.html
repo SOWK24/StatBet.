@@ -50,7 +50,7 @@ body {
 <meta name="apple-mobile-web-app-title" content="Pauly’Bet">
 <meta name="application-name" content="Pauly’Bet">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Barlow+Condensed:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js">
 /* Retour haptique sur les éléments interactifs, sans bloquer leur action */
 (function initGlobalTapFeedback() {
@@ -1234,6 +1234,26 @@ body::-webkit-scrollbar,
 .app-brand-icon { display:block; width:36px; height:36px; flex:0 0 36px; object-fit:contain; border-radius:10px; }
 .logo-row .app-brand .app-logo { margin:0; padding:0; font-family:'Archivo',sans-serif; font-size:27px; line-height:1; font-weight:900; letter-spacing:1.2px; white-space:nowrap; }
 </style>
+
+<style id="polybet-numeric-font">
+/* Archivo reste la police de tous les textes ; Barlow Condensed est réservé aux chiffres. */
+.scoreboard-value,
+.stat-value,
+.year-num,
+.pill-value,
+.bet-bilan,
+.bet-amounts strong,
+.motion-amount,
+.brand-result-amount,
+#pauly-keyboard .pk-grid .pk-key-wrap:not(.pk-enter-wrap) > button:not(.pk-action):not(.pk-delete),
+input[inputmode="decimal"],
+input[inputmode="numeric"],
+input[type="number"] {
+  font-family:'Barlow Condensed',sans-serif!important;
+  font-variant-numeric:tabular-nums;
+}
+</style>
+
 </head>
 <body style="margin:0;padding:0;min-height:100vh;background:#000!important;color-scheme:dark">
 <div id="pauly-splash" aria-hidden="true"><img src="./icon.png?v=paulybet-2" alt=""></div>
@@ -2827,7 +2847,7 @@ function drawChart(canvas, data) {
     canvas.height = 40;
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = '#787878';
-    ctx.font = '11px Archivo';
+    ctx.font = '11px ' + 'Barlow Condensed';
     ctx.textAlign = 'center';
     ctx.fillText('Pas encore assez de données', (wrap.clientWidth - 16) / 2, 24);
     return;
@@ -2877,7 +2897,7 @@ function drawChart(canvas, data) {
   }
   // labels axe Y
   ctx.fillStyle = '#787878';
-  ctx.font = '10px Archivo';
+  ctx.font = '10px ' + 'Barlow Condensed';
   ctx.textAlign = 'right';
   for (let i = 0; i <= gridSteps; i++) {
     const v = yMax - (yRange / gridSteps) * i;
@@ -2938,7 +2958,7 @@ function drawChart(canvas, data) {
       ctx.fill();
       ctx.restore();
     }
-    ctx.fillStyle = '#787878'; ctx.font = '9px Archivo'; ctx.textAlign = 'center';
+    ctx.fillStyle = '#787878'; ctx.font = '9px ' + 'Barlow Condensed'; ctx.textAlign = 'center';
     ctx.fillText(m.label, cx, H - 8);
   };
 
