@@ -8,7 +8,9 @@
 <meta name="supported-color-schemes" content="dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<!-- Écran de lancement iOS : image noire plein écran, sans media query fragile. -->
+<!-- Écran de lancement natif : correspondance exacte avec l’écran de l’iPhone 17 (402 × 874 pt, @3x). -->
+<link rel="apple-touch-startup-image" href="./startup-iphone17.png" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+<!-- Image de secours pour les autres tailles d’écran. -->
 <link rel="apple-touch-startup-image" href="./startup-iphone17.png">
 <link rel="preload" as="image" href="./startup-iphone17.png" fetchpriority="high">
 <link rel="preload" as="image" href="./icon.png?v=paulybet-2" fetchpriority="high">
