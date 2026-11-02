@@ -3108,8 +3108,10 @@ function drawChart(canvas, data) {
     const isPos = m.bilan > 0;
     // Zone interactive strictement limitée au rectangle réellement dessiné en vert.
     const barLeft = cx - barW / 2;
+    // Cible tactile élargie : les barres fines restent faciles à sélectionner sur iPhone.
+    const touchHalfWidth = Math.max(barW / 2, 13);
     bar.hitbox = isPos && progress >= 1
-      ? { left: barLeft, right: barLeft + barW, top, bottom: top + h }
+      ? { left: cx - touchHalfWidth, right: cx + touchHalfWidth, top: Math.max(PAD.top, top - 8), bottom: Math.min(H - PAD.bottom, top + h + 8) }
       : null;
     const color = getComputedStyle(document.documentElement).getPropertyValue('--wina').trim() || '#A6FF3B';
     const x = cx - barW / 2;
@@ -3205,13 +3207,8 @@ function drawChart(canvas, data) {
     const cssY = clientY - rect.top;
     if (cssX < 0 || cssY < 0 || cssX >= rect.width || cssY >= rect.height) return null;
 
-    // Vérifie la couleur du pixel réellement peint : aucune zone rectangulaire invisible n'est cliquable.
-    const px = Math.max(0, Math.min(canvas.width - 1, Math.floor(cssX * canvas.width / rect.width)));
-    const py = Math.max(0, Math.min(canvas.height - 1, Math.floor(cssY * canvas.height / rect.height)));
-    const pixel = ctx.getImageData(px, py, 1, 1).data;
-    const isGreenBarPixel = pixel[3] > 0 && pixel[1] > 190 && pixel[0] > 90 && pixel[0] < 220 && pixel[2] < 110;
-    if (!isGreenBarPixel) return null;
-
+    // La hitbox suit la barre dessinée et reste indépendante de la couleur du thème.
+    // Ne pas tester le pixel : iOS peut renvoyer un pixel anti-aliasé/translucide au toucher.
     const x = cssX * (W / rect.width);
     const y = cssY * (H / rect.height);
     return bars.find(b => {
@@ -3227,7 +3224,8 @@ function drawChart(canvas, data) {
     const bar = findBar(e.clientX, e.clientY);
     if (bar) showTip(bar, e.clientX);
   };
-  // Un déplacement du doigt sert au swipe, jamais à ouvrir une fiche mensuelle.
+  // Le pointerup ouvre directement la fiche sur tactile (iOS ne déclenche pas
+  // toujours un click fiable sur un canvas après un geste ou un scroll).
   canvas.onpointerdown = e => {
     pointerStart = { x: e.clientX, y: e.clientY, id: e.pointerId };
   };
@@ -3235,7 +3233,15 @@ function drawChart(canvas, data) {
     if (!pointerStart || pointerStart.id !== e.pointerId) return;
     const moved = Math.hypot(e.clientX - pointerStart.x, e.clientY - pointerStart.y) > 8;
     pointerStart = null;
-    if (moved) suppressClickUntil = Date.now() + 500;
+    if (moved) {
+      suppressClickUntil = Date.now() + 500;
+      return;
+    }
+    const bar = findBar(e.clientX, e.clientY);
+    if (bar) {
+      showTip(bar, e.clientX);
+      suppressClickUntil = Date.now() + 500;
+    }
   };
   canvas.onpointercancel = () => { pointerStart = null; };
   canvas.setAttribute('aria-label','Graphique interactif : touchez uniquement une barre verte pour afficher les statistiques du mois');
