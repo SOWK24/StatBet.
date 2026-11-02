@@ -478,7 +478,7 @@ body.pk-open #app { top:0 !important; bottom:auto !important; height:calc(100% -
 }
 
 /* ── History ── */
-.history-title { font-family:var(--font-d); font-size:32px; font-weight:800; letter-spacing:2px; margin-bottom:20px; padding-top:4px; }
+.history-title { font-family:var(--font-d); font-size:26px; font-weight:800; letter-spacing:1.5px; margin-bottom:20px; padding-top:4px; }
 
 .year-block { background:var(--surface); border-radius:12px; margin-bottom:12px; overflow:hidden; }
 .year-header {
@@ -1237,7 +1237,7 @@ body::-webkit-scrollbar,
 <style id="polybet-settings-brand">
 .settings-header { display:flex; align-items:center; margin:0 0 20px; }
 .settings-header .app-brand { display:flex; align-items:center; gap:10px; }
-.settings-header .history-title { margin:0; padding:4px 0 0; font-family:var(--font-d); font-size:32px; line-height:1; font-weight:800; letter-spacing:2px; }
+.settings-header .history-title { margin:0; padding:4px 0 0; font-family:var(--font-d); font-size:26px; line-height:1; font-weight:800; letter-spacing:1.5px; }
 </style>
 
 <style id="polybet-numeric-font">
@@ -1284,6 +1284,7 @@ input[type="number"] {
 }
 </style>
 
+<style id="polybet-history-brand">.history-header{display:flex;align-items:center;margin:0 0 20px}.history-header .app-brand{display:flex;align-items:center;gap:10px}.history-header .history-title{margin:0;padding:4px 0 0;font-size:26px;letter-spacing:1.5px;line-height:1}</style>
 </head>
 <body style="margin:0;padding:0;min-height:100vh;background:#000!important;color-scheme:dark">
 <div id="pauly-splash" aria-hidden="true"><img src="./icon.png?v=paulybet-2" alt=""></div>
@@ -1380,7 +1381,7 @@ input[type="number"] {
 
   <div id="panel-history" class="panel">
     <div class="panel-inner">
-      <div class="history-title">HISTORIQUE</div>
+      <div class="history-header"><div class="app-brand"><img class="app-brand-icon" src="./icon.png" alt="" width="39" height="39"><div class="history-title">HISTORIQUE</div></div></div>
       <div id="history-container">
         <div class="empty-state">
           <p>Aucun pari</p>
