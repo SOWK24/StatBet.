@@ -1946,11 +1946,15 @@ async function pullFromCloud(silent) {
         }
       }
     }
+    initialCloudLoadPending = false;
+    if (document.getElementById('panel-history')?.classList.contains('active')) renderHistory();
     setSyncIndicator('ok');
     if (!silent) updateSyncStatusLine('ok', 'Données récupérées depuis le cloud ✓');
     isPulling = false;
     return true;
   } catch (e) {
+    initialCloudLoadPending = false;
+    if (document.getElementById('panel-history')?.classList.contains('active')) renderHistory();
     setSyncIndicator('err');
     if (!silent) updateSyncStatusLine('err', 'Erreur de récupération : ' + (e.message || e));
     isPulling = false;
@@ -2060,6 +2064,8 @@ function disconnectSync() {
 }
 
 let bets = loadBets();
+// Tant que la première récupération cloud n'est pas terminée, ne pas afficher un faux état vide.
+let initialCloudLoadPending = !!getSyncCfg();
 
 /* Préférences locales Polybet : indépendantes des paris et de Supabase. */
 const APP_SETTINGS_KEY = 'paulybet_app_settings_v1';
@@ -3161,6 +3167,10 @@ function renderHistory() {
   renderDashboard();
   const groups = groupByYear(bets);
   if (groups.length === 0) {
+    if (initialCloudLoadPending) {
+      container.innerHTML = '';
+      return;
+    }
     container.innerHTML = `<div class="empty-state"><p>Aucun pari</p><p>Saisis ton premier pari dans Mon Activité.</p></div>`;
     return;
   }
