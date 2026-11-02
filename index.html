@@ -3110,7 +3110,7 @@ function drawChart(canvas, data) {
     const barLeft = cx - barW / 2;
     // Cible tactile élargie : les barres fines restent faciles à sélectionner sur iPhone.
     const touchHalfWidth = Math.max(barW / 2, 13);
-    bar.hitbox = isPos && progress >= 1
+    bar.hitbox = progress >= 1
       ? { left: cx - touchHalfWidth, right: cx + touchHalfWidth, top: Math.max(PAD.top, top - 8), bottom: Math.min(H - PAD.bottom, top + h + 8) }
       : null;
     const color = getComputedStyle(document.documentElement).getPropertyValue('--wina').trim() || '#A6FF3B';
