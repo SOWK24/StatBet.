@@ -1715,9 +1715,10 @@ function calcStats(bets) {
   const totalGains = r2(bets.reduce((s,b) => s + b.gain, 0));
   const bilanNet   = r2(totalGains - totalMises);
   const roi        = totalMises > 0 ? r2(bilanNet / totalMises * 100) : 0;
-  const nbGains    = bets.filter(b => b.gain > b.mise).length;
-  const tauxReussite = bets.length > 0 ? r2(nbGains / bets.length * 100) : 0;
-  return { totalMises, totalGains, bilanNet, roi, nbParis: bets.length, nbGains, tauxReussite };
+  const countedBets = bets.filter(b => b.status !== 'cancelled');
+  const nbGains    = countedBets.filter(b => b.gain > b.mise).length;
+  const tauxReussite = countedBets.length > 0 ? r2(nbGains / countedBets.length * 100) : 0;
+  return { totalMises, totalGains, bilanNet, roi, nbParis: countedBets.length, nbGains, tauxReussite };
 }
 
 function groupByYear(bets) {
@@ -1755,6 +1756,104 @@ function chartData(data) {
     return { key:k, label:m.label, year:Number(k.slice(0,4)), monthIndex:Number(k.slice(5,7))-1, mises:r2(m.mises), gains:r2(m.gains), bilan, nb:m.nb };
   });
 }
+
+/* Paris reconstitués depuis l'historique Winamax et Betclic d'octobre 2026.
+   Les heures Betclic n'étaient pas disponibles : midi sert uniquement de repère visuel. */
+const OCTOBER_2026_RECOVERY_BETS = [
+{ id:'recovery-2026-10-w-6JNI1H0C', mise:10, gain:0, date:'2026-10-02T18:15:37.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6JNI3JBP', mise:1.5, gain:0, date:'2026-10-02T18:17:14.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6JR40ZXS', mise:15, gain:26.46, date:'2026-10-05T06:54:25.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6JRS8AUZ', mise:10, gain:20, date:'2026-10-05T18:11:57.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6JSPGIPF', mise:15, gain:24.17, date:'2026-10-06T09:42:08.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6JSPJGYA', mise:10, gain:21.86, date:'2026-10-06T09:44:25.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6JSPM3EI', mise:1.57, gain:6.78, date:'2026-10-06T09:46:28.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6K2RYDLZ', mise:10, gain:21.82, date:'2026-10-13T10:49:42.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6K30DQKV', mise:23.02, gain:40.9, date:'2026-10-13T14:45:35.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6K36CZY9', mise:5, gain:0, date:'2026-10-13T17:32:58.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6K38OQNZ', mise:10, gain:0, date:'2026-10-13T18:38:06.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6K3BSXGS', mise:5, gain:10.83, date:'2026-10-13T20:05:20.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6K4KKN61', mise:22.89, gain:55.72, date:'2026-10-14T16:58:36.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6K4NAHEG', mise:10, gain:20, date:'2026-10-14T18:14:41.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6K4NEEH2', mise:10, gain:21.74, date:'2026-10-14T18:17:44.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6K4NJ080', mise:5, gain:0, date:'2026-10-14T18:21:18.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6K5YQU12', mise:10, gain:0, date:'2026-10-15T16:23:06.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6K6DYQPN', mise:15, gain:0, date:'2026-10-15T23:29:09.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6K7JRVHB', mise:10, gain:0, date:'2026-10-16T18:59:32.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6K7JUDIC-1', mise:4.32, gain:0, date:'2026-10-16T19:05:33.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6K8JLTPW', mise:15, gain:33.84, date:'2026-10-17T11:42:36.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6K8KFISJ', mise:5, gain:24.03, date:'2026-10-17T12:05:42.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6K8KFRY8', mise:5, gain:24.03, date:'2026-10-17T12:05:54.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6K8KG1VH', mise:5, gain:0, date:'2026-10-17T12:06:06.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6K8KZC5Z', mise:10, gain:19.44, date:'2026-10-17T12:21:06.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KD2OOG8', mise:463.14, gain:0, date:'2026-10-20T15:47:47.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KFYIJ1R', mise:10, gain:10, date:'2026-10-22T16:14:20.000Z', year:2026, source:'Winamax', status:'cancelled' },
+{ id:'recovery-2026-10-w-6KG17OH1', mise:5, gain:0, date:'2026-10-22T17:29:53.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KG4FZN9', mise:5, gain:0, date:'2026-10-22T19:00:19.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KG4H5LV', mise:5, gain:0, date:'2026-10-22T19:01:13.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KG721PT', mise:5, gain:0, date:'2026-10-22T20:13:27.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KGZQOYH', mise:10, gain:15.82, date:'2026-10-23T09:36:27.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KH242J3', mise:10, gain:16.16, date:'2026-10-23T10:42:50.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KFZ2VAV-1', mise:10, gain:0, date:'2026-10-23T23:38:49.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KHU2YXJ', mise:2.07, gain:0, date:'2026-10-23T23:45:48.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KHU8RI2', mise:20, gain:25.31, date:'2026-10-23T23:50:18.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KHU9KI6', mise:5, gain:10.15, date:'2026-10-23T23:50:56.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KIGVY1C', mise:5, gain:6.55, date:'2026-10-24T10:24:11.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KIJB63K', mise:6.55, gain:0, date:'2026-10-24T11:32:01.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KIPMICU', mise:5.46, gain:0, date:'2026-10-24T14:28:48.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KIZ8JEM', mise:5, gain:0, date:'2026-10-24T18:57:52.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KIZ94NI', mise:5, gain:0, date:'2026-10-24T18:58:19.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KJSKUOF', mise:20, gain:0.47, date:'2026-10-25T07:39:15.000Z', year:2026, source:'Winamax', status:'cashout' },
+{ id:'recovery-2026-10-w-6KJSW1VV', mise:10, gain:0.17, date:'2026-10-25T07:47:58.000Z', year:2026, source:'Winamax', status:'cashout' },
+{ id:'recovery-2026-10-w-6KJSXF5T', mise:5, gain:0, date:'2026-10-25T07:49:02.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KJSXOL2', mise:5, gain:0, date:'2026-10-25T07:49:14.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KJTXYOL', mise:10, gain:0.16, date:'2026-10-25T08:17:27.000Z', year:2026, source:'Winamax', status:'cashout' },
+{ id:'recovery-2026-10-w-6KJU09LB', mise:5, gain:0, date:'2026-10-25T08:19:14.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KK2VHWR', mise:20, gain:24, date:'2026-10-25T12:27:28.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KK4JMD3', mise:24, gain:33.84, date:'2026-10-25T13:14:13.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KKGEHJF', mise:34.64, gain:50.57, date:'2026-10-25T18:46:09.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KKJAN7O', mise:10, gain:0, date:'2026-10-25T20:07:09.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KKNZAKI', mise:5, gain:10.16, date:'2026-10-25T22:18:17.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KLICZXY', mise:9, gain:3.81, date:'2026-10-26T12:28:45.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KLUA5RE', mise:10, gain:0, date:'2026-10-26T18:02:28.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KLVDUB8', mise:10, gain:11.34, date:'2026-10-26T18:33:19.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KM55DAA', mise:20, gain:36.4, date:'2026-10-26T23:06:40.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KM5BHZG', mise:10, gain:0, date:'2026-10-26T23:11:26.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KM5J9HV', mise:6.72, gain:9.48, date:'2026-10-26T23:17:29.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KM9YG05', mise:20, gain:0, date:'2026-10-27T01:21:15.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KMQN6N9', mise:45.88, gain:72.92, date:'2026-10-27T09:08:23.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KNJZB48', mise:20, gain:32.57, date:'2026-10-27T22:49:38.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KO87W9F', mise:10, gain:18.63, date:'2026-10-28T10:08:09.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KO940BW', mise:10, gain:15.37, date:'2026-10-28T10:33:08.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KOR1TFV', mise:4.43, gain:6.95, date:'2026-10-28T18:55:18.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KOYRER4-1', mise:15.37, gain:34.45, date:'2026-10-28T23:05:37.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KPNDH6G', mise:30, gain:0, date:'2026-10-29T10:00:10.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KPTINB4', mise:15, gain:0, date:'2026-10-29T12:52:09.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KQDCAD4', mise:15, gain:20.88, date:'2026-10-29T22:07:05.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KQDKCFX', mise:10, gain:16.97, date:'2026-10-29T22:13:21.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KQDOIEW', mise:5, gain:12.63, date:'2026-10-29T22:16:35.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KQDOR5V', mise:6.78, gain:17.12, date:'2026-10-29T22:16:46.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KR6INKG', mise:10, gain:17.2, date:'2026-10-30T11:43:51.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KR6M81Y', mise:3.88, gain:11.76, date:'2026-10-30T11:46:37.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KRSZT5N', mise:15, gain:0, date:'2026-10-30T22:13:03.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KRT1UI6', mise:10, gain:15.4, date:'2026-10-30T22:14:38.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KRT3PNF', mise:5, gain:0, date:'2026-10-30T22:16:05.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KSJ2GXV', mise:19.1, gain:31.05, date:'2026-10-31T10:22:57.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KSK5D0F', mise:5, gain:0, date:'2026-10-31T10:53:11.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KSKCH6F', mise:10, gain:18.45, date:'2026-10-31T10:58:43.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KSN5IZ6', mise:3, gain:0, date:'2026-10-31T12:17:18.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KSYQSME', mise:2, gain:0, date:'2026-10-31T17:41:46.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-w-6KT1MBU0', mise:10, gain:15.23, date:'2026-10-31T19:02:16.000Z', year:2026, source:'Winamax' },
+{ id:'recovery-2026-10-bc-1', mise:10, gain:20, date:'2026-10-02T12:00:00+02:00', year:2026, source:'Betclic' },
+{ id:'recovery-2026-10-bc-2', mise:10, gain:20, date:'2026-10-05T12:00:00+02:00', year:2026, source:'Betclic' },
+{ id:'recovery-2026-10-bc-3', mise:10, gain:20, date:'2026-10-14T12:00:00+02:00', year:2026, source:'Betclic' },
+{ id:'recovery-2026-10-bc-4', mise:10, gain:0, date:'2026-10-20T12:00:00+02:00', year:2026, source:'Betclic' },
+{ id:'recovery-2026-10-bc-5', mise:20, gain:0, date:'2026-10-20T12:00:00+02:00', year:2026, source:'Betclic' },
+{ id:'recovery-2026-10-bc-6', mise:5, gain:0, date:'2026-10-21T12:00:00+02:00', year:2026, source:'Betclic' },
+{ id:'recovery-2026-10-bc-7', mise:20, gain:0, date:'2026-10-21T12:00:00+02:00', year:2026, source:'Betclic' },
+{ id:'recovery-2026-10-bc-8', mise:50, gain:0, date:'2026-10-21T12:00:00+02:00', year:2026, source:'Betclic' },
+{ id:'recovery-2026-10-bc-9', mise:5, gain:0, date:'2026-10-22T12:00:00+02:00', year:2026, source:'Betclic' },
+{ id:'recovery-2026-10-bc-10', mise:10, gain:25.5, date:'2026-10-31T12:00:00+02:00', year:2026, source:'Betclic' }
+];
 
 /* Paris restaurés depuis l'historique fourni par l'utilisateur — heures françaises d'été (UTC+2). */
 const JULY_RECOVERY_BETS = [
@@ -1834,7 +1933,7 @@ function loadBets() {
     }
     if (!Array.isArray(loaded)) loaded = [];
     loaded = normalizeJuly2026Amounts(loaded).bets;
-    const recoveryBets = normalizeJuly2026Amounts([...JULY_RECOVERY_BETS,
+    const recoveryBets = normalizeJuly2026Amounts([...JULY_RECOVERY_BETS, ...OCTOBER_2026_RECOVERY_BETS, ...OCTOBER_2026_RECOVERY_BETS,
       { id: 'recovery-2026-08-14', mise: 10, gain: 20.5, date: '2026-08-14T16:00:00Z', year: 2026 },
       { id: 'recovery-2026-09-17', mise: 10, gain: 20.5, date: '2026-09-17T16:00:00Z', year: 2026 }
     ]).bets;
@@ -1930,7 +2029,7 @@ async function pullFromCloud(silent) {
       bets = data.data;
       const julyCorrection = normalizeJuly2026Amounts(bets);
       bets = julyCorrection.bets;
-      // Reconstitution idempotente des paris restaurés d'août et septembre 2026.
+      // Reconstitution idempotente des paris restaurés.
       const recoveryBets = normalizeJuly2026Amounts([...JULY_RECOVERY_BETS,
         { id: 'recovery-2026-08-14', mise: 10, gain: 20.5, date: '2026-08-14T16:00:00Z', year: 2026 },
         { id: 'recovery-2026-09-17', mise: 10, gain: 20.5, date: '2026-09-17T16:00:00Z', year: 2026 }
@@ -2030,7 +2129,7 @@ async function connectAndSync() {
     if (error) throw error;
 
     if (data && Array.isArray(data.data) && data.data.length > 0) {
-      // Les données cloud restent la base ; ajout de deux paris de reconstitution une seule fois.
+      // Les données cloud restent la base ; ajout idempotent des paris reconstitués.
       bets = data.data;
       const julyCorrection = normalizeJuly2026Amounts(bets);
       bets = julyCorrection.bets;
