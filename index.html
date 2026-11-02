@@ -1518,14 +1518,15 @@ const STORAGE_KEY = 'statbet_bets_v3';
 const SEEDED_KEY  = 'statbet_seeded_v4'; // bumped to reset seed with correct data
 const r2 = n => Math.round(n * 100) / 100;
 
-/* Correction unique des montants de juillet 2026 : les montants ont été enregistrés x2.
-   Le marqueur est conservé dans chaque pari pour éviter toute division répétée,
-   y compris après une nouvelle récupération depuis Supabase ou sur un autre appareil. */
+/* Les montants de juillet 2026 doivent rester complets.
+   Les paris déjà divisés par l'ancienne correction sont restaurés une seule fois.
+   Les marqueurs rendent l'opération idempotente en local et après synchronisation Supabase. */
 const JULY_2026_HALF_FIX_FLAG = '_paulybetJuly2026HalfFixV1';
+const JULY_2026_FULL_AMOUNT_FLAG = '_paulybetJuly2026FullAmountsV2';
 function normalizeJuly2026Amounts(items) {
   let changed = false;
   const normalized = (Array.isArray(items) ? items : []).map(bet => {
-    if (!bet || bet[JULY_2026_HALF_FIX_FLAG]) return bet;
+    if (!bet || bet[JULY_2026_FULL_AMOUNT_FLAG]) return bet;
     const date = new Date(bet.date);
     if (!Number.isFinite(date.getTime())) return bet;
     const parts = new Intl.DateTimeFormat('en', {
@@ -1535,12 +1536,15 @@ function normalizeJuly2026Amounts(items) {
     const month = parts.find(part => part.type === 'month')?.value;
     if (year !== '2026' || month !== '07') return bet;
     changed = true;
-    return {
-      ...bet,
-      mise: r2((Number(bet.mise) || 0) / 2),
-      gain: r2((Number(bet.gain) || 0) / 2),
-      [JULY_2026_HALF_FIX_FLAG]: true
-    };
+    const wasHalved = bet[JULY_2026_HALF_FIX_FLAG] === true;
+    const restored = { ...bet };
+    if (wasHalved) {
+      restored.mise = r2((Number(bet.mise) || 0) * 2);
+      restored.gain = r2((Number(bet.gain) || 0) * 2);
+    }
+    delete restored[JULY_2026_HALF_FIX_FLAG];
+    restored[JULY_2026_FULL_AMOUNT_FLAG] = true;
+    return restored;
   });
   return { bets: normalized, changed };
 }
