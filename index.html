@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" style="background-color:#000;color-scheme:dark">
 <head>
 <meta charset="UTF-8">
 <meta name="color-scheme" content="dark">
@@ -8,7 +8,7 @@
 #pauly-splash {
   position:fixed; inset:0; z-index:2147483647; display:flex; align-items:center; justify-content:center;
   background:#000; opacity:1; visibility:visible; pointer-events:auto;
-  animation:paulySplashFade 4.1s ease forwards;
+  animation:paulySplashFade 2.6s ease forwards;
 }
 #pauly-splash img {
   display:block; width:min(76vw, 340px); height:auto; max-height:42vh; object-fit:contain;
@@ -30,6 +30,7 @@
 /* Fond noir immédiat : évite le flash blanc du WebView iOS. */
 :root { color-scheme:dark; background-color:#000 !important; }
 html, body { background-color:#000 !important; color-scheme:dark; }
+body { background:#000 !important; }
 body { min-height:100vh; }
 #app { visibility:hidden !important; }
 
@@ -1165,7 +1166,7 @@ body::-webkit-scrollbar,
 </style>
 
 </head>
-<body>
+<body style="background-color:#000;color-scheme:dark">
 <div id="pauly-splash" aria-hidden="true"><img src="./icon.png?v=paulybet-2" alt=""></div>
 <script>
 /* Révélation explicite après l'intro : plus fiable que visibility animée sur iOS. */
@@ -1179,8 +1180,9 @@ body::-webkit-scrollbar,
   // Ne pas écouter animationend sur le conteneur : l'événement de fin
   // du fondu du logo (enfant img, ~0,87 s) remonte aussi au parent
   // et coupait prématurément l'écran de démarrage.
-  // Le timer indépendant garantit au moins 3,8 s d'affichage du splash.
-  window.setTimeout(reveal, 4300);
+  // Le timer reste indépendant des animations pour éviter toute fermeture prématurée.
+  // Durée totale réduite à environ 2,8 s, fondu compris.
+  window.setTimeout(reveal, 2800);
 })();
 </script>
 <div id="app">
