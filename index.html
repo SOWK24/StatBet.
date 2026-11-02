@@ -1269,6 +1269,9 @@ input[type="number"] {
 <style id="polybet-history-brand">.history-header{display:flex;align-items:center;margin:0 0 20px}.history-header .app-brand{display:flex;align-items:center;gap:10px}.history-header .history-title{margin:0;padding:4px 0 0;font-size:26px;letter-spacing:1.5px;line-height:1}</style>
 
 <style id="pauly-startup-animation">
+/* Empêche le tableau de bord de se peindre derrière l’écran de démarrage. */
+body:not(.pauly-startup-ready) #app{visibility:hidden!important}
+body.pauly-startup-ready #app{visibility:visible!important}
 #pauly-splash{
   position:fixed;inset:0;z-index:2147483647;
   display:flex;align-items:center;justify-content:center;
@@ -1305,10 +1308,19 @@ input[type="number"] {
 (function(){
   var splash=document.getElementById('pauly-splash');
   if(!splash)return;
+  var finished=false;
+  var reveal=function(){
+    if(finished)return;
+    finished=true;
+    document.body.classList.add('pauly-startup-ready');
+  };
+  splash.addEventListener('animationend',function(event){
+    if(event.animationName==='paulyStartupFade')reveal();
+  });
   var hide=function(){splash.classList.add('pauly-splash-exit');};
   if(document.readyState==='complete') requestAnimationFrame(hide);
   else window.addEventListener('load',function(){requestAnimationFrame(hide);},{once:true});
-  setTimeout(hide,2600);
+  setTimeout(function(){hide();reveal();},2800);
 })();
 </script>
 <div id="app">
