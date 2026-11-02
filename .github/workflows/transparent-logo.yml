@@ -1,0 +1,58 @@
+name: Deploy Polybet with transparent logo
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - '.github/workflows/transparent-logo.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Generate PNG with real alpha transparency
+        run: |
+          python -m pip install Pillow
+          python - <<'PY'
+          from PIL import Image
+          src = Image.open("icon.png").convert("RGB")
+          out = Image.new("RGBA", src.size)
+          pixels = []
+          for r, g, b in src.getdata():
+              a = max(r, g, b)
+              if a == 0:
+                  pixels.append((0, 0, 0, 0))
+              else:
+                  pixels.append((min(255, round(r * 255 / a)), min(255, round(g * 255 / a)), min(255, round(b * 255 / a)), a))
+          out.putdata(pixels)
+          out.save("icon-transparent.png", optimize=True)
+          check = Image.open("icon-transparent.png")
+          assert check.mode == "RGBA"
+          assert check.getpixel((0, 0))[3] == 0, "Le fond du coin supérieur gauche n'est pas transparent"
+          print("PNG transparent créé :", check.size, check.mode)
+          PY
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
