@@ -13,7 +13,7 @@
 <!-- Image de secours pour les autres tailles d’écran. -->
 <link rel="apple-touch-startup-image" href="./startup-iphone17.png?v=paulybet-3">
 <link rel="preload" as="image" href="./startup-iphone17.png?v=paulybet-3" fetchpriority="high">
-<link rel="preload" as="image" href="./icon-transparent.png?v=paulybet-2" fetchpriority="high">
+<link rel="preload" as="image" href="./icon.png" fetchpriority="high">
 <style id="pauly-splash-critical">
 /* Fond noir immédiat : évite le flash blanc du WebView iOS. */
 :root { color-scheme:dark; background-color:#000 !important; }
@@ -39,9 +39,9 @@ body {
 /* Polybet bottom navigation + settings */
 #pages-viewport{order:1;min-height:0}#tabbar{order:2;position:relative;top:auto;bottom:auto;flex:0 0 auto;z-index:120;display:flex;padding:8px 10px calc(8px + env(safe-area-inset-bottom));background:var(--surface);border:0;border-top:1px solid var(--border);box-shadow:0 -8px 24px rgba(0,0,0,.18)}.tab-btn{flex:1;min-height:54px;padding:5px 3px;border:0;border-radius:12px;background:transparent;color:var(--text3);font-size:10px;font-weight:700;letter-spacing:.2px;text-transform:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}.tab-btn svg{width:22px;height:22px}.tab-btn.active{color:var(--wina);border:0;background:var(--wina-bg)}.panel-inner{padding-bottom:28px}.settings-section{margin-bottom:22px}.settings-heading{font-size:12px;font-weight:800;letter-spacing:1.4px;color:var(--wina);margin:0 0 10px 3px}.settings-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:15px;margin-bottom:10px}.settings-label{font-size:14px;font-weight:700;color:var(--text)}.settings-sub{font-size:11px;line-height:1.5;color:var(--text2);margin-top:4px}.theme-colors,.settings-segment{display:flex;gap:7px;margin-top:13px}.color-choice,.settings-segment button{flex:1;padding:10px 4px;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text2);font-size:12px;font-weight:700}.color-choice.selected,.settings-segment button.selected{border-color:var(--wina);color:var(--wina);background:var(--wina-bg)}.color-dot{display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:-1px;margin-right:4px}.color-dot.green{background:#A6FF3B!important}.color-dot.red{background:#FF5364}.color-dot.blue{background:#438BFF}.settings-toggle-row{display:flex;align-items:center;justify-content:space-between;gap:12px}.settings-toggle-row>div{flex:1}.settings-switch{position:relative;width:44px;height:26px;flex-shrink:0}.settings-switch input{opacity:0;width:1px;height:1px}.settings-switch span{position:absolute;inset:0;border-radius:20px;background:#59615A}.settings-switch span:before{content:'';position:absolute;width:20px;height:20px;left:3px;top:3px;border-radius:50%;background:white;transition:transform .2s}.settings-switch input:checked+span{background:var(--wina-dark)}.settings-switch input:checked+span:before{transform:translateX(18px)}.settings-action{width:100%;margin-top:12px;padding:12px;border-radius:9px;border:1px solid var(--wina-border);background:var(--wina-bg);color:var(--wina);font-weight:800;font-size:12px}:root[data-app-color="red"]{--wina:#FF5364;--wina-dark:#E63F50;--wina-bg:rgba(255,83,100,.12);--wina-border:rgba(255,83,100,.4)}:root[data-app-color="blue"]{--wina:#438BFF;--wina-dark:#286FE0;--wina-bg:rgba(67,139,255,.12);--wina-border:rgba(67,139,255,.4)}:root[data-app-appearance="light"]{color-scheme:light;--bg:#F2F4F1;--surface:#fff;--surface2:#E8ECE7;--border:#D6DDD4;--text:#172017;--text2:#596458;--text3:#778174}:root[data-app-appearance="light"] body,:root[data-app-appearance="light"] #app{background:var(--bg);color:var(--text)}@media(prefers-color-scheme:light){:root[data-app-appearance="auto"]{color-scheme:light;--bg:#F2F4F1;--surface:#fff;--surface2:#E8ECE7;--border:#D6DDD4;--text:#172017;--text2:#596458;--text3:#778174}:root[data-app-appearance="auto"] body,:root[data-app-appearance="auto"] #app{background:var(--bg);color:var(--text)}}
 </style>
-<link rel="apple-touch-icon" sizes="180x180" href="./icon-transparent.png?v=paulybet-2">
+<link rel="apple-touch-icon" sizes="180x180" href="./icon.png">
 <!-- Les métadonnées de lancement sont volontairement regroupées en tête du document. -->
-<link rel="icon" type="image/png" href="./icon-transparent.png?v=paulybet-2">
+<link rel="icon" type="image/png" href="./icon.png">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -1287,7 +1287,7 @@ input[type="number"] {
 <style id="polybet-history-brand">.history-header{display:flex;align-items:center;margin:0 0 20px}.history-header .app-brand{display:flex;align-items:center;gap:10px}.history-header .history-title{margin:0;padding:4px 0 0;font-size:26px;letter-spacing:1.5px;line-height:1}</style>
 </head>
 <body style="margin:0;padding:0;min-height:100vh;background:#000!important;color-scheme:dark">
-<div id="pauly-splash" aria-hidden="true"><img src="./icon-transparent.png?v=paulybet-2" alt=""></div>
+<div id="pauly-splash" aria-hidden="true"><img src="./icon.png" alt=""></div>
 <script>
 /* Démarre seulement après que le navigateur a eu l’occasion d’afficher le logo. */
 (function startPaulySplash() {
@@ -1306,7 +1306,7 @@ input[type="number"] {
   <div id="panel-dashboard" class="panel active">
     <div class="panel-inner">
       <div class="logo-row">
-        <div class="app-brand"><img class="app-brand-icon" src="./icon-transparent.png" alt="" width="39" height="39"><div class="app-logo">PAULY<span>’BET</span></div></div>
+        <div class="app-brand"><img class="app-brand-icon" src="./icon.png" alt="" width="39" height="39"><div class="app-logo">PAULY<span>’BET</span></div></div>
         <button class="sync-btn" id="sync-btn" onclick="openSyncModal()" aria-label="Synchronisation">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.36-2.64L3 16"/><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.36 2.64L21 8"/><polyline points="21 3 21 8 16 8"/><polyline points="3 21 3 16 8 16"/></svg>
           <span class="sync-dot off" id="sync-dot"></span>
@@ -1381,7 +1381,7 @@ input[type="number"] {
 
   <div id="panel-history" class="panel">
     <div class="panel-inner">
-      <div class="history-header"><div class="app-brand"><img class="app-brand-icon" src="./icon-transparent.png" alt="" width="39" height="39"><div class="history-title">HISTORIQUE</div></div></div>
+      <div class="history-header"><div class="app-brand"><img class="app-brand-icon" src="./icon.png" alt="" width="39" height="39"><div class="history-title">HISTORIQUE</div></div></div>
       <div id="history-container">
         <div class="empty-state">
           <p>Aucun pari</p>
@@ -1394,7 +1394,7 @@ input[type="number"] {
     <div class="panel-inner settings-inner">
       <div class="settings-header">
         <div class="app-brand">
-          <img class="app-brand-icon" src="./icon-transparent.png" alt="" width="39" height="39">
+          <img class="app-brand-icon" src="./icon.png" alt="" width="39" height="39">
           <div class="history-title">PARAMÈTRES</div>
         </div>
       </div>
