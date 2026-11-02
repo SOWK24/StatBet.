@@ -2076,12 +2076,26 @@ function haptique(niveau = 'leger') {
   try { navigator.vibrate(motifs[niveau] || motifs.leger); } catch (e) {}
 }
 
-const PAGE_ORDER=['dashboard','history','settings'];let currentActivePage='dashboard';function applyPageOffset(animate=false){const v=document.getElementById('pages-viewport');if(!v)return;const x=PAGE_ORDER.indexOf(currentActivePage)*v.clientWidth;if(animate)v.scrollTo({left:x,behavior:'smooth'});else v.scrollLeft=x}let pageScrollFromTab=false;let pageScrollReleaseTimer=0;function updateTabHighlight(name){document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===name))}function activatePage(name){currentActivePage=name;updateTabHighlight(name);document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+name));/* Ne jamais bloquer le rendu de la navigation avec la génération lourde des pages. */requestAnimationFrame(()=>{if(currentActivePage!==name)return;requestAnimationFrame(()=>{if(currentActivePage!==name)return;if(name==='history')renderHistory();if(name==='settings')refreshSettingsUI()})})}function commitVisiblePage(){
+const PAGE_ORDER=['dashboard','history','settings'];let currentActivePage='dashboard';function applyPageOffset(animate=false){const v=document.getElementById('pages-viewport');if(!v)return;const x=PAGE_ORDER.indexOf(currentActivePage)*v.clientWidth;if(animate)v.scrollTo({left:x,behavior:'smooth'});else v.scrollLeft=x}let pageScrollFromTab=false;let pageScrollReleaseTimer=0;function updateTabHighlight(name){document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===name))}function activatePage(name){currentActivePage=name;updateTabHighlight(name);document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+name));/* Ne jamais bloquer le rendu de la navigation avec la génération lourde des pages. */requestAnimationFrame(()=>{if(currentActivePage!==name)return;requestAnimationFrame(()=>{if(currentActivePage!==name)return;if(name==='history')renderHistory();if(name==='settings')refreshSettingsUI()})})}function updateSwipeHighlightFromScroll(v){
+ const position=v.scrollLeft/Math.max(1,v.clientWidth);
+ const activeIndex=Math.max(0,PAGE_ORDER.indexOf(currentActivePage));
+ let nextIndex=activeIndex;
+ /* Hystérésis : 58 % pour avancer, 42 % pour revenir. */
+ if(position>=activeIndex+0.58)nextIndex=Math.min(PAGE_ORDER.length-1,Math.round(position));
+ else if(position<=activeIndex-0.58)nextIndex=Math.max(0,Math.round(position));
+ if(nextIndex!==activeIndex){
+   currentActivePage=PAGE_ORDER[nextIndex];
+   updateTabHighlight(currentActivePage);
+ }
+}
+function commitVisiblePage(){
  const v=document.getElementById('pages-viewport');
  if(!v)return;
  const index=Math.max(0,Math.min(PAGE_ORDER.length-1,Math.round(v.scrollLeft/Math.max(1,v.clientWidth))));
  const name=PAGE_ORDER[index];
- if(name!==currentActivePage)activatePage(name);
+ const activePanel=document.getElementById('panel-'+name);
+ /* Le surlignage peut avoir changé pendant le geste : on finalise aussi le panneau. */
+ if(name!==currentActivePage||!activePanel?.classList.contains('active'))activatePage(name);
 }
 function scheduleSwipeCommit(delay=320){
  clearTimeout(pageScrollReleaseTimer);
@@ -2104,7 +2118,7 @@ function switchTab(name){
  activatePage(name);
  haptique('leger');
  applyPageOffset(true);
- /* Le scroll programmatique est isolé des événements de swipe. */
+ /* L'appui sur un onglet garde son activation immédiate. */
  pageScrollReleaseTimer=setTimeout(finishTabScroll,1400);
 }
 let fingerDownForPageSwipe=false;
@@ -2114,8 +2128,10 @@ function initSwipePageNavigation(){
  v.dataset.swipeReady='true';
  applyPageOffset(false);
  const onScroll=()=>{
-   if(pageScrollFromTab||fingerDownForPageSwipe)return;
-   scheduleSwipeCommit(320);
+   /* La couleur suit le franchissement du milieu de page, sans attendre l'inertie. */
+   if(pageScrollFromTab)return;
+   updateSwipeHighlightFromScroll(v);
+   if(!fingerDownForPageSwipe)scheduleSwipeCommit(320);
  };
  const onStart=e=>{
    if(!v.contains(e.target))return;
@@ -2123,7 +2139,7 @@ function initSwipePageNavigation(){
    fingerDownForPageSwipe=true;
    clearTimeout(pageScrollReleaseTimer);
  };
- const onEnd=e=>{
+ const onEnd=()=>{
    if(!fingerDownForPageSwipe)return;
    fingerDownForPageSwipe=false;
    scheduleSwipeCommit(320);
