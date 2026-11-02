@@ -8,11 +8,6 @@
 <meta name="supported-color-schemes" content="dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<!-- Écran de lancement natif : correspondance exacte avec l’écran de l’iPhone 17 (402 × 874 pt, @3x). -->
-<link rel="apple-touch-startup-image" href="./startup-iphone17.png?v=paulybet-3" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
-<!-- Image de secours pour les autres tailles d’écran. -->
-<link rel="apple-touch-startup-image" href="./startup-iphone17.png?v=paulybet-3">
-<link rel="preload" as="image" href="./startup-iphone17.png?v=paulybet-3" fetchpriority="high">
 <link rel="preload" as="image" href="./icon.png" fetchpriority="high">
 <style id="pauly-splash-critical">
 /* Fond noir immédiat : évite le flash blanc du WebView iOS. */
@@ -1180,34 +1175,6 @@ body::-webkit-scrollbar,
 }
 </style>
 
-<style id="pauly-splash-critical">
-/* L’écran reste visible statiquement jusqu’au premier rendu réel du navigateur. */
-#pauly-splash {
-  position:fixed; inset:0; z-index:2147483647;
-  display:flex; align-items:center; justify-content:center;
-  background:#000; opacity:1; visibility:visible; pointer-events:auto;
-}
-#pauly-splash img {
-  display:block; width:min(76vw, 340px); height:auto; max-height:42vh;
-  object-fit:contain; opacity:1; transform:scale(.90);
-}
-#pauly-splash.pauly-splash-started {
-  animation:paulySplashFade 2.8s ease-out forwards;
-}
-#pauly-splash.pauly-splash-started img {
-  animation:paulyLogoReveal .85s cubic-bezier(.2,.75,.25,1) both;
-}
-@keyframes paulyLogoReveal {
-  0% { transform:scale(.90); }
-  65% { transform:scale(1.04); }
-  100% { transform:scale(1); }
-}
-@keyframes paulySplashFade {
-  0%,82% { opacity:1; visibility:visible; pointer-events:auto; }
-  100% { opacity:0; visibility:hidden; pointer-events:none; }
-}
-</style>
-
 <style id="polybet-bottom-nav-final">
 /* Barre de navigation au niveau du document, hors du conteneur qui masque les débordements iOS. */
 #tabbar{box-sizing:border-box!important;position:fixed!important;display:flex!important;left:50%!important;right:auto!important;top:auto!important;bottom:0!important;transform:translateX(-50%)!important;width:min(100%,480px)!important;height:calc(49px + env(safe-area-inset-bottom))!important;min-height:calc(49px + env(safe-area-inset-bottom))!important;max-height:calc(49px + env(safe-area-inset-bottom))!important;visibility:visible!important;opacity:1!important;z-index:2147483000!important;flex:none!important;margin:0!important;padding:3px 9px calc(3px + env(safe-area-inset-bottom))!important;background:#111611!important;border-top:1px solid rgba(var(--wina-rgb),.22)!important;box-shadow:0 -8px 24px rgba(0,0,0,.35)!important}
@@ -1301,19 +1268,6 @@ input[type="number"] {
 <style id="polybet-history-brand">.history-header{display:flex;align-items:center;margin:0 0 20px}.history-header .app-brand{display:flex;align-items:center;gap:10px}.history-header .history-title{margin:0;padding:4px 0 0;font-size:26px;letter-spacing:1.5px;line-height:1}</style>
 </head>
 <body style="margin:0;padding:0;min-height:100vh;background:#000!important;color-scheme:dark">
-<div id="pauly-splash" aria-hidden="true"><img src="./icon.png" alt=""></div>
-<script>
-/* Démarre seulement après que le navigateur a eu l’occasion d’afficher le logo. */
-(function startPaulySplash() {
-  var splash = document.getElementById('pauly-splash');
-  if (!splash) return;
-  requestAnimationFrame(function () {
-    requestAnimationFrame(function () {
-      splash.classList.add('pauly-splash-started');
-    });
-  });
-})();
-</script>
 <div id="app">
 
   <div id="pages-viewport">
