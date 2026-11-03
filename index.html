@@ -1326,6 +1326,10 @@ body.pauly-startup-ready #app{visibility:visible!important}
 .admin-topline h2{margin:0}
 .admin-close{border:0;background:var(--card2,#242424);color:inherit;border-radius:50%;width:34px;height:34px;font-size:17px}
 .admin-summary{display:flex;align-items:baseline;gap:8px;padding:14px 0;font-size:13px;opacity:.8}
+.admin-migrate-card{margin:12px 0 15px;padding:14px;border:1px solid rgba(166,255,59,.22);border-radius:14px;background:rgba(166,255,59,.055)}
+.admin-migrate-card strong{font-size:13px}
+.admin-migrate-card p{font-size:11px;line-height:1.5;opacity:.7;margin:7px 0 12px}
+.admin-migrate-btn{width:100%;padding:12px;border:0;border-radius:10px;background:#A6FF3B;color:#10150B;font-size:12px;font-weight:900}
 .admin-summary strong{font-size:25px;opacity:1}
 .admin-account-row{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 2px;border:0;border-top:1px solid var(--border,rgba(255,255,255,.1));background:transparent;color:inherit;text-align:left}
 .admin-account-main{display:flex;flex-direction:column;gap:5px;min-width:0}
@@ -3724,10 +3728,28 @@ async function openAdminDashboard() {
       content.innerHTML = '<div class="sync-status-line">Aucun compte inscrit pour le moment.</div>';
       return;
     }
-    content.innerHTML = '<div class="admin-summary"><strong>' + adminAccountsCache.length + '</strong><span>compte(s) inscrit(s)</span></div>' +
-      adminAccountsCache.map(account => '<button class="admin-account-row" onclick="viewAdminAccount(\'' + escapeAdminHtml(account.user_id) + '\')"><span class="admin-account-main"><strong>' + escapeAdminHtml(account.email || 'E-mail indisponible') + '</strong><small>Inscription : ' + (account.created_at ? new Date(account.created_at).toLocaleDateString('fr-FR') : '—') + '</small></span><span class="admin-account-count">' + Number(account.bet_count || 0) + ' paris　›</span></button>').join('');
+    const ownerAccount = adminAccountsCache.find(account => account.user_id === currentUserId);
+    const migrationPrompt = ownerAccount && Number(ownerAccount.bet_count || 0) === 0
+      ? '<div class="admin-migrate-card"><strong>Importer ton historique actuel</strong><p>Transférer tes paris vers ce compte personnel, sans supprimer ni modifier la sauvegarde d’origine.</p><button class="admin-migrate-btn" onclick="migrateOwnerBets()">Importer mes paris</button></div>'
+      : '';
+    content.innerHTML = migrationPrompt + '<div class="admin-summary"><strong>' + adminAccountsCache.length + '</strong><span>compte(s) inscrit(s)</span></div>' +
+      adminAccountsCache.map(account => '<button class="admin-account-row" onclick="viewAdminAccount(\\'' + escapeAdminHtml(account.user_id) + '\\')"><span class="admin-account-main"><strong>' + escapeAdminHtml(account.email || 'E-mail indisponible') + '</strong><small>Inscription : ' + (account.created_at ? new Date(account.created_at).toLocaleDateString('fr-FR') : '—') + '</small></span><span class="admin-account-count">' + Number(account.bet_count || 0) + ' paris　›</span></button>').join('');
   } catch (e) {
     content.innerHTML = '<div class="sync-status-line err">Impossible de charger les comptes : ' + escapeAdminHtml(e.message || e) + '</div>';
+  }
+}
+async function migrateOwnerBets() {
+  if (!paulyBetIsAdmin || !currentUserId) return;
+  const content = document.getElementById('admin-modal-content');
+  content.innerHTML = '<div class="sync-status-line">Vérification de la sauvegarde et transfert sécurisé…</div>';
+  try {
+    const { data, error } = await ensureSupaClient().functions.invoke('paulybet-admin', { body: { action: 'migrate-owner' } });
+    if (error) throw error;
+    if (!data?.migrated) throw new Error('La migration n’a pas été effectuée.');
+    await pullFromCloud(true);
+    await openAdminDashboard();
+  } catch (e) {
+    content.innerHTML = '<div class="sync-status-line err">' + escapeAdminHtml(e.message || e) + '</div><button class="admin-back" onclick="openAdminDashboard()">← Retour aux comptes</button>';
   }
 }
 async function viewAdminAccount(userId) {
