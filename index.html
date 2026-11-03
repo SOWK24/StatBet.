@@ -3697,9 +3697,9 @@ async function refreshAdminAccess() {
   if (section) section.style.display = 'none';
   if (!client || !currentUserId) return false;
   try {
-    const { data, error } = await client.rpc('paulybet_admin_accounts');
+    const { data, error } = await client.functions.invoke('paulybet-admin', { body: { action: 'list' } });
     if (error) throw error;
-    paulyBetIsAdmin = Array.isArray(data);
+    paulyBetIsAdmin = Array.isArray(data?.accounts);
     if (section) section.style.display = paulyBetIsAdmin ? '' : 'none';
     return paulyBetIsAdmin;
   } catch (_) {
@@ -3717,9 +3717,9 @@ async function openAdminDashboard() {
   content.innerHTML = '<div class="sync-status-line">Chargement des comptes…</div>';
   const client = ensureSupaClient();
   try {
-    const { data, error } = await client.rpc('paulybet_admin_accounts');
+    const { data, error } = await client.functions.invoke('paulybet-admin', { body: { action: 'list' } });
     if (error) throw error;
-    adminAccountsCache = Array.isArray(data) ? data : [];
+    adminAccountsCache = Array.isArray(data?.accounts) ? data.accounts : [];
     if (!adminAccountsCache.length) {
       content.innerHTML = '<div class="sync-status-line">Aucun compte inscrit pour le moment.</div>';
       return;
@@ -3741,9 +3741,9 @@ async function viewAdminAccount(userId) {
   sub.textContent = account.email || 'Compte membre';
   content.innerHTML = '<div class="sync-status-line">Chargement de l’historique…</div>';
   try {
-    const { data, error } = await ensureSupaClient().from('paulybet_user_data').select('data,updated_at').eq('user_id', userId).maybeSingle();
+    const { data, error } = await ensureSupaClient().functions.invoke('paulybet-admin', { body: { action: 'account-data', user_id: userId } });
     if (error) throw error;
-    const userBets = data && Array.isArray(data.data) ? data.data : [];
+    const userBets = Array.isArray(data?.data) ? data.data : [];
     const stake = userBets.reduce((sum, bet) => sum + (Number(bet.mise) || 0), 0);
     const payout = userBets.reduce((sum, bet) => sum + (Number(bet.gain) || 0), 0);
     const net = payout - stake;
