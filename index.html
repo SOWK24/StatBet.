@@ -2143,7 +2143,8 @@ async function initPublicAuth() {
     currentUserId = null;
     authSession = null;
     bets = [];
-    saveLocalOnly(bets);
+    // Keep the existing device cache untouched until an authenticated account is loaded.
+    // The login gate hides the dashboard; a successful cloud pull replaces this cache.
     initialCloudLoadPending = false;
     renderDashboard();
     showAuthGate(true);
