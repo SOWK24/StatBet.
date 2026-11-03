@@ -1958,6 +1958,34 @@ function setAuthMessage(message, isError) {
   el.textContent = message || '';
   el.classList.toggle('error', !!isError);
 }
+const PAULYBET_AUTH_REDIRECT = 'https://sowk24.github.io/Pauly-Bet/preview/';
+function showEmailConfirmationFeedback() {
+  const params = new URLSearchParams(window.location.search);
+  const hash = new URLSearchParams((window.location.hash || '').replace(/^#/, ''));
+  const errorCode = params.get('error_description') || hash.get('error_description') || params.get('error') || hash.get('error');
+  if (errorCode) {
+    setAuthMessage('La validation du lien a échoué : ' + errorCode.replace(/\+/g, ' '), true);
+    return;
+  }
+  const confirmed = params.get('type') === 'signup' || hash.get('type') === 'signup' ||
+    params.has('token') || hash.has('access_token') || hash.has('token_hash');
+  if (confirmed) {
+    authMode = 'signin';
+    const title = document.getElementById('auth-title');
+    const intro = document.getElementById('auth-intro');
+    const submit = document.getElementById('auth-submit');
+    const toggle = document.getElementById('auth-toggle');
+    if (title) title.textContent = 'Adresse e-mail confirmée';
+    if (intro) intro.textContent = 'Ton adresse est validée. Connecte-toi pour accéder à ton espace Pauly’Bet.';
+    if (submit) submit.textContent = 'Se connecter';
+    if (toggle) toggle.textContent = 'Créer un compte';
+    setAuthMessage('Validation réussie ! Tu peux maintenant te connecter avec ton adresse e-mail et ton mot de passe.', false);
+    // Nettoyer uniquement les paramètres de retour après que Supabase ait pu lire le hash.
+    window.setTimeout(() => {
+      try { window.history.replaceState({}, document.title, PAULYBET_AUTH_REDIRECT); } catch (_) {}
+    }, 1800);
+  }
+}
 function toggleAuthMode() {
   authMode = authMode === 'signin' ? 'signup' : 'signin';
   document.getElementById('auth-title').textContent = authMode === 'signin' ? 'Ton espace de paris' : 'Créer ton compte';
@@ -1984,6 +2012,7 @@ async function activateUserSession(session) {
   return true;
 }
 async function initPublicAuth() {
+  showEmailConfirmationFeedback();
   const client = ensureSupaClient();
   if (!client) { setAuthMessage('Connexion au service indisponible. Vérifie ta connexion internet.', true); return; }
   const { data, error } = await client.auth.getSession();
@@ -2016,7 +2045,7 @@ async function submitAuth() {
       : await client.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: window.location.origin + window.location.pathname }
+          options: { emailRedirectTo: PAULYBET_AUTH_REDIRECT }
         });
     if (result.error) throw result.error;
     if (result.data.session) {
@@ -3673,20 +3702,36 @@ async function deleteAdminAccount(userId) {
   const account = adminAccountsCache.find(item => item.user_id === userId);
   if (!account || userId === currentUserId) return;
   const email = account.email || "ce membre";
-  if (!window.confirm("Supprimer définitivement le compte " + email + " ?\n\nCette action supprimera son accès et ses données de paris. Elle est irréversible.")) return;
+  const confirmed = window.confirm("Supprimer définitivement le compte " + email + " ?\n\nSon accès et toutes ses données de paris seront supprimés. Cette action est irréversible.");
+  if (!confirmed) return;
 
   const content = document.getElementById("admin-modal-content");
-  content.innerHTML = '<div class="sync-status-line">Suppression sécurisée du compte…</div>';
+  const button = content?.querySelector('button[onclick*="deleteAdminAccount"]');
+  if (button) { button.disabled = true; button.textContent = "Suppression en cours…"; }
+  if (content) content.insertAdjacentHTML('afterbegin', '<div id="admin-delete-status" class="sync-status-line">Suppression sécurisée du compte…</div>');
   try {
-    const { data, error } = await ensureSupaClient().functions.invoke("paulybet-admin", {
+    const client = ensureSupaClient();
+    if (!client) throw new Error("Connexion au service indisponible. Ferme puis rouvre l’application.");
+    const { data, error } = await client.functions.invoke("paulybet-admin", {
       body: { action: "delete-account", user_id: userId }
     });
-    if (error) throw error;
-    if (!data?.deleted) throw new Error("La suppression n’a pas été confirmée.");
+    if (error) {
+      let detail = error.message || "Erreur lors de l’appel au serveur.";
+      if (error.context && typeof error.context.json === "function") {
+        try { const body = await error.context.json(); if (body?.error) detail = body.error; } catch (_) {}
+      }
+      throw new Error(detail);
+    }
+    if (!data?.deleted || data.user_id !== userId) throw new Error(data?.error || "Le serveur n’a pas confirmé la suppression.");
     adminAccountsCache = adminAccountsCache.filter(item => item.user_id !== userId);
     await openAdminDashboard();
+    const status = document.createElement('div');
+    status.className = 'sync-status-line ok';
+    status.textContent = 'Compte ' + email + ' supprimé définitivement.';
+    document.getElementById('admin-modal-content')?.prepend(status);
   } catch (e) {
-    content.innerHTML = '<div class="sync-status-line err">Suppression impossible : ' + escapeAdminHtml(e.message || e) + '</div><button class="admin-back" onclick="viewAdminAccount(\'' + escapeAdminHtml(userId) + '\')">← Retour au membre</button>';
+    const message = e?.message || String(e);
+    content.innerHTML = '<div class="sync-status-line err">Suppression impossible : ' + escapeAdminHtml(message) + '</div><button class="admin-back" onclick="viewAdminAccount(\'' + escapeAdminHtml(userId) + '\')">← Retour au membre</button><button class="admin-back" onclick="openAdminDashboard()">← Retour aux comptes</button>';
   }
 }
 
