@@ -3664,6 +3664,23 @@ function handleAdminOverlayClick(event) {
   if (event.target?.id === 'admin-overlay') closeAdminDashboard();
 }
 
+// Fermeture admin prioritaire au relâchement du doigt (Safari iOS/PWA).
+// Ne dépend pas du déclenchement du onclick inline du bouton.
+document.addEventListener('pointerup', function(event) {
+  const target = event.target instanceof Element ? event.target : null;
+  if (!target?.closest('#admin-close-btn')) return;
+  event.preventDefault();
+  event.stopPropagation();
+  closeAdminDashboard();
+}, true);
+document.addEventListener('touchend', function(event) {
+  const target = event.target instanceof Element ? event.target : null;
+  if (!target?.closest('#admin-close-btn')) return;
+  event.preventDefault();
+  event.stopPropagation();
+  closeAdminDashboard();
+}, { capture: true, passive: false });
+
 /* ─── Init ──────────────────────────────────────────────────────────── */
 renderDashboard();
 // Active réellement les gestes horizontaux après la création des deux panneaux.
