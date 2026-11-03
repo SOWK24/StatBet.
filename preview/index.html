@@ -1570,7 +1570,7 @@ body.pauly-startup-ready #app{visibility:visible!important}
 
 <div class="modal-overlay" id="admin-overlay" onclick="handleAdminOverlayClick(event)">
   <div class="modal-sheet admin-sheet" onclick="event.stopPropagation()">
-    <div class="admin-topline"><h2 id="admin-modal-title">Administration Pauly’Bet</h2><button class="admin-close" onclick="closeAdminDashboard()" aria-label="Fermer">✕</button></div>
+    <div class="admin-topline"><h2 id="admin-modal-title">Administration Pauly’Bet</h2><button type="button" class="admin-close" id="admin-close-btn" onclick="closeAdminDashboard(); return false;" aria-label="Fermer">✕</button></div>
     <div class="modal-sub" id="admin-modal-sub">Comptes inscrits sur la plateforme</div>
     <div id="admin-modal-content"><div class="sync-status-line">Chargement des comptes…</div></div>
   </div>
@@ -3576,6 +3576,7 @@ async function openAdminDashboard() {
   overlay.style.setProperty('position', 'fixed', 'important');
   overlay.style.setProperty('inset', '0', 'important');
   overlay.style.setProperty('display', 'flex', 'important');
+  overlay.setAttribute('aria-hidden', 'false');
   overlay.style.setProperty('align-items', 'center', 'important');
   overlay.style.setProperty('justify-content', 'center', 'important');
   overlay.style.setProperty('padding', 'max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom))', 'important');
@@ -3653,7 +3654,11 @@ async function viewAdminAccount(userId) {
   }
 }
 function closeAdminDashboard() {
-  document.getElementById('admin-overlay')?.classList.remove('show');
+  const overlay = document.getElementById('admin-overlay');
+  if (!overlay) return;
+  overlay.classList.remove('show');
+  overlay.style.setProperty('display', 'none', 'important');
+  overlay.setAttribute('aria-hidden', 'true');
 }
 function handleAdminOverlayClick(event) {
   if (event.target?.id === 'admin-overlay') closeAdminDashboard();
