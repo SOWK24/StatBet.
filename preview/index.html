@@ -2695,7 +2695,8 @@ function showResultCelebration(isWin, amount) {
       ariaLabel: isWin ? 'Victoire au pari' : 'Défaite au pari'
     };
 
-    const demoUrl = new URL('./demo-animation.html', window.location.href);
+    const demoPath = window.location.pathname.includes('/preview/') ? '../demo-animation.html' : './demo-animation.html';
+    const demoUrl = new URL(demoPath, window.location.href);
     demoUrl.searchParams.set('embed', '1');
     demoUrl.searchParams.set('kind', isWin ? 'gain' : 'loss');
     demoUrl.searchParams.set('amount', String(Math.max(0, Number(amount) || 0)));
