@@ -1483,7 +1483,7 @@ body.pauly-startup-ready #app{visibility:visible!important}
         <div class="settings-card"><div class="settings-label">Sauvegarder mes paris</div><div class="settings-sub">Télécharger une copie de tes paris au format JSON.</div><button class="settings-action" onclick="exportBetsBackup()">↓　Exporter une sauvegarde</button></div>
         <div class="settings-card settings-toggle-row"><div><div class="settings-label">Confirmation avant suppression</div><div class="settings-sub">Éviter les suppressions accidentelles.</div></div><label class="settings-switch"><input id="setting-delete" type="checkbox" onchange="setAppSetting('confirmDelete',this.checked)"><span></span></label></div>
       </div>
-      <div class="settings-section"><div class="settings-heading">MON COMPTE</div><div class="settings-card"><div class="settings-label">Compte personnel</div><div class="settings-sub">Gérer ton compte et ta sauvegarde privée.</div><button class="settings-action" onclick="openSyncModal()">Gérer mon compte</button></div></div>
+      <div class="settings-section"><div class="settings-heading">MON COMPTE</div><div class="settings-card"><div class="settings-label">Compte personnel</div><div class="settings-sub">Gérer ton compte et ta sauvegarde privée.</div><button class="settings-action" onclick="openSyncModal()">Gérer mon compte</button><button class="btn-danger-text" type="button" style="width:100%;margin-top:12px;padding:12px;border:1px solid rgba(255,83,100,.35);border-radius:9px;background:transparent;font-weight:800" onclick="disconnectSync()">Se déconnecter</button></div></div>
       <div class="settings-section" id="admin-settings-section" style="display:none"><div class="settings-heading">ADMINISTRATION</div><div class="settings-card"><div class="settings-label">Espace administrateur</div><div class="settings-sub">Consulter les comptes et les historiques des membres.</div><button class="settings-action" onclick="openAdminDashboard()">Ouvrir le tableau de bord</button></div></div>
     </div>
   </div>
@@ -2037,9 +2037,22 @@ async function submitAuth() {
   }
 }
 async function disconnectSync() {
+  if (!currentUserId) { showAuthGate(true); return; }
+  if (!window.confirm('Se déconnecter de ce compte ? Tes paris resteront sauvegardés et tu pourras les retrouver en te reconnectant.')) return;
   const client = ensureSupaClient();
-  if (client) await client.auth.signOut();
+  if (!client) { showToast('Service de compte indisponible. Réessaie.', 'loss'); return; }
+  // Envoyer une dernière sauvegarde avant de fermer la session pour ne perdre aucune modification récente.
   clearTimeout(syncPushTimer);
+  const saved = await pushToCloud(true);
+  if (!saved) {
+    showToast('Déconnexion annulée : la dernière sauvegarde n’a pas abouti. Vérifie ta connexion.', 'loss');
+    return;
+  }
+  const { error } = await client.auth.signOut();
+  if (error) {
+    showToast('Impossible de se déconnecter : ' + (error.message || error), 'loss');
+    return;
+  }
   currentUserId = null;
   authSession = null;
   paulyBetIsAdmin = false;
