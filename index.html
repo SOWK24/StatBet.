@@ -9,7 +9,6 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <!-- Écran de lancement noir : aucun logo statique avant l’animation HTML. -->
-<link rel="apple-touch-startup-image" href="./startup-iphone.png" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3)">
 <style id="pauly-splash-critical">
 /* Fond noir immédiat : évite le flash blanc du WebView iOS. */
 :root { color-scheme:dark; background-color:#000 !important; }
@@ -1301,6 +1300,52 @@ body.pauly-startup-ready #app{visibility:visible!important}
   #pauly-splash.pauly-splash-exit{animation:none;opacity:0;visibility:hidden}
 }
 </style>
+
+<style id="pauly-public-auth">
+.auth-overlay{position:fixed;inset:0;z-index:30000;display:flex;align-items:center;justify-content:center;padding:24px 18px calc(24px + env(safe-area-inset-bottom));background:radial-gradient(ellipse at 50% 0%,rgba(166,255,59,.12),transparent 48%),#070907}
+.auth-card{width:100%;max-width:420px;padding:30px 23px 25px;border:1px solid rgba(166,255,59,.18);border-radius:24px;background:#101510;box-shadow:0 24px 80px rgba(0,0,0,.55)}
+.auth-mark{width:64px;height:64px;border-radius:17px;display:flex;align-items:center;justify-content:center;background:#000;overflow:hidden;margin-bottom:15px;box-shadow:0 0 28px rgba(166,255,59,.15)}
+.auth-mark img{display:block;width:100%;height:100%;object-fit:contain;border-radius:17px}
+.auth-brand{font-size:10px;letter-spacing:2.4px;font-weight:900;color:#A6FF3B;margin-bottom:9px}
+.auth-card h1{font-size:25px;line-height:1.15;font-weight:900;color:#F7F8F4;margin-bottom:8px}
+.auth-intro{font-size:13px;line-height:1.5;color:#AEB8AA;margin-bottom:22px}
+.auth-card label{display:block;color:#DDE4D9;font-size:12px;font-weight:700;margin:0 0 7px}
+.auth-card input{display:block;width:100%;height:48px;margin-bottom:15px;padding:0 13px;border:1px solid #303B30;border-radius:11px;background:#080C08;color:#fff;font:inherit;font-size:16px;outline:none}
+.auth-card input:focus{border-color:#A6FF3B;box-shadow:0 0 0 3px rgba(166,255,59,.1)}
+.auth-primary{width:100%;height:49px;margin-top:5px;border:0;border-radius:11px;background:#A6FF3B;color:#10150B;font-size:14px;font-weight:900}
+.auth-primary:disabled{opacity:.55}
+.auth-switch{display:block;width:100%;padding:12px 8px 4px;border:0;background:transparent;color:#C9D4C5;font-size:12px;font-weight:600}
+.auth-message{min-height:18px;margin-top:12px;color:#A6FF3B;font-size:12px;line-height:1.45;text-align:center}
+.auth-message.error{color:#FF7B83}
+</style>
+
+
+<style id="paulybet-admin-styles">
+.admin-sheet{max-height:88vh;overflow-y:auto}
+.admin-topline{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.admin-topline h2{margin:0}
+.admin-close{border:0;background:var(--card2,#242424);color:inherit;border-radius:50%;width:34px;height:34px;font-size:17px}
+.admin-summary{display:flex;align-items:baseline;gap:8px;padding:14px 0;font-size:13px;opacity:.8}
+.admin-migrate-card{margin:12px 0 15px;padding:14px;border:1px solid rgba(166,255,59,.22);border-radius:14px;background:rgba(166,255,59,.055)}
+.admin-migrate-card strong{font-size:13px}
+.admin-migrate-card p{font-size:11px;line-height:1.5;opacity:.7;margin:7px 0 12px}
+.admin-migrate-btn{width:100%;padding:12px;border:0;border-radius:10px;background:#A6FF3B;color:#10150B;font-size:12px;font-weight:900}
+.admin-summary strong{font-size:25px;opacity:1}
+.admin-account-row{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 2px;border:0;border-top:1px solid var(--border,rgba(255,255,255,.1));background:transparent;color:inherit;text-align:left}
+.admin-account-main{display:flex;flex-direction:column;gap:5px;min-width:0}
+.admin-account-main strong{font-size:13px;overflow-wrap:anywhere}
+.admin-account-main small,.admin-account-count,.admin-last-update{font-size:11px;opacity:.65}
+.admin-account-count{white-space:nowrap}
+.admin-back{border:0;background:transparent;color:var(--accent,#a6ff3b);padding:12px 0;font-weight:700}
+.admin-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:12px 0}
+.admin-stats>div{padding:12px;border-radius:12px;background:var(--card2,#242424);display:flex;flex-direction:column;gap:5px;min-width:0}
+.admin-stats strong{font-size:16px;overflow-wrap:anywhere}
+.admin-stats small{font-size:10px;opacity:.65}
+.admin-last-update{margin:8px 0 12px}
+.admin-bet-list{max-height:42vh;overflow:auto}
+.admin-bet-row{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px;padding:11px 0;border-top:1px solid var(--border,rgba(255,255,255,.1));font-size:11px}
+</style>
+
 </head>
 <body style="margin:0;padding:0;min-height:100vh;background:#000!important;color-scheme:dark">
 <div id="pauly-splash" aria-hidden="true"><img src="./icon.png" alt=""></div>
@@ -1330,7 +1375,7 @@ body.pauly-startup-ready #app{visibility:visible!important}
     <div class="panel-inner">
       <div class="logo-row">
         <div class="app-brand"><img class="app-brand-icon" src="./icon.png" alt="" width="39" height="39"><div class="app-logo">PAULY<span>’BET</span></div></div>
-        <button class="sync-btn" id="sync-btn" onclick="openSyncModal()" aria-label="Synchronisation">
+        <button class="sync-btn" id="sync-btn" onclick="openSyncModal()" aria-label="Mon compte">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.36-2.64L3 16"/><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.36 2.64L21 8"/><polyline points="21 3 21 8 16 8"/><polyline points="3 21 3 16 8 16"/></svg>
           <span class="sync-dot off" id="sync-dot"></span>
         </button>
@@ -1434,7 +1479,8 @@ body.pauly-startup-ready #app{visibility:visible!important}
         <div class="settings-card"><div class="settings-label">Sauvegarder mes paris</div><div class="settings-sub">Télécharger une copie de tes paris au format JSON.</div><button class="settings-action" onclick="exportBetsBackup()">↓　Exporter une sauvegarde</button></div>
         <div class="settings-card settings-toggle-row"><div><div class="settings-label">Confirmation avant suppression</div><div class="settings-sub">Éviter les suppressions accidentelles.</div></div><label class="settings-switch"><input id="setting-delete" type="checkbox" onchange="setAppSetting('confirmDelete',this.checked)"><span></span></label></div>
       </div>
-      <div class="settings-section"><div class="settings-heading">SYNCHRONISATION</div><div class="settings-card"><div class="settings-label">Compte cloud</div><div class="settings-sub">Gérer la connexion et la synchronisation de tes données.</div><button class="settings-action" onclick="openSyncModal()">Gérer la synchronisation</button></div></div>
+      <div class="settings-section"><div class="settings-heading">MON COMPTE</div><div class="settings-card"><div class="settings-label">Compte personnel</div><div class="settings-sub">Gérer ton compte et ta sauvegarde privée.</div><button class="settings-action" onclick="openSyncModal()">Gérer mon compte</button></div></div>
+      <div class="settings-section" id="admin-settings-section" style="display:none"><div class="settings-heading">ADMINISTRATION</div><div class="settings-card"><div class="settings-label">Espace administrateur</div><div class="settings-sub">Consulter les comptes et les historiques des membres.</div><button class="settings-action" onclick="openAdminDashboard()">Ouvrir le tableau de bord</button></div></div>
     </div>
   </div>
   </div>
@@ -1490,43 +1536,44 @@ body.pauly-startup-ready #app{visibility:visible!important}
 </div>
 
 
+<div class="auth-overlay" id="auth-overlay">
+  <div class="auth-card">
+    <div class="auth-mark"><img src="./icon.png" alt="Logo Pauly’Bet"></div>
+    <div class="auth-brand">PAULY’BET</div>
+    <h1 id="auth-title">Créer ton compte</h1>
+    <p class="auth-intro" id="auth-intro">Crée ton compte pour commencer ton suivi privé.</p>
+    <label for="auth-email">Adresse e-mail</label>
+    <input id="auth-email" type="email" autocomplete="email" inputmode="email" placeholder="ton@email.com">
+    <label for="auth-password">Mot de passe</label>
+    <input id="auth-password" type="password" autocomplete="new-password" placeholder="8 caractères minimum">
+    <button class="auth-primary" id="auth-submit" onclick="submitAuth()">Créer mon compte</button>
+    <button class="auth-switch" id="auth-toggle" onclick="toggleAuthMode()">J’ai déjà un compte ? Se connecter</button>
+    <p class="auth-message" id="auth-message" role="status"></p>
+  </div>
+</div>
+
 <div class="modal-overlay" id="sync-overlay" onclick="handleSyncOverlayClick(event)">
   <div class="modal-sheet" onclick="event.stopPropagation()">
-    <h2>Synchronisation cloud</h2>
-    <div class="modal-sub">
-      Connecte un projet <strong>Supabase</strong> (gratuit) pour retrouver tes données sur tous tes appareils.
-      <br>1. Crée un projet sur <a href="https://supabase.com" target="_blank">supabase.com</a>.
-      <br>2. Dans l'éditeur SQL, exécute le script fourni pour créer la table.
-      <br>3. Renseigne ci-dessous l'URL du projet, la clé "anon public" et un code perso (mot de passe simple qui identifie tes données — choisis-en un unique et garde-le secret).
-    </div>
-
-    <div class="form-row">
-      <label class="form-label" for="sync-url">URL du projet Supabase</label>
-      <input class="form-input sync-input" id="sync-url" style="font-size:16px;" placeholder="https://xxxx.supabase.co" autocomplete="off" autocapitalize="off" spellcheck="false">
-    </div>
-    <div class="form-row">
-      <label class="form-label" for="sync-key">Clé anon public</label>
-      <input class="form-input sync-input" id="sync-key" style="font-size:16px;" placeholder="eyJhbGciOi..." autocomplete="off" autocapitalize="off" spellcheck="false">
-    </div>
-    <div class="form-row">
-      <label class="form-label" for="sync-code">Code perso (identifiant de tes données)</label>
-      <input class="form-input sync-input" id="sync-code" style="font-size:16px;" placeholder="ex: m0nC0deSecret42" autocomplete="off" autocapitalize="off" spellcheck="false">
-    </div>
-
-    <div class="sync-status-line" id="sync-status-line">Non connecté.</div>
-
+    <h2>Mon compte</h2>
+    <div class="modal-sub" id="account-email">Compte connecté</div>
+    <div class="sync-status-line" id="sync-status-line">Synchronisation automatique activée.</div>
     <div class="modal-actions">
       <button class="btn-secondary" onclick="closeSyncModal()">Fermer</button>
-      <button class="btn-submit" style="flex:1;" onclick="connectAndSync()">Connecter &amp; synchroniser</button>
     </div>
-    <button class="btn-danger-text" id="sync-disconnect-btn" onclick="disconnectSync()" style="display:none;">Déconnecter cet appareil (les données restent en local)</button>
+    <button class="btn-danger-text" id="sync-disconnect-btn" onclick="disconnectSync()">Se déconnecter</button>
   </div>
+</div>
 
+<div class="modal-overlay" id="admin-overlay" onclick="handleAdminOverlayClick(event)">
+  <div class="modal-sheet admin-sheet" onclick="event.stopPropagation()">
+    <div class="admin-topline"><h2 id="admin-modal-title">Administration Pauly’Bet</h2><button class="admin-close" onclick="closeAdminDashboard()" aria-label="Fermer">✕</button></div>
+    <div class="modal-sub" id="admin-modal-sub">Comptes inscrits sur la plateforme</div>
+    <div id="admin-modal-content"><div class="sync-status-line">Chargement des comptes…</div></div>
+  </div>
 </div>
 
 <script>
 const STORAGE_KEY = 'statbet_bets_v3';
-const SEEDED_KEY  = 'statbet_seeded_v4'; // bumped to reset seed with correct data
 const r2 = n => Math.round(n * 100) / 100;
 
 /* Les montants de juillet 2026 doivent rester complets.
@@ -1572,159 +1619,6 @@ function fmtEurPlain(n) {
 function fmtDate(iso) {
   const d = new Date(iso);
   return d.toLocaleDateString('fr-FR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
-}
-
-/* ─── Seed : commence septembre 2025
-   Mise totale cible  : 2 135,44 €
-   Gain total cible   : 4 535,44 €  (2 135,44 + 2 400)
-   Bilan net cible    : +2 400,00 €
-   ─────────────────────────────────────────────────────── */
-function generateSeedBets() {
-  // Paris réels depuis sept 2025.
-  // On a ajusté les montants pour que la somme soit exacte.
-  const raw = [
-    // ── SEPTEMBRE 2025 ──
-    {m:20,   g:52.00,  d:'2025-09-03T19:00:00Z'},
-    {m:10,   g:26.00,  d:'2025-09-06T16:15:00Z'},
-    {m:25,   g:0,      d:'2025-09-09T20:30:00Z'},
-    {m:80,   g:208.00, d:'2025-09-12T18:00:00Z'},
-    {m:12,   g:31.20,  d:'2025-09-15T14:30:00Z'},
-    {m:18,   g:0,      d:'2025-09-18T19:45:00Z'},
-    {m:15,   g:39.00,  d:'2025-09-21T15:00:00Z'},
-    {m:8,    g:0,      d:'2025-09-24T20:15:00Z'},
-    {m:25,   g:67.50,  d:'2025-09-27T16:30:00Z'},
-    {m:20,   g:54.00,  d:'2025-09-30T19:00:00Z'},
-
-    // ── OCTOBRE 2025 ──
-    {m:10,   g:0,      d:'2025-10-02T14:00:00Z'},
-    {m:18,   g:46.80,  d:'2025-10-05T20:00:00Z'},
-    {m:30,   g:0,      d:'2025-10-08T16:30:00Z'},
-    {m:15,   g:39.00,  d:'2025-10-11T19:15:00Z'},
-    {m:65,   g:163.80, d:'2025-10-13T18:00:00Z'},
-    {m:12,   g:0,      d:'2025-10-16T14:45:00Z'},
-    {m:20,   g:52.00,  d:'2025-10-19T20:30:00Z'},
-    {m:8,    g:21.60,  d:'2025-10-22T16:00:00Z'},
-    {m:25,   g:0,      d:'2025-10-25T19:30:00Z'},
-    {m:15,   g:40.50,  d:'2025-10-28T15:00:00Z'},
-    {m:10,   g:26.00,  d:'2025-10-31T20:00:00Z'},
-
-    // ── NOVEMBRE 2025 ──
-    {m:22,   g:0,      d:'2025-11-03T16:00:00Z'},
-    {m:18,   g:46.80,  d:'2025-11-06T19:30:00Z'},
-    {m:30,   g:78.00,  d:'2025-11-09T14:15:00Z'},
-    {m:10,   g:0,      d:'2025-11-12T20:00:00Z'},
-    {m:90,   g:234.00, d:'2025-11-14T18:30:00Z'},
-    {m:15,   g:39.00,  d:'2025-11-17T15:00:00Z'},
-    {m:25,   g:0,      d:'2025-11-20T20:15:00Z'},
-    {m:12,   g:31.20,  d:'2025-11-23T16:30:00Z'},
-    {m:8,    g:21.60,  d:'2025-11-26T19:00:00Z'},
-    {m:20,   g:0,      d:'2025-11-29T14:30:00Z'},
-
-    // ── DÉCEMBRE 2025 ──
-    {m:25,   g:67.50,  d:'2025-12-02T20:00:00Z'},
-    {m:15,   g:0,      d:'2025-12-05T16:00:00Z'},
-    {m:18,   g:48.60,  d:'2025-12-08T19:30:00Z'},
-    {m:70,   g:182.00, d:'2025-12-11T18:00:00Z'},
-    {m:10,   g:0,      d:'2025-12-14T14:30:00Z'},
-    {m:20,   g:54.00,  d:'2025-12-17T20:15:00Z'},
-    {m:12,   g:31.20,  d:'2025-12-20T15:00:00Z'},
-    {m:30,   g:0,      d:'2025-12-23T19:45:00Z'},
-    {m:8,    g:21.60,  d:'2025-12-27T16:00:00Z'},
-    {m:25,   g:67.50,  d:'2025-12-30T20:00:00Z'},
-
-    // ── JANVIER 2026 ──
-    {m:15,   g:39.00,  d:'2026-01-03T14:30:00Z'},
-    {m:20,   g:0,      d:'2026-01-06T20:00:00Z'},
-    {m:10,   g:26.00,  d:'2026-01-09T16:45:00Z'},
-    {m:55,   g:143.00, d:'2026-01-12T19:30:00Z'},
-    {m:18,   g:0,      d:'2026-01-15T15:00:00Z'},
-    {m:25,   g:67.50,  d:'2026-01-18T20:15:00Z'},
-    {m:8,    g:21.60,  d:'2026-01-21T16:30:00Z'},
-    {m:30,   g:0,      d:'2026-01-24T19:00:00Z'},
-    {m:12,   g:31.20,  d:'2026-01-27T14:15:00Z'},
-    {m:20,   g:54.00,  d:'2026-01-30T20:30:00Z'},
-
-    // ── FÉVRIER 2026 ──
-    {m:15,   g:0,      d:'2026-02-02T16:00:00Z'},
-    {m:25,   g:67.50,  d:'2026-02-05T19:30:00Z'},
-    {m:10,   g:26.00,  d:'2026-02-08T14:00:00Z'},
-    {m:80,   g:208.00, d:'2026-02-11T20:00:00Z'},
-    {m:18,   g:0,      d:'2026-02-14T17:30:00Z'},
-    {m:12,   g:31.20,  d:'2026-02-17T15:00:00Z'},
-    {m:20,   g:54.00,  d:'2026-02-20T20:15:00Z'},
-    {m:8,    g:0,      d:'2026-02-23T16:30:00Z'},
-    {m:30,   g:81.00,  d:'2026-02-26T19:00:00Z'},
-
-    // ── MARS 2026 ──
-    {m:25,   g:0,      d:'2026-03-01T14:30:00Z'},
-    {m:15,   g:40.50,  d:'2026-03-04T20:00:00Z'},
-    {m:10,   g:26.00,  d:'2026-03-07T16:15:00Z'},
-    {m:60,   g:156.00, d:'2026-03-10T19:45:00Z'},
-    {m:20,   g:0,      d:'2026-03-13T15:00:00Z'},
-    {m:18,   g:48.60,  d:'2026-03-16T20:30:00Z'},
-    {m:8,    g:21.60,  d:'2026-03-19T16:00:00Z'},
-    {m:25,   g:0,      d:'2026-03-22T19:15:00Z'},
-    {m:12,   g:31.20,  d:'2026-03-25T14:30:00Z'},
-    {m:30,   g:81.00,  d:'2026-03-28T20:00:00Z'},
-    {m:15,   g:0,      d:'2026-03-31T16:30:00Z'},
-
-    // ── AVRIL 2026 ──
-    {m:20,   g:54.00,  d:'2026-04-03T19:30:00Z'},
-    {m:10,   g:0,      d:'2026-04-06T14:00:00Z'},
-    {m:25,   g:67.50,  d:'2026-04-09T20:15:00Z'},
-    {m:75,   g:195.00, d:'2026-04-12T18:00:00Z'},
-    {m:18,   g:0,      d:'2026-04-15T15:30:00Z'},
-    {m:12,   g:32.40,  d:'2026-04-18T19:45:00Z'},
-    {m:8,    g:21.60,  d:'2026-04-21T16:00:00Z'},
-    {m:30,   g:0,      d:'2026-04-24T20:30:00Z'},
-    {m:15,   g:40.50,  d:'2026-04-27T14:15:00Z'},
-    {m:20,   g:54.00,  d:'2026-04-30T19:00:00Z'},
-
-    // ── MAI 2026 ──
-    {m:10,   g:0,      d:'2026-05-03T16:00:00Z'},
-    {m:25,   g:67.50,  d:'2026-05-06T20:00:00Z'},
-    {m:18,   g:48.60,  d:'2026-05-09T15:30:00Z'},
-    {m:90,   g:234.00, d:'2026-05-12T19:15:00Z'},
-    {m:15,   g:0,      d:'2026-05-15T14:00:00Z'},
-    {m:12,   g:31.20,  d:'2026-05-18T20:30:00Z'},
-    {m:8,    g:21.60,  d:'2026-05-21T16:45:00Z'},
-    {m:20,   g:0,      d:'2026-05-24T19:00:00Z'},
-    {m:30,   g:81.00,  d:'2026-05-27T15:00:00Z'},
-    {m:10,   g:27.00,  d:'2026-05-30T20:15:00Z'},
-
-    // ── JUIN 2026 ──
-    {m:25,   g:0,      d:'2026-06-02T16:30:00Z'},
-    {m:15,   g:40.50,  d:'2026-06-05T19:30:00Z'},
-    {m:18,   g:48.60,  d:'2026-06-08T14:00:00Z'},
-    {m:65,   g:169.00, d:'2026-06-11T20:00:00Z'},
-    {m:10,   g:0,      d:'2026-06-14T16:00:00Z'},
-    {m:20,   g:54.00,  d:'2026-06-17T19:45:00Z'},
-    {m:12,   g:31.20,  d:'2026-06-20T15:30:00Z'},
-    {m:8,    g:21.60,  d:'2026-06-23T20:00:00Z'},
-    {m:30,   g:0,      d:'2026-06-26T16:15:00Z'},
-    {m:15.44,g:40.50,  d:'2026-06-29T19:00:00Z'},
-  ];
-
-  // Vérification et ajustement final pour atteindre exactement les cibles
-  // Cible mises : 2135.44 €  |  Cible gains : 4535.44 €
-  const totalM = raw.reduce((s,b) => s + b.m, 0);
-  const totalG = raw.reduce((s,b) => s + b.g, 0);
-  const targetM = 2135.44;
-  const targetG = 4535.44;
-
-  // On applique une correction sur le dernier pari si nécessaire
-  const diffM = Math.round((targetM - totalM) * 100) / 100;
-  const diffG = Math.round((targetG - totalG) * 100) / 100;
-  if (Math.abs(diffM) > 0.001) raw[raw.length-1].m = Math.round((raw[raw.length-1].m + diffM) * 100) / 100;
-  if (Math.abs(diffG) > 0.001 && raw[raw.length-1].g > 0) raw[raw.length-1].g = Math.round((raw[raw.length-1].g + diffG) * 100) / 100;
-
-  return raw.map((b, i) => ({
-    id: `seed-${String(i+1).padStart(3,'0')}`,
-    mise: r2(b.m),
-    gain: r2(b.g),
-    date: b.d,
-    year: new Date(b.d).getFullYear()
-  }));
 }
 
 /* ─── Calculs ──────────────────────────────────────────────────────── */
@@ -1949,44 +1843,35 @@ function mergeRecoveryBets(existing, recoveryBets) {
   });
 }
 
-/* ─── Stockage ─────────────────────────────────────────────────────── */
+/* ─── Stockage privé par compte ─────────────────────────────────────── */
 function loadBets() {
   try {
-    let loaded;
-    if (!localStorage.getItem(SEEDED_KEY)) {
-      loaded = generateSeedBets();
-      localStorage.setItem(SEEDED_KEY, '1');
-    } else {
-      loaded = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    }
-    if (!Array.isArray(loaded)) loaded = [];
-    loaded = normalizeJuly2026Amounts(loaded).bets;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(loaded));
-    return loaded;
+    const loaded = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    if (!Array.isArray(loaded)) return [];
+    return normalizeJuly2026Amounts(loaded).bets;
   } catch(e) { return []; }
 }
-function saveBets(bets) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(bets)); } catch(e) {}
+function saveBets(items) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); } catch(e) {}
   queueCloudPush();
 }
 
-/* ─── Sync cloud (Supabase) ───────────────────────────────────────── */
-const SYNC_CFG_KEY = 'statbet_sync_cfg_v1'; // { url, key, code }
+const SUPABASE_URL = 'https://dzyolkssdkqubbipekyb.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_IOGlya4rUiERviuMGPNoeA_NPmH89np';
 let supaClient = null;
+let authSession = null;
+let currentUserId = null;
 let syncPushTimer = null;
-let isPulling = false;
+let authMode = 'signup';
+let initialCloudLoadPending = true;
 
-function getSyncCfg() {
-  try { return JSON.parse(localStorage.getItem(SYNC_CFG_KEY) || 'null'); } catch(e) { return null; }
+function ensureSupaClient() {
+  if (!window.supabase) return null;
+  if (!supaClient) supaClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+  });
+  return supaClient;
 }
-function setSyncCfg(cfg) {
-  try { localStorage.setItem(SYNC_CFG_KEY, JSON.stringify(cfg)); } catch(e) {}
-}
-function clearSyncCfg() {
-  try { localStorage.removeItem(SYNC_CFG_KEY); } catch(e) {}
-  supaClient = null;
-}
-
 function setSyncIndicator(state) {
   const btn = document.getElementById('sync-btn');
   const dot = document.getElementById('sync-dot');
@@ -1998,121 +1883,176 @@ function setSyncIndicator(state) {
   else if (state === 'err') { btn.classList.add('err'); dot.classList.add('err'); }
   else { dot.classList.add('off'); }
 }
-
-function ensureSupaClient() {
-  const cfg = getSyncCfg();
-  if (!cfg || !cfg.url || !cfg.key || !cfg.code) return null;
-  if (!window.supabase) return null;
-  if (!supaClient) supaClient = window.supabase.createClient(cfg.url, cfg.key);
-  return supaClient;
+function saveLocalOnly(items) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); } catch(e) {}
 }
-
 function queueCloudPush() {
-  const cfg = getSyncCfg();
-  if (!cfg) return;
+  if (!currentUserId) return;
   clearTimeout(syncPushTimer);
-  syncPushTimer = setTimeout(pushToCloud, 700);
+  syncPushTimer = setTimeout(() => pushToCloud(true), 700);
 }
-
 async function pushToCloud(silent) {
-  const cfg = getSyncCfg();
-  if (!cfg) return true;
+  const userId = currentUserId;
   const client = ensureSupaClient();
-  if (!client) return false;
+  if (!userId || !client) return false;
+  const snapshot = JSON.parse(JSON.stringify(bets));
   setSyncIndicator('syncing');
   try {
-    const { error } = await client
-      .from('statbet_sync')
-      .upsert({ sync_code: cfg.code, data: bets, updated_at: new Date().toISOString() }, { onConflict: 'sync_code' });
+    const { error } = await client.from('paulybet_user_data').upsert({
+      user_id: userId, data: snapshot, updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id' });
     if (error) throw error;
-    setSyncIndicator('ok');
-    if (!silent) updateSyncStatusLine('ok', 'Synchronisé ✓');
+    if (currentUserId === userId) setSyncIndicator('ok');
+    if (!silent) updateSyncStatusLine('ok', 'Synchronisé automatiquement ✓');
     return true;
   } catch (e) {
     setSyncIndicator('err');
-    if (!silent) updateSyncStatusLine('err', 'Erreur d\'envoi : ' + (e.message || e));
+    if (!silent) updateSyncStatusLine('err', 'Erreur de synchronisation : ' + (e.message || e));
     return false;
   }
 }
-
 async function pullFromCloud(silent) {
-  const cfg = getSyncCfg();
+  const userId = currentUserId;
   const client = ensureSupaClient();
-  if (!client) return false;
-  isPulling = true;
+  if (!userId || !client) return false;
   setSyncIndicator('syncing');
   try {
-    const { data, error } = await client
-      .from('statbet_sync')
-      .select('data, updated_at')
-      .eq('sync_code', cfg.code)
-      .maybeSingle();
+    const { data, error } = await client.from('paulybet_user_data')
+      .select('data, updated_at').eq('user_id', userId).maybeSingle();
     if (error) throw error;
-    if (data && Array.isArray(data.data)) {
-      bets = data.data;
-      const julyCorrection = normalizeJuly2026Amounts(bets);
-      bets = julyCorrection.bets;
-      // Le cloud est la source de vérité : aucun historique de récupération
-      // n'est réinjecté automatiquement lors d'une lecture.
-      saveLocalOnly(bets);
-      renderDashboard();
-      if (document.getElementById('panel-history').classList.contains('active')) renderHistory();
-      if (julyCorrection.changed) {
-        try {
-          const { error: saveError } = await client
-            .from('statbet_sync')
-            .upsert({ sync_code: cfg.code, data: bets, updated_at: new Date().toISOString() }, { onConflict: 'sync_code' });
-          if (saveError) throw saveError;
-          if (!silent) updateSyncStatusLine('ok', julyCorrection.changed ? 'Montants de juillet corrigés et synchronisés ✓' : 'Historique complété et synchronisé ✓');
-        } catch (saveError) {
-          console.error('StatBet recovery cloud save failed', saveError);
-          if (!silent) updateSyncStatusLine('err', 'Paris ajoutés localement, sauvegarde cloud impossible : ' + (saveError.message || saveError));
-        }
-      }
-    }
-    initialCloudLoadPending = false;
+    bets = data && Array.isArray(data.data) ? data.data : [];
+    const normalized = normalizeJuly2026Amounts(bets);
+    bets = normalized.bets;
+    saveLocalOnly(bets);
+    renderDashboard();
     if (document.getElementById('panel-history')?.classList.contains('active')) renderHistory();
+    if (normalized.changed) await pushToCloud(true);
+    initialCloudLoadPending = false;
     setSyncIndicator('ok');
-    if (!silent) updateSyncStatusLine('ok', 'Données récupérées depuis le cloud ✓');
-    isPulling = false;
+    if (!silent) updateSyncStatusLine('ok', 'Données personnelles synchronisées ✓');
     return true;
   } catch (e) {
     initialCloudLoadPending = false;
-    if (document.getElementById('panel-history')?.classList.contains('active')) renderHistory();
     setSyncIndicator('err');
     if (!silent) updateSyncStatusLine('err', 'Erreur de récupération : ' + (e.message || e));
-    isPulling = false;
     return false;
   }
 }
-
-function saveLocalOnly(b) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(b)); } catch(e) {}
-}
-
-function updateSyncStatusLine(state, text) {
+function updateSyncStatusLine(state, message) {
   const el = document.getElementById('sync-status-line');
   if (!el) return;
   el.className = 'sync-status-line ' + (state || '');
-  el.textContent = text;
+  el.textContent = message;
 }
-
-const DEFAULT_SYNC_CFG = {
-  url: 'https://dzyolkssdkqubbipekyb.supabase.co',
-  key: 'sb_publishable_IOGlya4rUiERviuMGPNoeA_NPmH89np',
-  code: '1234'
-};
-
+function showAuthGate(show) {
+  const gate = document.getElementById('auth-overlay');
+  if (gate) gate.style.display = show ? 'flex' : 'none';
+}
+function setAuthMessage(message, isError) {
+  const el = document.getElementById('auth-message');
+  if (!el) return;
+  el.textContent = message || '';
+  el.classList.toggle('error', !!isError);
+}
+function toggleAuthMode() {
+  authMode = authMode === 'signin' ? 'signup' : 'signin';
+  document.getElementById('auth-title').textContent = authMode === 'signin' ? 'Ton espace de paris' : 'Créer ton compte';
+  document.getElementById('auth-intro').textContent = authMode === 'signin'
+    ? 'Connecte-toi pour retrouver ton suivi personnel.'
+    : 'Crée ton compte pour commencer ton suivi privé.';
+  document.getElementById('auth-submit').textContent = authMode === 'signin' ? 'Se connecter' : 'Créer mon compte';
+  document.getElementById('auth-toggle').textContent = authMode === 'signin' ? 'Créer un compte' : 'J’ai déjà un compte ? Se connecter';
+  document.getElementById('auth-password').autocomplete = authMode === 'signin' ? 'current-password' : 'new-password';
+  setAuthMessage('', false);
+}
+async function activateUserSession(session) {
+  authSession = session;
+  currentUserId = session.user.id;
+  initialCloudLoadPending = true;
+  const ok = await pullFromCloud(true);
+  if (!ok) {
+    setAuthMessage('Connexion établie, mais impossible de charger tes données. Réessaie dans un instant.', true);
+    return false;
+  }
+  showAuthGate(false);
+  setAuthMessage('', false);
+  await refreshAdminAccess();
+  return true;
+}
+async function initPublicAuth() {
+  const client = ensureSupaClient();
+  if (!client) { setAuthMessage('Connexion au service indisponible. Vérifie ta connexion internet.', true); return; }
+  const { data, error } = await client.auth.getSession();
+  if (error) { setAuthMessage('Impossible de vérifier la session : ' + error.message, true); return; }
+  if (data.session) await activateUserSession(data.session);
+  else {
+    currentUserId = null;
+    authSession = null;
+    bets = [];
+    // Keep the existing device cache untouched until an authenticated account is loaded.
+    // The login gate hides the dashboard; a successful cloud pull replaces this cache.
+    initialCloudLoadPending = false;
+    renderDashboard();
+    showAuthGate(true);
+    setSyncIndicator('');
+  }
+}
+async function submitAuth() {
+  const client = ensureSupaClient();
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const button = document.getElementById('auth-submit');
+  if (!email || !password) { setAuthMessage('Renseigne ton adresse e-mail et ton mot de passe.', true); return; }
+  if (password.length < 8) { setAuthMessage('Le mot de passe doit contenir au moins 8 caractères.', true); return; }
+  button.disabled = true;
+  setAuthMessage(authMode === 'signin' ? 'Connexion en cours…' : 'Création du compte…', false);
+  try {
+    const result = authMode === 'signin'
+      ? await client.auth.signInWithPassword({ email, password })
+      : await client.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: window.location.origin + window.location.pathname }
+        });
+    if (result.error) throw result.error;
+    if (result.data.session) {
+      await activateUserSession(result.data.session);
+    } else {
+      authMode = 'signin';
+      document.getElementById('auth-title').textContent = 'Ton espace de paris';
+      document.getElementById('auth-intro').textContent = 'Connecte-toi pour retrouver ton suivi personnel.';
+      document.getElementById('auth-submit').textContent = 'Se connecter';
+      document.getElementById('auth-toggle').textContent = 'Créer un compte';
+      document.getElementById('auth-password').autocomplete = 'current-password';
+      setAuthMessage('Compte créé. Vérifie ta boîte mail pour confirmer ton adresse, puis connecte-toi.', false);
+    }
+  } catch (e) {
+    setAuthMessage(e.message || 'Une erreur est survenue.', true);
+  } finally {
+    button.disabled = false;
+  }
+}
+async function disconnectSync() {
+  const client = ensureSupaClient();
+  if (client) await client.auth.signOut();
+  clearTimeout(syncPushTimer);
+  currentUserId = null;
+  authSession = null;
+  paulyBetIsAdmin = false;
+  const adminSection = document.getElementById('admin-settings-section');
+  if (adminSection) adminSection.style.display = 'none';
+  closeAdminDashboard();
+  bets = [];
+  saveLocalOnly(bets);
+  initialCloudLoadPending = false;
+  closeSyncModal();
+  renderDashboard();
+  setSyncIndicator('');
+  showAuthGate(true);
+}
 function openSyncModal() {
-  const cfg = getSyncCfg();
-  const values = cfg || DEFAULT_SYNC_CFG;
-  document.getElementById('sync-url').value = values.url;
-  document.getElementById('sync-key').value = values.key;
-  document.getElementById('sync-code').value = values.code;
-  document.getElementById('sync-disconnect-btn').style.display = cfg ? 'block' : 'none';
-  updateSyncStatusLine('', cfg
-    ? 'Configuration enregistrée pour cet appareil (code "' + cfg.code + '").'
-    : 'Paramètres préremplis. Tu peux les modifier puis appuyer sur « Connecter ».');
+  document.getElementById('account-email').textContent = authSession?.user?.email || 'Compte connecté';
+  updateSyncStatusLine('ok', 'Sauvegarde automatique activée. Tes données sont privées.');
   document.getElementById('sync-overlay').classList.add('show');
 }
 function closeSyncModal() {
@@ -2122,67 +2062,7 @@ function handleSyncOverlayClick(e) {
   if (e.target.id === 'sync-overlay') closeSyncModal();
 }
 
-async function connectAndSync() {
-  const url = document.getElementById('sync-url').value.trim();
-  const key = document.getElementById('sync-key').value.trim();
-  const code = document.getElementById('sync-code').value.trim();
-  if (!url || !key || !code) { updateSyncStatusLine('err', 'Remplis les 3 champs.'); return; }
-  if (!window.supabase) { updateSyncStatusLine('err', 'Librairie Supabase non chargée (vérifie ta connexion internet).'); return; }
-  setSyncCfg({ url, key, code });
-  supaClient = null;
-  updateSyncStatusLine('', 'Connexion en cours...');
-
-  const client = ensureSupaClient();
-  if (!client) { updateSyncStatusLine('err', 'Configuration invalide.'); return; }
-
-  // On regarde s'il existe déjà des données dans le cloud pour ce code
-  try {
-    const { data, error } = await client
-      .from('statbet_sync')
-      .select('data, updated_at')
-      .eq('sync_code', code)
-      .maybeSingle();
-    if (error) throw error;
-
-    if (data && Array.isArray(data.data) && data.data.length > 0) {
-      // Le cloud est la source de vérité : ne pas fusionner les historiques
-      // statiques de récupération, qui peuvent dupliquer des paris existants.
-      bets = data.data;
-      const julyCorrection = normalizeJuly2026Amounts(bets);
-      bets = julyCorrection.bets;
-      saveLocalOnly(bets);
-      if (julyCorrection.changed) {
-        const { error: saveError } = await client
-          .from('statbet_sync')
-          .upsert({ sync_code: code, data: bets, updated_at: new Date().toISOString() }, { onConflict: 'sync_code' });
-        if (saveError) throw saveError;
-      }
-      renderDashboard();
-      if (document.getElementById('panel-history').classList.contains('active')) renderHistory();
-      updateSyncStatusLine('ok', julyCorrection.changed ? 'Montants de juillet corrigés et synchronisés ✓' : 'Données existantes récupérées depuis le cloud ✓');
-    } else {
-      // Rien en ligne encore → on envoie les données locales actuelles
-      await pushToCloud(true);
-      updateSyncStatusLine('ok', 'Connecté. Données locales envoyées vers le cloud ✓');
-    }
-    setSyncIndicator('ok');
-    document.getElementById('sync-disconnect-btn').style.display = 'block';
-  } catch (e) {
-    setSyncIndicator('err');
-    updateSyncStatusLine('err', 'Erreur : ' + (e.message || e) + ' — vérifie l\'URL, la clé et que la table existe.');
-  }
-}
-
-function disconnectSync() {
-  clearSyncCfg();
-  setSyncIndicator('');
-  updateSyncStatusLine('', 'Déconnecté. Tes données restent en local sur cet appareil.');
-  document.getElementById('sync-disconnect-btn').style.display = 'none';
-}
-
 let bets = loadBets();
-// Tant que la première récupération cloud n'est pas terminée, ne pas afficher un faux état vide.
-let initialCloudLoadPending = !!getSyncCfg();
 
 /* Préférences locales Polybet : indépendantes des paris et de Supabase. */
 const APP_SETTINGS_KEY = 'paulybet_app_settings_v1';
@@ -3659,6 +3539,105 @@ function doEdit() {
   showToast('Pari modifié', editSelectedResult === 'win' ? 'win' : 'loss');
 }
 
+/* ─── Administration sécurisée Pauly’Bet ─────────────────────────────── */
+let paulyBetIsAdmin = false;
+let adminAccountsCache = [];
+function escapeAdminHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+async function refreshAdminAccess() {
+  const client = ensureSupaClient();
+  const section = document.getElementById('admin-settings-section');
+  paulyBetIsAdmin = false;
+  if (section) section.style.display = 'none';
+  if (!client || !currentUserId) return false;
+  try {
+    const { data, error } = await client.functions.invoke('paulybet-admin', { body: { action: 'list' } });
+    if (error) throw error;
+    adminAccountsCache = Array.isArray(data?.accounts) ? data.accounts : [];
+    paulyBetIsAdmin = Array.isArray(data?.accounts);
+    if (section) section.style.display = paulyBetIsAdmin ? '' : 'none';
+    return paulyBetIsAdmin;
+  } catch (_) {
+    paulyBetIsAdmin = false;
+    return false;
+  }
+}
+async function openAdminDashboard() {
+  if (!paulyBetIsAdmin || !currentUserId) return;
+  const overlay = document.getElementById('admin-overlay');
+  overlay.classList.add('show');
+  document.getElementById('admin-modal-title').textContent = 'Administration Pauly’Bet';
+  document.getElementById('admin-modal-sub').textContent = 'Comptes inscrits sur la plateforme';
+  const content = document.getElementById('admin-modal-content');
+  content.innerHTML = '<div class="sync-status-line">Chargement des comptes…</div>';
+  const client = ensureSupaClient();
+  try {
+    const { data, error } = await client.functions.invoke('paulybet-admin', { body: { action: 'list' } });
+    if (error) throw error;
+    adminAccountsCache = Array.isArray(data?.accounts) ? data.accounts : [];
+    if (!adminAccountsCache.length) {
+      content.innerHTML = '<div class="sync-status-line">Aucun compte inscrit pour le moment.</div>';
+      return;
+    }
+    const ownerAccount = adminAccountsCache.find(account => account.user_id === currentUserId);
+    const migrationPrompt = ownerAccount && Number(ownerAccount.bet_count || 0) === 0
+      ? '<div class="admin-migrate-card"><strong>Importer ton historique actuel</strong><p>Transférer tes paris vers ce compte personnel, sans supprimer ni modifier la sauvegarde d’origine.</p><button class="admin-migrate-btn" onclick="migrateOwnerBets()">Importer mes paris</button></div>'
+      : '';
+    content.innerHTML = migrationPrompt + '<div class="admin-summary"><strong>' + adminAccountsCache.length + '</strong><span>compte(s) inscrit(s)</span></div>' +
+      adminAccountsCache.map(account => '<button class="admin-account-row" onclick="viewAdminAccount(\'' + escapeAdminHtml(account.user_id) + '\')"><span class="admin-account-main"><strong>' + escapeAdminHtml(account.email || 'E-mail indisponible') + '</strong><small>Inscription : ' + (account.created_at ? new Date(account.created_at).toLocaleDateString('fr-FR') : '—') + '</small></span><span class="admin-account-count">' + Number(account.bet_count || 0) + ' paris　›</span></button>').join('');
+  } catch (e) {
+    content.innerHTML = '<div class="sync-status-line err">Impossible de charger les comptes : ' + escapeAdminHtml(e.message || e) + '</div>';
+  }
+}
+async function migrateOwnerBets() {
+  if (!paulyBetIsAdmin || !currentUserId) return;
+  const content = document.getElementById('admin-modal-content');
+  content.innerHTML = '<div class="sync-status-line">Vérification de la sauvegarde et transfert sécurisé…</div>';
+  try {
+    const { data, error } = await ensureSupaClient().functions.invoke('paulybet-admin', { body: { action: 'migrate-owner' } });
+    if (error) throw error;
+    if (!data?.migrated) throw new Error('La migration n’a pas été effectuée.');
+    const refreshed = await pullFromCloud(true);
+    if (!refreshed) throw new Error('Les paris ont été transférés, mais leur rechargement a échoué. Reconnecte-toi pour vérifier ton historique.');
+    await openAdminDashboard();
+  } catch (e) {
+    content.innerHTML = '<div class="sync-status-line err">' + escapeAdminHtml(e.message || e) + '</div><button class="admin-back" onclick="openAdminDashboard()">← Retour aux comptes</button>';
+  }
+}
+async function viewAdminAccount(userId) {
+  if (!paulyBetIsAdmin || !currentUserId || !/^[0-9a-f-]{36}$/i.test(userId)) return;
+  const account = adminAccountsCache.find(item => item.user_id === userId);
+  if (!account) return;
+  const title = document.getElementById('admin-modal-title');
+  const sub = document.getElementById('admin-modal-sub');
+  const content = document.getElementById('admin-modal-content');
+  title.textContent = 'Historique du membre';
+  sub.textContent = account.email || 'Compte membre';
+  content.innerHTML = '<div class="sync-status-line">Chargement de l’historique…</div>';
+  try {
+    const { data, error } = await ensureSupaClient().functions.invoke('paulybet-admin', { body: { action: 'account-data', user_id: userId } });
+    if (error) throw error;
+    const userBets = Array.isArray(data?.data) ? data.data : [];
+    const stake = userBets.reduce((sum, bet) => sum + (Number(bet.mise) || 0), 0);
+    const payout = userBets.reduce((sum, bet) => sum + (Number(bet.gain) || 0), 0);
+    const net = payout - stake;
+    const money = n => Number(n).toLocaleString('fr-FR', {style:'currency',currency:'EUR'});
+    content.innerHTML = '<button class="admin-back" onclick="openAdminDashboard()">← Tous les comptes</button>' +
+      '<div class="admin-stats"><div><strong>' + userBets.length + '</strong><small>Paris</small></div><div><strong>' + money(stake) + '</strong><small>Mises</small></div><div><strong>' + money(payout) + '</strong><small>Gains</small></div><div><strong>' + (net >= 0 ? '+' : '') + money(net) + '</strong><small>Résultat net</small></div></div>' +
+      '<div class="admin-last-update">Dernière sauvegarde : ' + (data?.updated_at ? new Date(data.updated_at).toLocaleString('fr-FR') : 'Aucune') + '</div>' +
+      (userBets.length ? '<div class="admin-bet-list">' + [...userBets].sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0)).map(bet => '<div class="admin-bet-row"><span>' + escapeAdminHtml(bet.date ? new Date(bet.date).toLocaleString('fr-FR') : 'Date inconnue') + '</span><strong>Mise ' + money(bet.mise) + '</strong><span>Gain ' + money(bet.gain) + '</span></div>').join('') + '</div>' : '<div class="sync-status-line">Ce membre n’a pas encore enregistré de pari.</div>');
+  } catch (e) {
+    content.innerHTML = '<button class="admin-back" onclick="openAdminDashboard()">← Tous les comptes</button><div class="sync-status-line err">Impossible de charger cet historique : ' + escapeAdminHtml(e.message || e) + '</div>';
+  }
+}
+function closeAdminDashboard() {
+  document.getElementById('admin-overlay')?.classList.remove('show');
+}
+function handleAdminOverlayClick(event) {
+  if (event.target?.id === 'admin-overlay') closeAdminDashboard();
+}
+
 /* ─── Init ──────────────────────────────────────────────────────────── */
 renderDashboard();
 // Active réellement les gestes horizontaux après la création des deux panneaux.
@@ -3681,11 +3660,8 @@ document.addEventListener('keydown', e => {
 inputGain.addEventListener('keydown', e => { if (e.key === 'Enter' && !document.getElementById('result-celebration')?.classList.contains('show')) addBet(); });
 
 (function initSync() {
-  setSyncIndicator(getSyncCfg() ? 'ok' : '');
-  if (getSyncCfg()) {
-    // Petite latence pour laisser le script Supabase finir de charger
-    setTimeout(() => pullFromCloud(true), 300);
-  }
+  setSyncIndicator('');
+  setTimeout(() => initPublicAuth(), 300);
 })();
 /* Retour haptique global et animation d'appui */
 (function initGlobalTapFeedback() {
