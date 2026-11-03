@@ -3697,9 +3697,9 @@ async function refreshAdminAccess() {
   if (section) section.style.display = 'none';
   if (!client || !currentUserId) return false;
   try {
-    const { data, error } = await client.functions.invoke('paulybet-admin', { body: { action: 'check' } });
+    const { data, error } = await client.functions.invoke('paulybet-admin', { body: { action: 'list' } });
     if (error) throw error;
-    paulyBetIsAdmin = data?.admin === true;
+    paulyBetIsAdmin = Array.isArray(data?.accounts);
     if (section) section.style.display = paulyBetIsAdmin ? '' : 'none';
     return paulyBetIsAdmin;
   } catch (_) {
