@@ -1316,7 +1316,7 @@ body.pauly-startup-ready #app{visibility:visible!important}
 .auth-card input:focus{border-color:#A6FF3B;box-shadow:0 0 0 3px rgba(166,255,59,.1)}
 .auth-primary{width:100%;height:49px;margin-top:5px;border:0;border-radius:11px;background:#A6FF3B;color:#10150B;font-size:14px;font-weight:900}
 .auth-primary:disabled{opacity:.55}
-.auth-switch{display:block;width:100%;padding:15px 8px 5px;border:0;background:transparent;color:#C9D4C5;font-size:13px;font-weight:700}
+.auth-switch{display:block;width:100%;padding:12px 8px 4px;border:0;background:transparent;color:#C9D4C5;font-size:12px;font-weight:600}
 .auth-message{min-height:18px;margin-top:12px;color:#A6FF3B;font-size:12px;line-height:1.45;text-align:center}
 .auth-message.error{color:#FF7B83}
 </style>
@@ -1542,14 +1542,14 @@ body.pauly-startup-ready #app{visibility:visible!important}
   <div class="auth-card">
     <div class="auth-mark"><img src="../icon.png" alt="Logo Pauly’Bet"></div>
     <div class="auth-brand">PAULY’BET</div>
-    <h1 id="auth-title">Ton espace de paris</h1>
-    <p class="auth-intro" id="auth-intro">Connecte-toi pour retrouver ton suivi personnel.</p>
+    <h1 id="auth-title">Créer ton compte</h1>
+    <p class="auth-intro" id="auth-intro">Crée ton compte pour commencer ton suivi privé.</p>
     <label for="auth-email">Adresse e-mail</label>
     <input id="auth-email" type="email" autocomplete="email" inputmode="email" placeholder="ton@email.com">
     <label for="auth-password">Mot de passe</label>
-    <input id="auth-password" type="password" autocomplete="current-password" placeholder="8 caractères minimum">
-    <button class="auth-primary" id="auth-submit" onclick="submitAuth()">Se connecter</button>
-    <button class="auth-switch" id="auth-toggle" onclick="toggleAuthMode()">Créer un compte</button>
+    <input id="auth-password" type="password" autocomplete="new-password" placeholder="8 caractères minimum">
+    <button class="auth-primary" id="auth-submit" onclick="submitAuth()">Créer mon compte</button>
+    <button class="auth-switch" id="auth-toggle" onclick="toggleAuthMode()">J’ai déjà un compte ? Se connecter</button>
     <p class="auth-message" id="auth-message" role="status"></p>
   </div>
 </div>
@@ -1864,7 +1864,7 @@ let supaClient = null;
 let authSession = null;
 let currentUserId = null;
 let syncPushTimer = null;
-let authMode = 'signin';
+let authMode = 'signup';
 let initialCloudLoadPending = true;
 
 function ensureSupaClient() {
@@ -1963,7 +1963,7 @@ function toggleAuthMode() {
     ? 'Connecte-toi pour retrouver ton suivi personnel.'
     : 'Crée ton compte pour commencer ton suivi privé.';
   document.getElementById('auth-submit').textContent = authMode === 'signin' ? 'Se connecter' : 'Créer mon compte';
-  document.getElementById('auth-toggle').textContent = authMode === 'signin' ? 'Créer un compte' : 'J’ai déjà un compte';
+  document.getElementById('auth-toggle').textContent = authMode === 'signin' ? 'Créer un compte' : 'J’ai déjà un compte ? Se connecter';
   document.getElementById('auth-password').autocomplete = authMode === 'signin' ? 'current-password' : 'new-password';
   setAuthMessage('', false);
 }
