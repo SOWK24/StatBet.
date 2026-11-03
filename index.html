@@ -1961,11 +1961,6 @@ function loadBets() {
     }
     if (!Array.isArray(loaded)) loaded = [];
     loaded = normalizeJuly2026Amounts(loaded).bets;
-    const recoveryBets = normalizeJuly2026Amounts([...JULY_RECOVERY_BETS, ...OCTOBER_2026_RECOVERY_BETS, ...NOVEMBER_2026_RECOVERY_BETS,
-      { id: 'recovery-2026-08-14', mise: 10, gain: 20.5, date: '2026-08-14T16:00:00Z', year: 2026 },
-      { id: 'recovery-2026-09-17', mise: 10, gain: 20.5, date: '2026-09-17T16:00:00Z', year: 2026 }
-    ]).bets;
-    loaded = mergeRecoveryBets(loaded, recoveryBets);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(loaded));
     return loaded;
   } catch(e) { return []; }
@@ -2057,19 +2052,12 @@ async function pullFromCloud(silent) {
       bets = data.data;
       const julyCorrection = normalizeJuly2026Amounts(bets);
       bets = julyCorrection.bets;
-      // Reconstitution idempotente des paris restaurés.
-      const recoveryBets = normalizeJuly2026Amounts([...JULY_RECOVERY_BETS, ...OCTOBER_2026_RECOVERY_BETS, ...NOVEMBER_2026_RECOVERY_BETS,
-        { id: 'recovery-2026-08-14', mise: 10, gain: 20.5, date: '2026-08-14T16:00:00Z', year: 2026 },
-        { id: 'recovery-2026-09-17', mise: 10, gain: 20.5, date: '2026-09-17T16:00:00Z', year: 2026 }
-      ]).bets;
-      let addedRecoveryBets = false;
-      const beforeRecoveryCount = bets.length;
-      bets = mergeRecoveryBets(bets, recoveryBets);
-      addedRecoveryBets = bets.length !== beforeRecoveryCount;
+      // Le cloud est la source de vérité : aucun historique de récupération
+      // n'est réinjecté automatiquement lors d'une lecture.
       saveLocalOnly(bets);
       renderDashboard();
       if (document.getElementById('panel-history').classList.contains('active')) renderHistory();
-      if (addedRecoveryBets || julyCorrection.changed) {
+      if (julyCorrection.changed) {
         try {
           const { error: saveError } = await client
             .from('statbet_sync')
@@ -2157,20 +2145,13 @@ async function connectAndSync() {
     if (error) throw error;
 
     if (data && Array.isArray(data.data) && data.data.length > 0) {
-      // Les données cloud restent la base ; ajout idempotent des paris reconstitués.
+      // Le cloud est la source de vérité : ne pas fusionner les historiques
+      // statiques de récupération, qui peuvent dupliquer des paris existants.
       bets = data.data;
       const julyCorrection = normalizeJuly2026Amounts(bets);
       bets = julyCorrection.bets;
-      const recoveryBets = normalizeJuly2026Amounts([...JULY_RECOVERY_BETS, ...OCTOBER_2026_RECOVERY_BETS, ...NOVEMBER_2026_RECOVERY_BETS,
-        { id: 'recovery-2026-08-14', mise: 10, gain: 20.5, date: '2026-08-14T16:00:00Z', year: 2026 },
-        { id: 'recovery-2026-09-17', mise: 10, gain: 20.5, date: '2026-09-17T16:00:00Z', year: 2026 }
-      ]).bets;
-      let addedRecoveryBets = false;
-      const beforeRecoveryCount = bets.length;
-      bets = mergeRecoveryBets(bets, recoveryBets);
-      addedRecoveryBets = bets.length !== beforeRecoveryCount;
       saveLocalOnly(bets);
-      if (addedRecoveryBets || julyCorrection.changed) {
+      if (julyCorrection.changed) {
         const { error: saveError } = await client
           .from('statbet_sync')
           .upsert({ sync_code: code, data: bets, updated_at: new Date().toISOString() }, { onConflict: 'sync_code' });
