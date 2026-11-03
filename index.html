@@ -3733,7 +3733,7 @@ async function openAdminDashboard() {
       ? '<div class="admin-migrate-card"><strong>Importer ton historique actuel</strong><p>Transférer tes paris vers ce compte personnel, sans supprimer ni modifier la sauvegarde d’origine.</p><button class="admin-migrate-btn" onclick="migrateOwnerBets()">Importer mes paris</button></div>'
       : '';
     content.innerHTML = migrationPrompt + '<div class="admin-summary"><strong>' + adminAccountsCache.length + '</strong><span>compte(s) inscrit(s)</span></div>' +
-      adminAccountsCache.map(account => '<button class="admin-account-row" onclick="viewAdminAccount(\\'' + escapeAdminHtml(account.user_id) + '\\')"><span class="admin-account-main"><strong>' + escapeAdminHtml(account.email || 'E-mail indisponible') + '</strong><small>Inscription : ' + (account.created_at ? new Date(account.created_at).toLocaleDateString('fr-FR') : '—') + '</small></span><span class="admin-account-count">' + Number(account.bet_count || 0) + ' paris　›</span></button>').join('');
+      adminAccountsCache.map(account => '<button class="admin-account-row" onclick="viewAdminAccount(\'' + escapeAdminHtml(account.user_id) + '\')"><span class="admin-account-main"><strong>' + escapeAdminHtml(account.email || 'E-mail indisponible') + '</strong><small>Inscription : ' + (account.created_at ? new Date(account.created_at).toLocaleDateString('fr-FR') : '—') + '</small></span><span class="admin-account-count">' + Number(account.bet_count || 0) + ' paris　›</span></button>').join('');
   } catch (e) {
     content.innerHTML = '<div class="sync-status-line err">Impossible de charger les comptes : ' + escapeAdminHtml(e.message || e) + '</div>';
   }
