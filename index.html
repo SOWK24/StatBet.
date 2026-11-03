@@ -2170,6 +2170,8 @@ function handleSyncOverlayClick(e) {
   if (e.target.id === 'sync-overlay') closeSyncModal();
 }
 
+let bets = loadBets();
+
 /* Préférences locales Polybet : indépendantes des paris et de Supabase. */
 const APP_SETTINGS_KEY = 'paulybet_app_settings_v1';
 const DEFAULT_APP_SETTINGS = { color:'green', appearance:'dark', haptics:true, confirmDelete:true };
