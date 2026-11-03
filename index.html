@@ -3703,6 +3703,7 @@ async function refreshAdminAccess() {
   try {
     const { data, error } = await client.functions.invoke('paulybet-admin', { body: { action: 'list' } });
     if (error) throw error;
+    adminAccountsCache = Array.isArray(data?.accounts) ? data.accounts : [];
     paulyBetIsAdmin = Array.isArray(data?.accounts);
     if (section) section.style.display = paulyBetIsAdmin ? '' : 'none';
     return paulyBetIsAdmin;
@@ -3746,7 +3747,8 @@ async function migrateOwnerBets() {
     const { data, error } = await ensureSupaClient().functions.invoke('paulybet-admin', { body: { action: 'migrate-owner' } });
     if (error) throw error;
     if (!data?.migrated) throw new Error('La migration n’a pas été effectuée.');
-    await pullFromCloud(true);
+    const refreshed = await pullFromCloud(true);
+    if (!refreshed) throw new Error('Les paris ont été transférés, mais leur rechargement a échoué. Reconnecte-toi pour vérifier ton historique.');
     await openAdminDashboard();
   } catch (e) {
     content.innerHTML = '<div class="sync-status-line err">' + escapeAdminHtml(e.message || e) + '</div><button class="admin-back" onclick="openAdminDashboard()">← Retour aux comptes</button>';
