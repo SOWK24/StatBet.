@@ -2186,6 +2186,7 @@ async function disconnectSync() {
   paulyBetIsAdmin = false;
   const adminSection = document.getElementById('admin-settings-section');
   if (adminSection) adminSection.style.display = 'none';
+  closeAdminDashboard();
   bets = [];
   saveLocalOnly(bets);
   initialCloudLoadPending = false;
