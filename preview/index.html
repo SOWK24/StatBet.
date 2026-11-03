@@ -2011,7 +2011,11 @@ async function submitAuth() {
   try {
     const result = authMode === 'signin'
       ? await client.auth.signInWithPassword({ email, password })
-      : await client.auth.signUp({ email, password });
+      : await client.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: window.location.origin + window.location.pathname }
+        });
     if (result.error) throw result.error;
     if (result.data.session) {
       await activateUserSession(result.data.session);
