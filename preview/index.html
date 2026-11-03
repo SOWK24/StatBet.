@@ -11,7 +11,6 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <!-- Écran de lancement noir : aucun logo statique avant l’animation HTML. -->
-<link rel="apple-touch-startup-image" href="../startup-iphone.png" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3)">
 <style id="pauly-splash-critical">
 /* Fond noir immédiat : évite le flash blanc du WebView iOS. */
 :root { color-scheme:dark; background-color:#000 !important; }
@@ -1307,7 +1306,8 @@ body.pauly-startup-ready #app{visibility:visible!important}
 <style id="pauly-public-auth">
 .auth-overlay{position:fixed;inset:0;z-index:30000;display:flex;align-items:center;justify-content:center;padding:24px 18px calc(24px + env(safe-area-inset-bottom));background:radial-gradient(ellipse at 50% 0%,rgba(166,255,59,.12),transparent 48%),#070907}
 .auth-card{width:100%;max-width:420px;padding:30px 23px 25px;border:1px solid rgba(166,255,59,.18);border-radius:24px;background:#101510;box-shadow:0 24px 80px rgba(0,0,0,.55)}
-.auth-mark{width:54px;height:54px;border-radius:17px;display:flex;align-items:center;justify-content:center;background:#A6FF3B;color:#10150B;font-size:34px;font-weight:900;margin-bottom:15px;box-shadow:0 0 28px rgba(166,255,59,.15)}
+.auth-mark{width:64px;height:64px;border-radius:17px;display:flex;align-items:center;justify-content:center;background:#000;overflow:hidden;margin-bottom:15px;box-shadow:0 0 28px rgba(166,255,59,.15)}
+.auth-mark img{display:block;width:100%;height:100%;object-fit:contain;border-radius:17px}
 .auth-brand{font-size:10px;letter-spacing:2.4px;font-weight:900;color:#A6FF3B;margin-bottom:9px}
 .auth-card h1{font-size:25px;line-height:1.15;font-weight:900;color:#F7F8F4;margin-bottom:8px}
 .auth-intro{font-size:13px;line-height:1.5;color:#AEB8AA;margin-bottom:22px}
@@ -1350,7 +1350,7 @@ body.pauly-startup-ready #app{visibility:visible!important}
 
 </head>
 <body style="margin:0;padding:0;min-height:100vh;background:#000!important;color-scheme:dark">
-<div id="pauly-splash" aria-hidden="true"><img src="./icon.png" alt=""></div>
+<div id="pauly-splash" aria-hidden="true"><img src="../icon.png" alt=""></div>
 <script>
 (function(){
   var splash=document.getElementById('pauly-splash');
@@ -1376,7 +1376,7 @@ body.pauly-startup-ready #app{visibility:visible!important}
   <div id="panel-dashboard" class="panel active">
     <div class="panel-inner">
       <div class="logo-row">
-        <div class="app-brand"><img class="app-brand-icon" src="./icon.png" alt="" width="39" height="39"><div class="app-logo">PAULY<span>’BET</span></div></div>
+        <div class="app-brand"><img class="app-brand-icon" src="../icon.png" alt="" width="39" height="39"><div class="app-logo">PAULY<span>’BET</span></div></div>
         <button class="sync-btn" id="sync-btn" onclick="openSyncModal()" aria-label="Mon compte">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.36-2.64L3 16"/><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.36 2.64L21 8"/><polyline points="21 3 21 8 16 8"/><polyline points="3 21 3 16 8 16"/></svg>
           <span class="sync-dot off" id="sync-dot"></span>
@@ -1451,7 +1451,7 @@ body.pauly-startup-ready #app{visibility:visible!important}
 
   <div id="panel-history" class="panel">
     <div class="panel-inner">
-      <div class="history-header"><div class="app-brand"><img class="app-brand-icon" src="./icon.png" alt="" width="39" height="39"><div class="history-title">HISTORIQUE</div></div></div>
+      <div class="history-header"><div class="app-brand"><img class="app-brand-icon" src="../icon.png" alt="" width="39" height="39"><div class="history-title">HISTORIQUE</div></div></div>
       <div id="history-container"></div>
     </div>
   </div>
@@ -1459,7 +1459,7 @@ body.pauly-startup-ready #app{visibility:visible!important}
     <div class="panel-inner settings-inner">
       <div class="settings-header">
         <div class="app-brand">
-          <img class="app-brand-icon" src="./icon.png" alt="" width="39" height="39">
+          <img class="app-brand-icon" src="../icon.png" alt="" width="39" height="39">
           <div class="history-title">PARAMÈTRES</div>
         </div>
       </div>
@@ -1540,7 +1540,7 @@ body.pauly-startup-ready #app{visibility:visible!important}
 
 <div class="auth-overlay" id="auth-overlay">
   <div class="auth-card">
-    <div class="auth-mark">P</div>
+    <div class="auth-mark"><img src="../icon.png" alt="Logo Pauly’Bet"></div>
     <div class="auth-brand">PAULY’BET</div>
     <h1 id="auth-title">Ton espace de paris</h1>
     <p class="auth-intro" id="auth-intro">Connecte-toi pour retrouver ton suivi personnel.</p>
