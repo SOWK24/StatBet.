@@ -3570,6 +3570,23 @@ async function refreshAdminAccess() {
 async function openAdminDashboard() {
   if (!paulyBetIsAdmin || !currentUserId) return;
   const overlay = document.getElementById('admin-overlay');
+  const adminSheet = overlay.querySelector('.admin-sheet');
+  // Force le centrage au moment exact de l'ouverture, indépendamment
+  // des styles génériques des autres fenêtres en bas d'écran.
+  overlay.style.setProperty('position', 'fixed', 'important');
+  overlay.style.setProperty('inset', '0', 'important');
+  overlay.style.setProperty('display', 'flex', 'important');
+  overlay.style.setProperty('align-items', 'center', 'important');
+  overlay.style.setProperty('justify-content', 'center', 'important');
+  overlay.style.setProperty('padding', 'max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom))', 'important');
+  if (adminSheet) {
+    adminSheet.style.setProperty('width', '100%', 'important');
+    adminSheet.style.setProperty('max-width', '480px', 'important');
+    adminSheet.style.setProperty('max-height', 'calc(100dvh - 32px)', 'important');
+    adminSheet.style.setProperty('margin', 'auto', 'important');
+    adminSheet.style.setProperty('border-radius', '18px', 'important');
+    adminSheet.style.setProperty('transform', 'none', 'important');
+  }
   overlay.classList.add('show');
   document.getElementById('admin-modal-title').textContent = 'Administration Pauly’Bet';
   document.getElementById('admin-modal-sub').textContent = 'Comptes inscrits sur la plateforme';
