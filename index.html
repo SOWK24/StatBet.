@@ -1347,7 +1347,7 @@ body.pauly-startup-ready #app{visibility:visible!important}
     <div class="panel-inner">
       <div class="logo-row">
         <div class="app-brand"><img class="app-brand-icon" src="./icon.png" alt="" width="39" height="39"><div class="app-logo">PAULY<span>’BET</span></div></div>
-        <button class="sync-btn" id="sync-btn" onclick="openSyncModal()" aria-label="Synchronisation">
+        <button class="sync-btn" id="sync-btn" onclick="openSyncModal()" aria-label="Mon compte">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 1-9 9 9 9 0 0 1-6.36-2.64L3 16"/><path d="M3 12a9 9 0 0 1 9-9 9 9 0 0 1 6.36 2.64L21 8"/><polyline points="21 3 21 8 16 8"/><polyline points="3 21 3 16 8 16"/></svg>
           <span class="sync-dot off" id="sync-dot"></span>
         </button>
@@ -1451,7 +1451,7 @@ body.pauly-startup-ready #app{visibility:visible!important}
         <div class="settings-card"><div class="settings-label">Sauvegarder mes paris</div><div class="settings-sub">Télécharger une copie de tes paris au format JSON.</div><button class="settings-action" onclick="exportBetsBackup()">↓　Exporter une sauvegarde</button></div>
         <div class="settings-card settings-toggle-row"><div><div class="settings-label">Confirmation avant suppression</div><div class="settings-sub">Éviter les suppressions accidentelles.</div></div><label class="settings-switch"><input id="setting-delete" type="checkbox" onchange="setAppSetting('confirmDelete',this.checked)"><span></span></label></div>
       </div>
-      <div class="settings-section"><div class="settings-heading">SYNCHRONISATION</div><div class="settings-card"><div class="settings-label">Compte cloud</div><div class="settings-sub">Gérer la connexion et la synchronisation de tes données.</div><button class="settings-action" onclick="openSyncModal()">Gérer la synchronisation</button></div></div>
+      <div class="settings-section"><div class="settings-heading">MON COMPTE</div><div class="settings-card"><div class="settings-label">Compte personnel</div><div class="settings-sub">Gérer ton compte et ta sauvegarde privée.</div><button class="settings-action" onclick="openSyncModal()">Gérer mon compte</button></div></div>
     </div>
   </div>
   </div>
@@ -2129,8 +2129,13 @@ async function submitAuth() {
     if (result.data.session) {
       await activateUserSession(result.data.session);
     } else {
+      authMode = 'signin';
+      document.getElementById('auth-title').textContent = 'Ton espace de paris';
+      document.getElementById('auth-intro').textContent = 'Connecte-toi pour retrouver ton suivi personnel.';
+      document.getElementById('auth-submit').textContent = 'Se connecter';
+      document.getElementById('auth-toggle').textContent = 'Créer un compte';
+      document.getElementById('auth-password').autocomplete = 'current-password';
       setAuthMessage('Compte créé. Vérifie ta boîte mail pour confirmer ton adresse, puis connecte-toi.', false);
-      if (authMode === 'signup') toggleAuthMode();
     }
   } catch (e) {
     setAuthMessage(e.message || 'Une erreur est survenue.', true);
