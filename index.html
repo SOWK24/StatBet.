@@ -1319,6 +1319,29 @@ body.pauly-startup-ready #app{visibility:visible!important}
 .auth-message.error{color:#FF7B83}
 </style>
 
+
+<style id="paulybet-admin-styles">
+.admin-sheet{max-height:88vh;overflow-y:auto}
+.admin-topline{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.admin-topline h2{margin:0}
+.admin-close{border:0;background:var(--card2,#242424);color:inherit;border-radius:50%;width:34px;height:34px;font-size:17px}
+.admin-summary{display:flex;align-items:baseline;gap:8px;padding:14px 0;font-size:13px;opacity:.8}
+.admin-summary strong{font-size:25px;opacity:1}
+.admin-account-row{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 2px;border:0;border-top:1px solid var(--border,rgba(255,255,255,.1));background:transparent;color:inherit;text-align:left}
+.admin-account-main{display:flex;flex-direction:column;gap:5px;min-width:0}
+.admin-account-main strong{font-size:13px;overflow-wrap:anywhere}
+.admin-account-main small,.admin-account-count,.admin-last-update{font-size:11px;opacity:.65}
+.admin-account-count{white-space:nowrap}
+.admin-back{border:0;background:transparent;color:var(--accent,#a6ff3b);padding:12px 0;font-weight:700}
+.admin-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:12px 0}
+.admin-stats>div{padding:12px;border-radius:12px;background:var(--card2,#242424);display:flex;flex-direction:column;gap:5px;min-width:0}
+.admin-stats strong{font-size:16px;overflow-wrap:anywhere}
+.admin-stats small{font-size:10px;opacity:.65}
+.admin-last-update{margin:8px 0 12px}
+.admin-bet-list{max-height:42vh;overflow:auto}
+.admin-bet-row{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px;padding:11px 0;border-top:1px solid var(--border,rgba(255,255,255,.1));font-size:11px}
+</style>
+
 </head>
 <body style="margin:0;padding:0;min-height:100vh;background:#000!important;color-scheme:dark">
 <div id="pauly-splash" aria-hidden="true"><img src="./icon.png" alt=""></div>
@@ -1453,6 +1476,7 @@ body.pauly-startup-ready #app{visibility:visible!important}
         <div class="settings-card settings-toggle-row"><div><div class="settings-label">Confirmation avant suppression</div><div class="settings-sub">Éviter les suppressions accidentelles.</div></div><label class="settings-switch"><input id="setting-delete" type="checkbox" onchange="setAppSetting('confirmDelete',this.checked)"><span></span></label></div>
       </div>
       <div class="settings-section"><div class="settings-heading">MON COMPTE</div><div class="settings-card"><div class="settings-label">Compte personnel</div><div class="settings-sub">Gérer ton compte et ta sauvegarde privée.</div><button class="settings-action" onclick="openSyncModal()">Gérer mon compte</button></div></div>
+      <div class="settings-section" id="admin-settings-section" style="display:none"><div class="settings-heading">ADMINISTRATION</div><div class="settings-card"><div class="settings-label">Espace administrateur</div><div class="settings-sub">Consulter les comptes et les historiques des membres.</div><button class="settings-action" onclick="openAdminDashboard()">Ouvrir le tableau de bord</button></div></div>
     </div>
   </div>
   </div>
@@ -1533,6 +1557,14 @@ body.pauly-startup-ready #app{visibility:visible!important}
       <button class="btn-secondary" onclick="closeSyncModal()">Fermer</button>
     </div>
     <button class="btn-danger-text" id="sync-disconnect-btn" onclick="disconnectSync()">Se déconnecter</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="admin-overlay" onclick="handleAdminOverlayClick(event)">
+  <div class="modal-sheet admin-sheet" onclick="event.stopPropagation()">
+    <div class="admin-topline"><h2 id="admin-modal-title">Administration Pauly’Bet</h2><button class="admin-close" onclick="closeAdminDashboard()" aria-label="Fermer">✕</button></div>
+    <div class="modal-sub" id="admin-modal-sub">Comptes inscrits sur la plateforme</div>
+    <div id="admin-modal-content"><div class="sync-status-line">Chargement des comptes…</div></div>
   </div>
 </div>
 
@@ -2094,6 +2126,7 @@ async function activateUserSession(session) {
   }
   showAuthGate(false);
   setAuthMessage('', false);
+  await refreshAdminAccess();
   return true;
 }
 async function initPublicAuth() {
@@ -2150,6 +2183,9 @@ async function disconnectSync() {
   clearTimeout(syncPushTimer);
   currentUserId = null;
   authSession = null;
+  paulyBetIsAdmin = false;
+  const adminSection = document.getElementById('admin-settings-section');
+  if (adminSection) adminSection.style.display = 'none';
   bets = [];
   saveLocalOnly(bets);
   initialCloudLoadPending = false;
@@ -3645,6 +3681,85 @@ function doEdit() {
   renderDashboard();
   renderHistory();
   showToast('Pari modifié', editSelectedResult === 'win' ? 'win' : 'loss');
+}
+
+/* ─── Administration sécurisée Pauly’Bet ─────────────────────────────── */
+let paulyBetIsAdmin = false;
+let adminAccountsCache = [];
+function escapeAdminHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+async function refreshAdminAccess() {
+  const client = ensureSupaClient();
+  const section = document.getElementById('admin-settings-section');
+  paulyBetIsAdmin = false;
+  if (section) section.style.display = 'none';
+  if (!client || !currentUserId) return false;
+  try {
+    const { data, error } = await client.rpc('paulybet_admin_accounts');
+    if (error) throw error;
+    paulyBetIsAdmin = Array.isArray(data);
+    if (section) section.style.display = paulyBetIsAdmin ? '' : 'none';
+    return paulyBetIsAdmin;
+  } catch (_) {
+    paulyBetIsAdmin = false;
+    return false;
+  }
+}
+async function openAdminDashboard() {
+  if (!paulyBetIsAdmin || !currentUserId) return;
+  const overlay = document.getElementById('admin-overlay');
+  overlay.classList.add('show');
+  document.getElementById('admin-modal-title').textContent = 'Administration Pauly’Bet';
+  document.getElementById('admin-modal-sub').textContent = 'Comptes inscrits sur la plateforme';
+  const content = document.getElementById('admin-modal-content');
+  content.innerHTML = '<div class="sync-status-line">Chargement des comptes…</div>';
+  const client = ensureSupaClient();
+  try {
+    const { data, error } = await client.rpc('paulybet_admin_accounts');
+    if (error) throw error;
+    adminAccountsCache = Array.isArray(data) ? data : [];
+    if (!adminAccountsCache.length) {
+      content.innerHTML = '<div class="sync-status-line">Aucun compte inscrit pour le moment.</div>';
+      return;
+    }
+    content.innerHTML = '<div class="admin-summary"><strong>' + adminAccountsCache.length + '</strong><span>compte(s) inscrit(s)</span></div>' +
+      adminAccountsCache.map(account => '<button class="admin-account-row" onclick="viewAdminAccount(\'' + escapeAdminHtml(account.user_id) + '\')"><span class="admin-account-main"><strong>' + escapeAdminHtml(account.email || 'E-mail indisponible') + '</strong><small>Inscription : ' + (account.created_at ? new Date(account.created_at).toLocaleDateString('fr-FR') : '—') + '</small></span><span class="admin-account-count">' + Number(account.bet_count || 0) + ' paris　›</span></button>').join('');
+  } catch (e) {
+    content.innerHTML = '<div class="sync-status-line err">Impossible de charger les comptes : ' + escapeAdminHtml(e.message || e) + '</div>';
+  }
+}
+async function viewAdminAccount(userId) {
+  if (!paulyBetIsAdmin || !currentUserId || !/^[0-9a-f-]{36}$/i.test(userId)) return;
+  const account = adminAccountsCache.find(item => item.user_id === userId);
+  if (!account) return;
+  const title = document.getElementById('admin-modal-title');
+  const sub = document.getElementById('admin-modal-sub');
+  const content = document.getElementById('admin-modal-content');
+  title.textContent = 'Historique du membre';
+  sub.textContent = account.email || 'Compte membre';
+  content.innerHTML = '<div class="sync-status-line">Chargement de l’historique…</div>';
+  try {
+    const { data, error } = await ensureSupaClient().from('paulybet_user_data').select('data,updated_at').eq('user_id', userId).maybeSingle();
+    if (error) throw error;
+    const userBets = data && Array.isArray(data.data) ? data.data : [];
+    const stake = userBets.reduce((sum, bet) => sum + (Number(bet.mise) || 0), 0);
+    const payout = userBets.reduce((sum, bet) => sum + (Number(bet.gain) || 0), 0);
+    const net = payout - stake;
+    const money = n => Number(n).toLocaleString('fr-FR', {style:'currency',currency:'EUR'});
+    content.innerHTML = '<button class="admin-back" onclick="openAdminDashboard()">← Tous les comptes</button>' +
+      '<div class="admin-stats"><div><strong>' + userBets.length + '</strong><small>Paris</small></div><div><strong>' + money(stake) + '</strong><small>Mises</small></div><div><strong>' + money(payout) + '</strong><small>Gains</small></div><div><strong>' + (net >= 0 ? '+' : '') + money(net) + '</strong><small>Résultat net</small></div></div>' +
+      '<div class="admin-last-update">Dernière sauvegarde : ' + (data?.updated_at ? new Date(data.updated_at).toLocaleString('fr-FR') : 'Aucune') + '</div>' +
+      (userBets.length ? '<div class="admin-bet-list">' + [...userBets].sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0)).map(bet => '<div class="admin-bet-row"><span>' + escapeAdminHtml(bet.date ? new Date(bet.date).toLocaleString('fr-FR') : 'Date inconnue') + '</span><strong>Mise ' + money(bet.mise) + '</strong><span>Gain ' + money(bet.gain) + '</span></div>').join('') + '</div>' : '<div class="sync-status-line">Ce membre n’a pas encore enregistré de pari.</div>');
+  } catch (e) {
+    content.innerHTML = '<button class="admin-back" onclick="openAdminDashboard()">← Tous les comptes</button><div class="sync-status-line err">Impossible de charger cet historique : ' + escapeAdminHtml(e.message || e) + '</div>';
+  }
+}
+function closeAdminDashboard() {
+  document.getElementById('admin-overlay')?.classList.remove('show');
+}
+function handleAdminOverlayClick(event) {
+  if (event.target?.id === 'admin-overlay') closeAdminDashboard();
 }
 
 /* ─── Init ──────────────────────────────────────────────────────────── */
