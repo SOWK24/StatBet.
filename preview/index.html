@@ -3663,10 +3663,33 @@ async function viewAdminAccount(userId) {
       '<div class="admin-stats"><div><strong>' + userBets.length + '</strong><small>Paris</small></div><div><strong>' + money(stake) + '</strong><small>Mises</small></div><div><strong>' + money(payout) + '</strong><small>Gains</small></div><div><strong>' + (net >= 0 ? '+' : '') + money(net) + '</strong><small>Résultat net</small></div></div>' +
       '<div class="admin-last-update">Dernière sauvegarde : ' + (data?.updated_at ? new Date(data.updated_at).toLocaleString('fr-FR') : 'Aucune') + '</div>' +
       (userBets.length ? '<div class="admin-bet-list">' + [...userBets].sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0)).map(bet => '<div class="admin-bet-row"><span>' + escapeAdminHtml(bet.date ? new Date(bet.date).toLocaleString('fr-FR') : 'Date inconnue') + '</span><strong>Mise ' + money(bet.mise) + '</strong><span>Gain ' + money(bet.gain) + '</span></div>').join('') + '</div>' : '<div class="sync-status-line">Ce membre n’a pas encore enregistré de pari.</div>');
+    content.innerHTML += '<button class="btn-danger-text" type="button" style="width:100%;margin-top:18px;padding:13px;border:1px solid rgba(255,83,100,.42);border-radius:10px;background:rgba(255,83,100,.07);font-weight:900" onclick="deleteAdminAccount(\'' + escapeAdminHtml(userId) + '\')">Supprimer définitivement ce compte</button>';
   } catch (e) {
     content.innerHTML = '<button class="admin-back" onclick="openAdminDashboard()">← Tous les comptes</button><div class="sync-status-line err">Impossible de charger cet historique : ' + escapeAdminHtml(e.message || e) + '</div>';
   }
 }
+async function deleteAdminAccount(userId) {
+  if (!paulyBetIsAdmin || !currentUserId || !/^[0-9a-f-]{36}$/i.test(userId)) return;
+  const account = adminAccountsCache.find(item => item.user_id === userId);
+  if (!account || userId === currentUserId) return;
+  const email = account.email || "ce membre";
+  if (!window.confirm("Supprimer définitivement le compte " + email + " ?\n\nCette action supprimera son accès et ses données de paris. Elle est irréversible.")) return;
+
+  const content = document.getElementById("admin-modal-content");
+  content.innerHTML = '<div class="sync-status-line">Suppression sécurisée du compte…</div>';
+  try {
+    const { data, error } = await ensureSupaClient().functions.invoke("paulybet-admin", {
+      body: { action: "delete-account", user_id: userId }
+    });
+    if (error) throw error;
+    if (!data?.deleted) throw new Error("La suppression n’a pas été confirmée.");
+    adminAccountsCache = adminAccountsCache.filter(item => item.user_id !== userId);
+    await openAdminDashboard();
+  } catch (e) {
+    content.innerHTML = '<div class="sync-status-line err">Suppression impossible : ' + escapeAdminHtml(e.message || e) + '</div><button class="admin-back" onclick="viewAdminAccount(\'' + escapeAdminHtml(userId) + '\')">← Retour au membre</button>';
+  }
+}
+
 function closeAdminDashboard() {
   const overlay = document.getElementById('admin-overlay');
   if (!overlay) return;
