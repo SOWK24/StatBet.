@@ -1319,6 +1319,9 @@ body.pauly-startup-ready #app{visibility:visible!important}
 .auth-switch{display:block;width:100%;padding:12px 8px 4px;border:0;background:transparent;color:#C9D4C5;font-size:12px;font-weight:600}
 .auth-message{min-height:18px;margin-top:12px;color:#A6FF3B;font-size:12px;line-height:1.45;text-align:center}
 .auth-message.error{color:#FF7B83}
+.auth-message.confirmed{display:block;margin:0 0 20px;padding:15px 14px;border:1px solid rgba(166,255,59,.42);border-radius:14px;background:rgba(166,255,59,.09);color:#E8FFD2;font-size:13px;line-height:1.55;text-align:left}
+.auth-message.confirmed strong{display:block;margin-bottom:5px;color:#A6FF3B;font-size:15px}
+.auth-message.confirmed .auth-return-note{display:block;margin-top:7px;color:#fff;font-weight:800}
 </style>
 
 
@@ -1546,13 +1549,13 @@ body.pauly-startup-ready #app{visibility:visible!important}
     <div class="auth-brand">PAULY’BET</div>
     <h1 id="auth-title">Créer ton compte</h1>
     <p class="auth-intro" id="auth-intro">Crée ton compte pour commencer ton suivi privé.</p>
+    <p class="auth-message" id="auth-message" role="status"></p>
     <label for="auth-email">Adresse e-mail</label>
     <input id="auth-email" type="email" autocomplete="email" inputmode="email" placeholder="ton@email.com">
     <label for="auth-password">Mot de passe</label>
     <input id="auth-password" type="password" autocomplete="new-password" placeholder="8 caractères minimum">
     <button class="auth-primary" id="auth-submit" onclick="submitAuth()">Créer mon compte</button>
     <button class="auth-switch" id="auth-toggle" onclick="toggleAuthMode()">J’ai déjà un compte ? Se connecter</button>
-    <p class="auth-message" id="auth-message" role="status"></p>
   </div>
 </div>
 
@@ -1957,6 +1960,7 @@ function setAuthMessage(message, isError) {
   if (!el) return;
   el.textContent = message || '';
   el.classList.toggle('error', !!isError);
+  el.classList.remove('confirmed');
 }
 const PAULYBET_AUTH_REDIRECT = 'https://sowk24.github.io/Pauly-Bet/preview/';
 function showEmailConfirmationFeedback() {
@@ -1976,10 +1980,15 @@ function showEmailConfirmationFeedback() {
     const submit = document.getElementById('auth-submit');
     const toggle = document.getElementById('auth-toggle');
     if (title) title.textContent = 'Adresse e-mail confirmée';
-    if (intro) intro.textContent = 'Ton adresse est validée. Connecte-toi pour accéder à ton espace Pauly’Bet.';
+    if (intro) intro.textContent = 'Ton inscription est confirmée. Il ne te reste plus qu’à retourner dans ton application.';
     if (submit) submit.textContent = 'Se connecter';
     if (toggle) toggle.textContent = 'Créer un compte';
-    setAuthMessage('Validation réussie ! Tu peux maintenant te connecter avec ton adresse e-mail et ton mot de passe.', false);
+    const status = document.getElementById('auth-message');
+    if (status) {
+      status.innerHTML = '<strong>✓ Adresse e-mail validée !</strong>Ton compte Pauly’Bet est maintenant activé.\n\nFerme cette page, puis retourne sur l’application Pauly’Bet que tu as ajoutée à ton écran d’accueil.\n<span class="auth-return-note">Ouvre son icône pour te connecter et commencer à utiliser ton compte.</span>';
+      status.classList.add('confirmed');
+      status.classList.remove('error');
+    }
     // Nettoyer uniquement les paramètres de retour après que Supabase ait pu lire le hash.
     window.setTimeout(() => {
       try { window.history.replaceState({}, document.title, PAULYBET_AUTH_REDIRECT); } catch (_) {}
