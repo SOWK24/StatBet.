@@ -1586,7 +1586,31 @@ body.pauly-startup-ready #app{visibility:visible!important}
 
 <script>
 const STORAGE_KEY = 'statbet_bets_v3';
-const r2 = n => Math.round(n * 100) / 100;
+const r2 = n => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
+
+/* Parseur monétaire commun : accepte 12,50 / 12.50 et les séparateurs de milliers. */
+function parseMoney(value) {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  let normalized = String(value ?? '').trim().replace(/[€\\s\\u00a0]/g, '');
+  if (!normalized) return 0;
+  if (normalized.includes(',') && normalized.includes('.')) {
+    normalized = normalized.lastIndexOf(',') > normalized.lastIndexOf('.')
+      ? normalized.replace(/\\./g, '').replace(',', '.')
+      : normalized.replace(/,/g, '');
+  } else normalized = normalized.replace(',', '.');
+  const amount = Number(normalized);
+  return Number.isFinite(amount) ? amount : NaN;
+}
+function normalizeBetAmounts(items) {
+  if (!Array.isArray(items)) return [];
+  items.forEach(bet => {
+    if (!bet || typeof bet !== 'object') return;
+    const mise = parseMoney(bet.mise), gain = parseMoney(bet.gain);
+    bet.mise = Number.isFinite(mise) ? r2(mise) : 0;
+    bet.gain = Number.isFinite(gain) ? r2(gain) : 0;
+  });
+  return items;
+}
 
 /* Les montants de juillet 2026 doivent rester complets.
    Les paris déjà divisés par l'ancienne correction sont restaurés une seule fois.
@@ -1635,6 +1659,7 @@ function fmtDate(iso) {
 
 /* ─── Calculs ──────────────────────────────────────────────────────── */
 function calcStats(bets) {
+  normalizeBetAmounts(bets);
   // Les tickets annulés sont exclus totalement ; les tickets en cours restent visibles mais ne sont pas encore comptabilisés.
   const settledBets = bets.filter(b => b.status !== 'cancelled' && b.status !== 'pending');
   const totalMises = r2(settledBets.reduce((s,b) => s + b.mise, 0));
@@ -1660,6 +1685,7 @@ function groupByYear(bets) {
 }
 
 function chartData(data) {
+  normalizeBetAmounts(data);
   const settled = data.filter(b => b.status !== 'cancelled' && b.status !== 'pending');
   if (settled.length < 1) return null;
   const sorted = [...settled].sort((a,b) => new Date(a.date) - new Date(b.date));
@@ -2556,14 +2582,6 @@ function resetRecordEdit() {
   showToast('Retour au calcul automatique', 'win');
 }
 
-/* Les montants acceptent le séparateur décimal français (virgule) ou international (point). */
-function parseMoney(value) {
-  const normalized = String(value ?? '').trim().replace(/\s/g, '').replace(',', '.');
-  if (!normalized) return 0;
-  const amount = Number(normalized);
-  return Number.isFinite(amount) ? amount : NaN;
-}
-
 /* ─── Formulaire ────────────────────────────────────────────────────── */
 const inputMise  = document.getElementById('input-mise');
 const inputGain  = document.getElementById('input-gain');
@@ -3006,7 +3024,7 @@ function drawChart(canvas, data) {
   for (let i = 0; i <= gridSteps; i++) {
     const v = yMax - (yRange / gridSteps) * i;
     const y = PAD.top + (cH / gridSteps) * i;
-    ctx.fillText((v >= 0 ? '+' : '−') + Math.round(Math.abs(v)), PAD.left - 6, y + 3);
+    ctx.fillText((v >= 0 ? '+' : '−') + Math.abs(v).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), PAD.left - 6, y + 3);
   }
 
   // ligne du zéro, plus marquée
@@ -3222,6 +3240,7 @@ function renderHistory() {
   const container = document.getElementById('history-container');
   // L'historique affiche strictement les paris déjà présents dans les données.
   if (!Array.isArray(bets)) bets = [];
+  normalizeBetAmounts(bets);
   // Retirer totalement les anciens paris annulés, y compris ceux déjà synchronisés.
   const beforeCancelledCleanup = bets.length;
   bets = bets.filter(b => b.status !== 'cancelled');
