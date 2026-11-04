@@ -1591,11 +1591,11 @@ const r2 = n => Math.round((Number(n) + Number.EPSILON) * 100) / 100;
 /* Parseur monétaire commun : accepte 12,50 / 12.50 et les séparateurs de milliers. */
 function parseMoney(value) {
   if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
-  let normalized = String(value ?? '').trim().replace(/[€\\s\\u00a0]/g, '');
+  let normalized = String(value ?? '').trim().replace(/[€\s\u00a0]/g, '');
   if (!normalized) return 0;
   if (normalized.includes(',') && normalized.includes('.')) {
     normalized = normalized.lastIndexOf(',') > normalized.lastIndexOf('.')
-      ? normalized.replace(/\\./g, '').replace(',', '.')
+      ? normalized.replace(/\./g, '').replace(',', '.')
       : normalized.replace(/,/g, '');
   } else normalized = normalized.replace(',', '.');
   const amount = Number(normalized);
@@ -4109,7 +4109,7 @@ body.pk-open #app {
 
 <script id="polybet-all-numeric-glyphs-script">
 (function(){
-  const numericPattern = /\\d+(?:[.,:/-]\\d+)*/g;
+  const numericPattern = /\d+(?:[.,:/-]\d+)*/g;
   function formatNumericText(root){
     if(!root) return;
     const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
@@ -4118,7 +4118,7 @@ body.pk-open #app {
       const node=walker.currentNode;
       const parent=node.parentElement;
       if(!parent || parent.closest('script,style,svg,textarea,input,.pb-numeric-glyph')) continue;
-      if(!/\\d/.test(node.nodeValue)) continue;
+      if(!/\d/.test(node.nodeValue)) continue;
       nodes.push(node);
     }
     nodes.forEach(node=>{
