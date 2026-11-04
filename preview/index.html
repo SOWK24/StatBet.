@@ -1886,10 +1886,12 @@ function loadBets() {
   try {
     const loaded = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
     if (!Array.isArray(loaded)) return [];
-    return normalizeJuly2026Amounts(loaded).bets;
+    const julyFixed = normalizeJuly2026Amounts(loaded);
+    return normalizeBetAmounts(julyFixed.bets);
   } catch(e) { return []; }
 }
 function saveBets(items) {
+  normalizeBetAmounts(items);
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); } catch(e) {}
   queueCloudPush();
 }
