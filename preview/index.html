@@ -594,6 +594,11 @@ canvas { display:block; width:100%; cursor:pointer; touch-action:pan-y; }
 #edit-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:300; align-items:flex-end; justify-content:center; }
 #edit-overlay.show { display:flex; }
 #edit-sheet { background:var(--surface); border-radius:18px 18px 0 0; padding:24px 20px 36px; width:100%; max-width:480px; max-height:calc(100% - 12px); overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; animation:slideUp .22s cubic-bezier(.22,1,.36,1); }
+/* Le formulaire d'édition reste entièrement accessible même avec le clavier iOS ouvert. */
+#edit-sheet { max-height:calc(100dvh - 12px - env(safe-area-inset-top)); padding-bottom:max(24px, env(safe-area-inset-bottom)); scroll-padding-bottom:100px; }
+#edit-sheet .del-actions { position:sticky; bottom:-1px; z-index:2; padding:12px 0 max(10px, env(safe-area-inset-bottom)); margin-top:18px!important; background:linear-gradient(to bottom, transparent 0, var(--surface) 14px); }
+#edit-sheet .del-actions button { min-height:48px; }
+
 #edit-overlay.pk-open { bottom:var(--pk-height, 0px); transition:bottom .52s cubic-bezier(.22,.75,.25,1); }
 #edit-sheet .pk-scroll-spacer { height:24px; }
 #edit-sheet h3 { font-family:var(--font-d); font-size:20px; font-weight:800; letter-spacing:.5px; margin-bottom:16px; }
@@ -2533,8 +2538,8 @@ function openRecordEdit() {
 }
 
 function saveRecordEdit() {
-  const mise = parseFloat(document.getElementById('record-edit-mise').value);
-  const gain = parseFloat(document.getElementById('record-edit-gain').value);
+  const mise = parseMoney(document.getElementById('record-edit-mise').value);
+  const gain = parseMoney(document.getElementById('record-edit-gain').value);
   const date = document.getElementById('record-edit-date').value;
   if (isNaN(mise) || isNaN(gain) || !date) {
     showToast('Merci de remplir tous les champs', 'loss');
@@ -2549,6 +2554,14 @@ function resetRecordEdit() {
   clearRecordOverride();
   renderRecordCard();
   showToast('Retour au calcul automatique', 'win');
+}
+
+/* Les montants acceptent le séparateur décimal français (virgule) ou international (point). */
+function parseMoney(value) {
+  const normalized = String(value ?? '').trim().replace(/\s/g, '').replace(',', '.');
+  if (!normalized) return 0;
+  const amount = Number(normalized);
+  return Number.isFinite(amount) ? amount : NaN;
 }
 
 /* ─── Formulaire ────────────────────────────────────────────────────── */
@@ -2570,14 +2583,14 @@ function selectResult(type) {
 }
 
 function updatePreview() {
-  const mise = parseFloat(inputMise.value) || 0;
+  const mise = parseMoney(inputMise.value) || 0;
   const hasData = mise > 0 && selectedResult !== null;
   previewBar.classList.toggle('visible', hasData);
   btnAdd.disabled = !hasData;
   if (!hasData) return;
 
   let gain = 0;
-  if (selectedResult === 'win') gain = parseFloat(inputGain.value) || 0;
+  if (selectedResult === 'win') gain = parseMoney(inputGain.value) || 0;
 
   const bilan = r2(gain - mise);
   document.getElementById('prev-mise').textContent = fmtEurPlain(mise);
@@ -2590,11 +2603,11 @@ inputMise.addEventListener('input', updatePreview);
 inputGain.addEventListener('input', updatePreview);
 
 function addBet() {
-  const mise = parseFloat(inputMise.value);
+  const mise = parseMoney(inputMise.value);
   if (!(mise > 0) || selectedResult === null) return;
   // Capturer le résultat AVANT de réinitialiser le formulaire.
   const isWin = selectedResult === 'win';
-  const gain = isWin ? (parseFloat(inputGain.value) || 0) : 0;
+  const gain = isWin ? (parseMoney(inputGain.value) || 0) : 0;
   const now  = new Date();
   const newBet = {
     id: `bet-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
@@ -3551,6 +3564,8 @@ function openEditModal(id) {
 
   document.getElementById('edit-overlay').classList.add('show');
   if (document.body.classList.contains('pk-open')) document.getElementById('edit-overlay').classList.add('pk-open');
+  const editSheet = document.getElementById('edit-sheet');
+  requestAnimationFrame(() => { editSheet.scrollTop = 0; });
 }
 
 function editSelectResult(type) {
@@ -3575,9 +3590,9 @@ function doEdit() {
   const bet = bets.find(b => b.id === pendingEditId);
   if (!bet) return;
 
-  const mise = parseFloat(document.getElementById('edit-mise').value);
+  const mise = parseMoney(document.getElementById('edit-mise').value);
   if (!(mise > 0)) { showToast('Mise invalide', 'loss'); return; }
-  const gain = editSelectedResult === 'loss' ? 0 : (parseFloat(document.getElementById('edit-gain').value) || 0);
+  const gain = editSelectedResult === 'loss' ? 0 : (parseMoney(document.getElementById('edit-gain').value) || 0);
   const dateVal = document.getElementById('edit-date').value;
   const newDate = dateVal ? new Date(dateVal) : new Date(bet.date);
 
