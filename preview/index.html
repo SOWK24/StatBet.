@@ -3728,13 +3728,16 @@ async function viewAdminAccount(userId) {
   try {
     const { data, error } = await ensureSupaClient().functions.invoke('paulybet-admin', { body: { action: 'account-data', user_id: userId } });
     if (error) throw error;
-    const userBets = Array.isArray(data?.data) ? data.data : [];
-    const stake = userBets.reduce((sum, bet) => sum + (Number(bet.mise) || 0), 0);
-    const payout = userBets.reduce((sum, bet) => sum + (Number(bet.gain) || 0), 0);
-    const net = payout - stake;
+    const rawUserBets = Array.isArray(data?.data) ? data.data : [];
+    // Reprendre exactement les règles de la page d’accueil : montants normalisés,
+    // correction historique de juillet 2026 et exclusion des paris en cours/annulés.
+    const julyFixed = normalizeJuly2026Amounts(rawUserBets.map(bet => ({ ...bet })));
+    const userBets = normalizeBetAmounts(julyFixed.bets);
+    const stats = calcStats(userBets);
+    const settledBets = userBets.filter(bet => bet.status !== 'cancelled' && bet.status !== 'pending');
     const money = n => Number(n).toLocaleString('fr-FR', {style:'currency',currency:'EUR'});
     content.innerHTML = '<button class="admin-back" onclick="openAdminDashboard()">← Tous les comptes</button>' +
-      '<div class="admin-stats"><div><strong>' + userBets.length + '</strong><small>Paris</small></div><div><strong>' + money(stake) + '</strong><small>Mises</small></div><div><strong>' + money(payout) + '</strong><small>Gains</small></div><div><strong>' + (net >= 0 ? '+' : '') + money(net) + '</strong><small>Résultat net</small></div></div>' +
+      '<div class="admin-stats"><div><strong>' + stats.nbParis + '</strong><small>Paris</small></div><div><strong>' + money(stats.totalMises) + '</strong><small>Mises</small></div><div><strong>' + money(stats.totalGains) + '</strong><small>Gains</small></div><div><strong>' + (stats.bilanNet >= 0 ? '+' : '') + money(stats.bilanNet) + '</strong><small>Résultat net</small></div></div>' +
       '<div class="admin-last-update">Dernière sauvegarde : ' + (data?.updated_at ? new Date(data.updated_at).toLocaleString('fr-FR') : 'Aucune') + '</div>' +
       (userBets.length ? '<div class="admin-bet-list">' + [...userBets].sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0)).map(bet => '<div class="admin-bet-row"><span>' + escapeAdminHtml(bet.date ? new Date(bet.date).toLocaleString('fr-FR') : 'Date inconnue') + '</span><strong>Mise ' + money(bet.mise) + '</strong><span>Gain ' + money(bet.gain) + '</span></div>').join('') + '</div>' : '<div class="sync-status-line">Ce membre n’a pas encore enregistré de pari.</div>');
     content.innerHTML += '<button class="btn-danger-text" type="button" style="width:100%;margin-top:18px;padding:13px;border:1px solid rgba(255,83,100,.42);border-radius:10px;background:rgba(255,83,100,.07);font-weight:900" onclick="deleteAdminAccount(\'' + escapeAdminHtml(userId) + '\')">Supprimer définitivement ce compte</button>';
